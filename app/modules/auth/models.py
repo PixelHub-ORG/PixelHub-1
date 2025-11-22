@@ -13,6 +13,9 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
+    two_factor_secret = db.Column(db.String(64), nullable=True)
+    is_two_factor_enabled = db.Column(db.Boolean, nullable=False, default=False)
+
     data_sets = db.relationship("app.modules.dataset.models.PixDataset", backref="user", lazy=True)
     profile = db.relationship("UserProfile", backref="user", uselist=False)
 

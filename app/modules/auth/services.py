@@ -8,19 +8,31 @@ from app.modules.profile.models import UserProfile
 from app.modules.profile.repositories import UserProfileRepository
 from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
-
+#importes del doble factor
+import pyotp
+import qrcode
+import io
+import base64
 
 class AuthenticationService(BaseService):
     def __init__(self):
         super().__init__(UserRepository())
         self.user_profile_repository = UserProfileRepository()
 
-    def login(self, email, password, remember=True):
+    def login(self, email, password, two_factor_code=None, remember=True):
         user = self.repository.get_by_email(email)
-        if user is not None and user.check_password(password):
-            login_user(user, remember=remember)
-            return True
-        return False
+        if not user or not user.check_password(password):
+            return {"success": False, "2fa_required": False, "user": None}
+
+        if user.is_two_factor_enabled:
+            if two_factor_code is None:
+                return {"success": False, "2fa_required": True, "user": user}
+            if not self.verify_two_factor_code(user, two_factor_code):
+                return {"success": False, "2fa_required": True, "user": user}
+
+        login_user(user, remember=remember)
+        return {"success": True, "2fa_required": False, "user": user}
+
 
     def is_email_available(self, email: str) -> bool:
         return self.repository.get_by_email(email) is None
@@ -42,19 +54,23 @@ class AuthenticationService(BaseService):
                 raise ValueError("Surname is required.")
 
             user_data = {"email": email, "password": password}
+            user = self.create(commit=False, **user_data)
+
+            user.two_factor_secret = pyotp.random_base32()
+            user.is_two_factor_enabled = False
 
             profile_data = {
                 "name": name,
                 "surname": surname,
+                "user_id": user.id
             }
-
-            user = self.create(commit=False, **user_data)
-            profile_data["user_id"] = user.id
             self.user_profile_repository.create(**profile_data)
+
             self.repository.session.commit()
         except Exception as exc:
             self.repository.session.rollback()
             raise exc
+
         return user
 
     def update_profile(self, user_profile_id, form):
@@ -76,3 +92,40 @@ class AuthenticationService(BaseService):
 
     def temp_folder_by_user(self, user: User) -> str:
         return os.path.join(uploads_folder_name(), "temp", str(user.id))
+    
+    #doble factor
+    def generate_two_factor_secret(self, user: User) -> str:
+        secret = pyotp.random_base32()
+        user.two_factor_secret = secret
+        self.repository.session.commit()
+        return secret
+
+
+    def generate_qr_code_for_two_factor(self, user: User, app_name: str = "PixelHub") -> str:
+        """Generates a QR code for the user's 2FA setup."""
+        if not user.two_factor_secret:
+            self.generate_two_factor_secret(user)
+
+        totp = pyotp.TOTP(user.two_factor_secret)
+        uri = totp.provisioning_uri(name=user.email, issuer_name=app_name)
+
+        img = qrcode.make(uri)
+        buffer = io.BytesIO()
+        img.save(buffer, format="PNG")
+        buffer.seek(0)
+        qr_code_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+
+        return f"data:image/png;base64,{qr_code_base64}"
+
+    def verify_two_factor_code(self, user: User, code: str) -> bool:
+        totp = pyotp.TOTP(user.two_factor_secret)
+        return totp.verify(code)  
+
+    def enable_two_factor(self, user: User):
+        user.is_two_factor_enabled = True
+        self.repository.session.commit()
+
+    def disable_two_factor(self, user: User):
+        user.is_two_factor_enabled = False
+        user.two_factor_secret = None  
+        self.repository.session.commit()

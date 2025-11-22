@@ -60,7 +60,6 @@ def login():
 
     return render_template("auth/login_form.html", form=form, error=error)
 
-
 @auth_bp.route("/logout", endpoint="logout")
 def logout():
     logout_user() 
@@ -106,7 +105,27 @@ def enable_2fa():
 
     return render_template("auth/enable_2fa.html", qr_code=qr_code, secret=secret, error=error)
 
-#TODO: verify 2fa route
+@auth_bp.route("/2fa/verify", methods=["GET", "POST"], endpoint="verify_2fa")
+def verify_2fa():
+    user_id = session.get('two_factor_user_id')
+    if not user_id:
+        return redirect(url_for("auth.login"))
+
+    user = authentication_service.repository.get(user_id)
+    error = None
+
+    if request.method == "POST":
+        code = request.form.get("code")
+        if not code:
+            error = "Please enter the 2FA code."
+        elif authentication_service.verify_two_factor_code(user, code):
+            login_user(user) 
+            session.pop('two_factor_user_id', None) 
+            return redirect(url_for("public.index"))
+        else:
+            error = "Invalid 2FA code, please try again."
+
+    return render_template("auth/verify_2fa.html", error=error)
 
 @auth_bp.route("/2fa/disable", methods=["POST"], endpoint="disable_2fa")
 def disable_2fa():
