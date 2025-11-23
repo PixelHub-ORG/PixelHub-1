@@ -154,3 +154,158 @@ def test_signup_redirects_to_enable_2fa(test_client):
     )
 
     assert response.request.path == url_for("auth.enable_2fa")
+
+
+#AQUI
+def test_login_without_2fa_redirects_to_enable_2fa(test_client):
+    response = test_client.post(
+        "/login",
+        data=dict(email="no2fa@example.com", password="password"),
+        follow_redirects=True,
+    )
+
+    assert response.request.path == url_for("auth.enable_2fa")
+
+def test_login_with_2fa_redirects_to_verify_2fa(test_client):
+    response = test_client.post(
+        "/login",
+        data=dict(email="with2fa@example.com", password="password"),
+        follow_redirects=True,
+    )
+
+    assert response.request.path == url_for("auth.enable_2fa")
+
+def test_enable_2fa_success_flow(test_client, monkeypatch):
+    auth_service = AuthenticationService()
+
+    test_client.get("/logout", follow_redirects=True)
+    with test_client.session_transaction() as sess:
+        sess.clear()
+
+    user = auth_service.create_with_profile(
+        name="Enable2FATest",
+        surname="User",
+        email="enable_2fa_flow@example.com",
+        password="password",
+    )
+    repo = UserRepository()
+    user = repo.get_by_email("enable_2fa_flow@example.com")
+    assert user is not None
+    assert user.is_two_factor_enabled is False
+
+    with test_client.session_transaction() as sess:
+        sess["setup_2fa_user_id"] = user.id
+
+    monkeypatch.setattr(
+        "app.modules.auth.services.AuthenticationService.verify_two_factor_code",
+        lambda self, u, code: True,
+    )
+
+    resp = test_client.post(
+        "/2fa/enable",
+        data={"code": "123456"},
+        follow_redirects=False,
+    )
+
+    assert resp.status_code in (301, 302)
+
+    updated_user = repo.get_by_email("enable_2fa_flow@example.com")
+    assert updated_user.is_two_factor_enabled is True
+
+def test_enable_2fa_wrong_code_shows_error(test_client, monkeypatch):
+    auth_service = AuthenticationService()
+    user = auth_service.create_with_profile(
+        name="Enable2FAWrongCode",
+        surname="User",
+        email="enable_2fa_wrong@example.com",
+        password="password",
+    )
+    repo = UserRepository()
+    user = repo.get_by_email("enable_2fa_wrong@example.com")
+    assert user is not None
+    assert user.is_two_factor_enabled is False
+
+    with test_client.session_transaction() as sess:
+        sess["_user_id"] = str(user.id)
+
+    monkeypatch.setattr(
+        "app.modules.auth.services.AuthenticationService.verify_two_factor_code",
+        lambda self, u, code: False,
+    )
+
+    resp = test_client.post(
+        "/2fa/enable",
+        data={"code": "000000"},
+        follow_redirects=False,
+    )
+
+    assert resp.status_code == 200
+
+    updated = repo.get_by_email("enable_2fa_wrong@example.com")
+    assert updated.is_two_factor_enabled is False
+
+
+def test_verify_2fa_success(test_client):
+    repo = UserRepository()
+    user = repo.get_by_email("with2fa@example.com")
+    secret = user.two_factor_secret
+
+    with test_client.session_transaction() as sess:
+        sess["two_factor_user_id"] = user.id
+
+    totp = pyotp.TOTP(secret)
+    code = totp.now()
+
+    resp = test_client.post("/2fa/verify", data={"code": code}, follow_redirects=False)
+    assert resp.status_code in (301, 302)
+    assert resp.headers["Location"].endswith("/")
+
+def test_verify_2fa_wrong_code_stays_on_page(test_client):
+    repo = UserRepository()
+    user = repo.get_by_email("with2fa@example.com")
+
+    with test_client.session_transaction() as sess:
+        sess["two_factor_user_id"] = user.id
+
+    resp = test_client.post(
+        "/2fa/verify",
+        data={"code": "000000"},
+        follow_redirects=True,
+    )
+
+    assert resp.status_code == 200
+    assert resp.request.path == "/2fa/verify"
+
+    assert (
+        b"Invalid 2FA code" in resp.data
+        or b"Invalid 2FA code, please try again." in resp.data
+    )
+
+def test_disable_2fa_requires_authentication(test_client):
+    with test_client.session_transaction() as sess:
+        sess.clear()
+
+    resp = test_client.post("/2fa/disable", follow_redirects=False)
+
+    assert resp.status_code in (301, 302)
+    location = resp.headers.get("Location", "")
+    assert location.endswith("/login") or location.endswith("/")
+
+def test_disable_2fa_turns_off_flag(test_client):
+    repo = UserRepository()
+    user = repo.get_by_email("with2fa@example.com")
+    assert user is not None
+
+    if not user.is_two_factor_enabled:
+        AuthenticationService().enable_two_factor(user)
+        user = repo.get_by_email("with2fa@example.com")
+        assert user.is_two_factor_enabled is True
+
+    with test_client.session_transaction() as sess:
+        sess["_user_id"] = str(user.id)
+
+    resp = test_client.post("/2fa/disable", follow_redirects=True)
+    assert resp.request.path == "/"
+
+    updated = repo.get_by_email("with2fa@example.com")
+    assert updated.is_two_factor_enabled is False
