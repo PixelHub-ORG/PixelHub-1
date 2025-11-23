@@ -102,7 +102,6 @@ class AuthenticationService(BaseService):
 
 
     def generate_qr_code_for_two_factor(self, user: User, app_name: str = "PixelHub") -> str:
-        """Generates a QR code for the user's 2FA setup."""
         if not user.two_factor_secret:
             self.generate_two_factor_secret(user)
 

@@ -85,7 +85,7 @@ def enable_2fa():
     if not user.two_factor_secret:
         secret = authentication_service.generate_two_factor_secret(user)
         user.two_factor_secret = secret
-        authentication_service.repository.save(user)
+        authentication_service.repository.session.commit()
     else:
         secret = user.two_factor_secret
 
