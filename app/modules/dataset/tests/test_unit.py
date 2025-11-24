@@ -4,6 +4,7 @@ import shutil
 import tempfile
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
+from zipfile import ZipFile
 
 import pytest
 from flask import Flask
@@ -421,7 +422,12 @@ def test_upload_valid(mock_current_user):
 
         assert resp.status_code == 200
         j = resp.get_json()
+        # Check backward compatibility
         assert j["filename"] == "test.pix"
+        # Check new array format
+        assert "filenames" in j
+        assert len(j["filenames"]) == 1
+        assert j["filenames"][0] == "test.pix"
         assert "uploaded" in j["message"].lower()
 
         # ensure file was saved
@@ -469,7 +475,214 @@ def test_upload_invalid_extension(mock_current_user):
 
         assert resp.status_code == 400
         j = resp.get_json()
-        assert "valid" in j["message"].lower()
+        assert "only .pix or .zip files are allowed" in j["message"].lower()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+@patch("app.modules.dataset.routes.current_user")
+def test_upload_valid_zip_with_pix_files(mock_current_user):
+    tmp = tempfile.mkdtemp()
+    try:
+        mock_current_user.temp_folder = lambda: tmp
+        mock_current_user.is_authenticated = True
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.register_blueprint(dataset_bp)
+        lm = LoginManager()
+        lm.init_app(app)
+
+        @lm.user_loader
+        def _load_user(user_id):
+            u = MagicMock()
+            u.is_authenticated = True
+            try:
+                u.id = int(user_id)
+            except Exception:
+                u.id = user_id
+            return u
+
+        app.config["TESTING"] = True
+        client = app.test_client()
+
+        with client.session_transaction() as sess:
+            sess["_user_id"] = "1"
+
+        # Create a zip file with multiple .pix files
+        zip_buffer = io.BytesIO()
+        with ZipFile(zip_buffer, "w") as zf:
+            zf.writestr("file1.pix", b"pix content 1")
+            zf.writestr("file2.pix", b"pix content 2")
+            zf.writestr("nested/file3.pix", b"pix content 3")
+        zip_buffer.seek(0)
+
+        data = {"file": (zip_buffer, "test.zip")}
+        resp = client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+
+        assert resp.status_code == 200
+        j = resp.get_json()
+        assert "uploaded" in j["message"].lower()
+        # Check backward compatibility - filename should be first file
+        assert j["filename"] == "file1.pix"
+        # Check new array format
+        assert "filenames" in j
+        assert len(j["filenames"]) == 3
+        assert "file1.pix" in j["filenames"]
+        assert "file2.pix" in j["filenames"]
+        assert "file3.pix" in j["filenames"]
+
+        # Verify files were extracted
+        for filename in j["filenames"]:
+            assert os.path.exists(os.path.join(tmp, filename))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+@patch("app.modules.dataset.routes.current_user")
+def test_upload_zip_without_pix_files(mock_current_user):
+    tmp = tempfile.mkdtemp()
+    try:
+        mock_current_user.temp_folder = lambda: tmp
+        mock_current_user.is_authenticated = True
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.register_blueprint(dataset_bp)
+        lm = LoginManager()
+        lm.init_app(app)
+
+        @lm.user_loader
+        def _load_user(user_id):
+            u = MagicMock()
+            u.is_authenticated = True
+            try:
+                u.id = int(user_id)
+            except Exception:
+                u.id = user_id
+            return u
+
+        app.config["TESTING"] = True
+        client = app.test_client()
+
+        with client.session_transaction() as sess:
+            sess["_user_id"] = "1"
+
+        # Create a zip file without .pix files
+        zip_buffer = io.BytesIO()
+        with ZipFile(zip_buffer, "w") as zf:
+            zf.writestr("file1.txt", b"text content")
+            zf.writestr("file2.doc", b"doc content")
+        zip_buffer.seek(0)
+
+        data = {"file": (zip_buffer, "test.zip")}
+        resp = client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+
+        assert resp.status_code == 400
+        j = resp.get_json()
+        assert "does not contain any .pix files" in j["message"].lower()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+@patch("app.modules.dataset.routes.current_user")
+def test_upload_zip_with_filename_collision(mock_current_user):
+    tmp = tempfile.mkdtemp()
+    try:
+        mock_current_user.temp_folder = lambda: tmp
+        mock_current_user.is_authenticated = True
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.register_blueprint(dataset_bp)
+        lm = LoginManager()
+        lm.init_app(app)
+
+        @lm.user_loader
+        def _load_user(user_id):
+            u = MagicMock()
+            u.is_authenticated = True
+            try:
+                u.id = int(user_id)
+            except Exception:
+                u.id = user_id
+            return u
+
+        app.config["TESTING"] = True
+        client = app.test_client()
+
+        with client.session_transaction() as sess:
+            sess["_user_id"] = "1"
+
+        # Pre-create a file to cause collision
+        existing_file = os.path.join(tmp, "duplicate.pix")
+        with open(existing_file, "w") as f:
+            f.write("existing content")
+
+        # Create zip with duplicate filename
+        zip_buffer = io.BytesIO()
+        with ZipFile(zip_buffer, "w") as zf:
+            zf.writestr("duplicate.pix", b"new content")
+        zip_buffer.seek(0)
+
+        data = {"file": (zip_buffer, "test.zip")}
+        resp = client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+
+        assert resp.status_code == 200
+        j = resp.get_json()
+        assert len(j["filenames"]) == 1
+        # Should generate unique filename like "duplicate (1).pix"
+        assert "duplicate" in j["filenames"][0]
+        assert j["filenames"][0] != "duplicate.pix"
+        assert os.path.exists(os.path.join(tmp, j["filenames"][0]))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+@patch("app.modules.dataset.routes.current_user")
+def test_upload_zip_with_case_insensitive_extension(mock_current_user):
+    tmp = tempfile.mkdtemp()
+    try:
+        mock_current_user.temp_folder = lambda: tmp
+        mock_current_user.is_authenticated = True
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.register_blueprint(dataset_bp)
+        lm = LoginManager()
+        lm.init_app(app)
+
+        @lm.user_loader
+        def _load_user(user_id):
+            u = MagicMock()
+            u.is_authenticated = True
+            try:
+                u.id = int(user_id)
+            except Exception:
+                u.id = user_id
+            return u
+
+        app.config["TESTING"] = True
+        client = app.test_client()
+
+        with client.session_transaction() as sess:
+            sess["_user_id"] = "1"
+
+        # Create zip with mixed-case .PIX extension
+        zip_buffer = io.BytesIO()
+        with ZipFile(zip_buffer, "w") as zf:
+            zf.writestr("FILE1.PIX", b"pix content 1")
+            zf.writestr("file2.Pix", b"pix content 2")
+        zip_buffer.seek(0)
+
+        data = {"file": (zip_buffer, "TEST.ZIP")}
+        resp = client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+
+        assert resp.status_code == 200
+        j = resp.get_json()
+        assert len(j["filenames"]) == 2
+        assert "FILE1.PIX" in j["filenames"]
+        assert "file2.Pix" in j["filenames"]
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 

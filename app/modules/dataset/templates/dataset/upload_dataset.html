@@ -246,7 +246,7 @@
                         url: "/dataset/file/upload",
                         paramName: 'file',
                         maxFilesize: 10,
-                        acceptedFiles: '.pix',
+                        acceptedFiles: '.pix,.zip',
                         init: function () {
 
                             let fileList = document.getElementById('file-list');
@@ -255,8 +255,8 @@
 
                             this.on('addedfile', function (file) {
 
-                                let ext = file.name.split('.').pop();
-                                if (ext !== 'pix') {
+                                let ext = file.name.split('.').pop().toLowerCase();
+                                if (ext !== 'pix' && ext !== 'zip') {
                                     this.removeFile(file);
 
                                     let alert = document.createElement('p');
@@ -274,10 +274,21 @@
                                 show_upload_dataset();
 
                                 console.log("File uploaded: ", response);
+                                
+                                // Handle both single file and multiple files from zip
+                                const filenames = Array.isArray(response.filenames) 
+                                    ? response.filenames 
+                                    : (response.filename ? [response.filename] : []);
+                                
+                                let processedCount = 0;
+                                filenames.forEach(function(savedFilename) {
+                                    if (!savedFilename) return;
+                                    processedCount++;
+                                    
                                 // actions when UVL model is uploaded
                                 let listItem = document.createElement('li');
                                 let h4Element = document.createElement('h4');
-                                h4Element.textContent = response.filename;
+                                h4Element.textContent = savedFilename;
                                 listItem.appendChild(h4Element);
 
                                 // generate incremental id for form
@@ -326,7 +337,12 @@
 
                                 removeButton.addEventListener('click', function () {
                                     fileList.removeChild(listItem);
-                                    this.removeFile(file);
+                                    
+                                    processedCount--;
+                                    // Remove the original file from dropzone when all extracted files are deleted
+                                    if (processedCount === 0) {
+                                        dropzone.removeFile(file);
+                                    }
 
                                     // Ajax request
                                     let xhr = new XMLHttpRequest();
@@ -336,14 +352,14 @@
                                         if (xhr.status === 200) {
                                             console.log('Deleted file from server');
 
-                                            if (dropzone.files.length === 0) {
+                                            if (fileList.children.length === 0) {
                                                 document.getElementById("upload_dataset").style.display = "none";
                                                 clean_upload_errors();
                                             }
 
                                         }
                                     };
-                                    xhr.send(JSON.stringify({file: file.name}));
+                                    xhr.send(JSON.stringify({file: savedFilename}));
                                 }.bind(this));
 
                                 /*
@@ -368,7 +384,7 @@
 
                                 formContainer.innerHTML = `
                                     <div class="row">
-                                        <input type="hidden" value="${response.filename}" name="file_models-${formUniqueId}-filename">
+                                        <input type="hidden" value="${savedFilename}" name="file_models-${formUniqueId}-filename">
                                         <div class="col-12">
                                             <div class="row">
                                                 <div class="col-12">
@@ -436,6 +452,8 @@
 
                                 listItem.appendChild(formContainer);
                                 fileList.appendChild(listItem);
+                                
+                                }); // end forEach
 
                             });
 

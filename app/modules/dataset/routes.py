@@ -7,16 +7,7 @@ import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
 
-from flask import (
-    abort,
-    jsonify,
-    make_response,
-    redirect,
-    render_template,
-    request,
-    send_from_directory,
-    url_for,
-)
+from flask import abort, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 
 from app.modules.dataset import dataset_bp
@@ -125,39 +116,75 @@ def home_leaderboard():
 @dataset_bp.route("/dataset/file/upload", methods=["POST"])
 @login_required
 def upload():
-    file = request.files["file"]
+    file = request.files.get("file")
     temp_folder = current_user.temp_folder()
 
-    if not file or not file.filename.endswith(".pix"):
-        return jsonify({"message": "No valid file"}), 400
+    if not file or not file.filename:
+        return jsonify({"message": "No file provided"}), 400
 
-    # create temp folder
+    _, extension = os.path.splitext(file.filename.lower())
+
+    if extension not in {".pix", ".zip"}:
+        return jsonify({"message": "Only .pix or .zip files are allowed"}), 400
+
     if not os.path.exists(temp_folder):
         os.makedirs(temp_folder)
 
-    file_path = os.path.join(temp_folder, file.filename)
-
-    if os.path.exists(file_path):
-        # Generate unique filename (by recursion)
-        base_name, extension = os.path.splitext(file.filename)
+    def _generate_unique_filename(original_name: str) -> str:
+        base_name, ext = os.path.splitext(original_name)
+        candidate = original_name
         i = 1
-        while os.path.exists(os.path.join(temp_folder, f"{base_name} ({i}){extension}")):
+        while os.path.exists(os.path.join(temp_folder, candidate)):
+            candidate = f"{base_name} ({i}){ext}"
             i += 1
-        new_filename = f"{base_name} ({i}){extension}"
-        file_path = os.path.join(temp_folder, new_filename)
-    else:
-        new_filename = file.filename
+        return candidate
+
+    saved_filenames = []
 
     try:
-        file.save(file_path)
+        if extension == ".pix":
+            new_filename = _generate_unique_filename(file.filename)
+            file_path = os.path.join(temp_folder, new_filename)
+            file.save(file_path)
+            saved_filenames.append(new_filename)
+        else:  # .zip
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_zip:
+                file.save(tmp_zip)
+                temp_zip_path = tmp_zip.name
+
+            try:
+                with ZipFile(temp_zip_path) as zip_file:
+                    pix_members = [
+                        info
+                        for info in zip_file.infolist()
+                        if not info.is_dir() and info.filename.lower().endswith(".pix")
+                    ]
+
+                    if not pix_members:
+                        return jsonify({"message": "Zip file does not contain any .pix files"}), 400
+
+                    for member in pix_members:
+                        file_data = zip_file.read(member)
+                        base_name = os.path.basename(member.filename)
+                        if not base_name:
+                            continue
+                        new_filename = _generate_unique_filename(base_name)
+                        file_path = os.path.join(temp_folder, new_filename)
+                        with open(file_path, "wb") as output_file:
+                            output_file.write(file_data)
+                        saved_filenames.append(new_filename)
+            finally:
+                if os.path.exists(temp_zip_path):
+                    os.remove(temp_zip_path)
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 
     return (
         jsonify(
             {
-                "message": "UVL uploaded and validated successfully",
-                "filename": new_filename,
+                "message": "Files uploaded successfully",
+                "filename": saved_filenames[0] if saved_filenames else None,
+                "filenames": saved_filenames,
             }
         ),
         200,
