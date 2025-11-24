@@ -1,9 +1,14 @@
+import os
+import shutil
+
 from app import db
 from app.modules.auth.services import AuthenticationService
 from app.modules.cart.repositories import CartItemRepository, CartRepository
 from app.modules.dataset.services import DataSetService
 from app.modules.filemodel.models import FileModel
 from app.modules.hubfile.models import Hubfile
+from app.modules.zenodo.services import ZenodoService
+from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
 
 
@@ -13,6 +18,7 @@ class CartService(BaseService):
         self.cart_item_repository = CartItemRepository()
         self.dataset_service = DataSetService()
         self.auth_service = AuthenticationService()
+        self.zenodo_service = ZenodoService()
         super().__init__(self.cart_repository)
 
     def add_to_cart(self, user_id: int, item_id: int):
@@ -52,35 +58,84 @@ class CartService(BaseService):
             return {"message": "User not authenticated."}, 401
 
         form.file_models = []
-
         dataset = self.dataset_service.create_from_form(form, user)
         if not dataset:
             return {"message": "Error creating dataset."}, 500
 
-        for item in cart.items:
-            orig_fm = item.file_model
+        dataset_folder = os.path.join(uploads_folder_name(), f"user_{user.id}", f"dataset_{dataset.id}")
+        os.makedirs(dataset_folder, exist_ok=True)
 
-            new_fm = FileModel(
-                data_set_id=dataset.id,
-                fm_meta_data_id=orig_fm.fm_meta_data_id,
-            )
-            db.session.add(new_fm)
+        new_file_models = []
 
-            for file in orig_fm.files:
-                clone_data = {
-                    col.name: getattr(file, col.name)
-                    for col in file.__table__.columns
-                    if col.name not in ("id", "file_model_id")
-                }
-                new_file = Hubfile(**clone_data)
-                new_file.file_model = new_fm
-                db.session.add(new_file)
+        try:
+            for item in cart.items:
+                orig_fm = item.file_model
+                new_fm = FileModel(
+                    data_set_id=dataset.id,
+                    fm_meta_data_id=orig_fm.fm_meta_data_id,
+                )
+                db.session.add(new_fm)
+                db.session.flush()
+                new_file_models.append(new_fm)
 
-        db.session.commit()
+                for file in orig_fm.files:
+                    clone_data = {
+                        col.name: getattr(file, col.name)
+                        for col in file.__table__.columns
+                        if col.name not in ("id", "file_model_id")
+                    }
+                    new_file = Hubfile(**clone_data)
+                    new_file.file_model = new_fm
+                    db.session.add(new_file)
 
-        self.cart_repository.clear_cart(user_id)
+                    src_path = os.path.join(
+                        uploads_folder_name(),
+                        f"user_{orig_fm.data_set.user_id}",
+                        f"dataset_{orig_fm.data_set_id}",
+                        file.name,
+                    )
+                    dst_path = os.path.join(dataset_folder, file.name)
+                    shutil.copy(src_path, dst_path)
+
+            db.session.commit()
+
+            deposition = self.zenodo_service.create_new_deposition(dataset)
+            deposition_id = deposition["id"]
+
+            for new_fm in new_file_models:
+                for hubfile in new_fm.files:
+                    file_path = os.path.join(dataset_folder, hubfile.name)
+                    if not os.path.exists(file_path):
+                        raise Exception(f"File not found: {hubfile.name}")
+                self.zenodo_service.upload_file(dataset, deposition_id, new_fm, user)
+
+            publish_resp = self.zenodo_service.publish_deposition(deposition_id)
+            doi = publish_resp.get("doi")
+            if not doi:
+                dep_data = self.zenodo_service.get_deposition(deposition_id)
+                doi = dep_data.get("doi") or dep_data.get("metadata", {}).get("doi")
+
+            dataset = db.session.merge(dataset)
+            if doi:
+                dataset.ds_meta_data.dataset_doi = doi
+                db.session.commit()
+            else:
+                raise Exception("Zenodo did not return a valid DOI.")
+
+            self.cart_repository.clear_cart(user_id)
+            db.session.commit()
+
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "message": "Error processing dataset or uploading to Zenodo",
+                "error": str(e),
+                "dataset_id": dataset.id if dataset else None,
+            }, 500
 
         return {
-            "message": "DataSet created successfully.",
+            "message": "Dataset created and uploaded to Zenodo",
             "dataset_id": dataset.id,
+            "zenodo_doi": doi,
+            "zenodo_url": f"https://doi.org/{doi}" if doi else None,
         }, 201

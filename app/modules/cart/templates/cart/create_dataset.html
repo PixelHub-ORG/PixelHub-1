@@ -242,7 +242,7 @@ function submitCartDatasetForm() {
         if (response.ok) {
             alert("Dataset created successfully!");
             if (data.dataset_id) {
-                window.location.href = "/dataset/unsynchronized/" + data.dataset_id + "/";
+                window.location.href = "/";
             } else {
                 window.location.reload();
             }
