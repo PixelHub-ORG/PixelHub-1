@@ -3,10 +3,10 @@ name: Test Coverage
 on:
   push:
     branches:
-      - "**"     # cualquier rama
+      - "**"
   pull_request:
     branches:
-      - "**"     # cualquier PR
+      - "**"
 
 concurrency:
   group: coverage-${{ github.ref }}
@@ -50,7 +50,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # necesario para ver bien los cambios
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -76,28 +76,27 @@ jobs:
         id: modules
         run: |
           MODULE_DIRS=""
-          # Recorremos todos los ficheros cambiados
           for file in ${{ steps.changed.outputs.all_changed_files }}; do
             case "$file" in
+              app/modules/*/tests/*)
+                ;;
               app/modules/*)
-                dir=$(echo "$file" | cut -d'/' -f1-3)   # app/modules/<modulo>
+                dir=$(echo "$file" | cut -d'/' -f1-3)
                 MODULE_DIRS="$MODULE_DIRS $dir"
                 ;;
             esac
           done
 
-          # Normalizar: quitar duplicados
           MODULE_DIRS=$(echo "$MODULE_DIRS" | tr ' ' '\n' | sort -u | tr '\n' ' ')
 
           if [ -z "$MODULE_DIRS" ]; then
             echo "NO_MODULES=true" >> $GITHUB_ENV
-            echo "No se han modificado módulos bajo app/modules. No se correrá coverage."
+            echo "No se han modificado módulos bajo app/modules (solo tests o nada). No se correrá coverage."
           else
             echo "NO_MODULES=false" >> $GITHUB_ENV
             echo "MODULE_DIRS=$MODULE_DIRS" >> $GITHUB_ENV
             echo "Módulos modificados: $MODULE_DIRS"
 
-            # Construimos lista de paquetes Python para --cov
             COV_PKGS=""
             for dir in $MODULE_DIRS; do
               pkg=$(echo "$dir" | tr '/' '.')
