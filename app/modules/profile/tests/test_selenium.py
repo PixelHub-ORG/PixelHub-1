@@ -4,7 +4,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
 from core.environment.host import get_host_for_selenium_testing
-from core.selenium.common import initialize_driver, close_driver
+from core.selenium.common import close_driver, initialize_driver
 
 
 def test_view_user_profile_from_dataset():
