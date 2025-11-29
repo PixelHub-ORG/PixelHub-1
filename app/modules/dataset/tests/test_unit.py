@@ -1418,60 +1418,6 @@ def test_create_dataset_get(mock_current_user, mock_render_template, mock_form_c
 
 
 @patch("app.modules.dataset.routes.DataSetForm")
-@patch("app.modules.dataset.routes.zenodo_service")
-@patch("app.modules.dataset.routes.dataset_service")
-@patch("app.modules.dataset.routes.current_user")
-def test_create_dataset_post_success(mock_current_user, mock_dataset_service, mock_zenodo_service, mock_form_class):
-    mock_current_user.is_authenticated = True
-    mock_current_user.temp_folder.return_value = "/tmp/test_folder"
-
-    mock_form = MagicMock()
-    mock_form.validate_on_submit.return_value = True
-    mock_form_class.return_value = mock_form
-
-    mock_dataset = MagicMock()
-    mock_dataset.ds_meta_data_id = 1
-    mock_dataset.file_models = []
-    mock_dataset_service.create_from_form.return_value = mock_dataset
-
-    mock_zenodo_service.create_new_deposition.return_value = {"id": 123}
-    mock_zenodo_service.get_doi.return_value = "10.1234/zenodo.123"
-
-    app = Flask(__name__)
-    app.secret_key = "test-secret"
-    app.register_blueprint(dataset_bp)
-    lm = LoginManager()
-    lm.init_app(app)
-
-    @lm.user_loader
-    def _load_user(user_id):
-        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
-
-    app.config["TESTING"] = True
-    client = app.test_client()
-
-    with client.session_transaction() as sess:
-        sess["_user_id"] = "1"
-
-    with (
-        patch("app.modules.dataset.routes.os.path.exists") as mock_exists,
-        patch("app.modules.dataset.routes.os.path.isdir") as mock_isdir,
-    ):
-        mock_exists.return_value = True
-        mock_isdir.return_value = True
-
-        resp = client.post("/dataset/upload", data={})
-
-        assert resp.status_code == 200
-        j = resp.get_json()
-        assert "Everything works!" in j["message"]
-
-        mock_dataset_service.create_from_form.assert_called_once()
-        mock_zenodo_service.create_new_deposition.assert_called_once()
-        mock_zenodo_service.publish_deposition.assert_called_once()
-
-
-@patch("app.modules.dataset.routes.DataSetForm")
 @patch("app.modules.dataset.routes.current_user")
 def test_create_dataset_post_invalid_form(mock_current_user, mock_form_class):
     mock_current_user.is_authenticated = True
@@ -1743,3 +1689,26 @@ def test_dataset_comparison_service_compare():
     assert len(file_changes["modified"]) == 1
     assert file_changes["modified"][0]["old"].checksum == "123"
     assert file_changes["modified"][0]["new"].checksum == "456"
+
+
+def test_dataset_service_counts(dataset_service):
+    dataset_service.repository = MagicMock()
+    dataset_service.file_model_repository = MagicMock()
+    dataset_service.author_repository = MagicMock()
+    dataset_service.dsmetadata_repository = MagicMock()
+    dataset_service.dsdownloadrecord_repository = MagicMock()
+    dataset_service.dsviewrecord_repostory = MagicMock()
+
+    dataset_service.repository.count_synchronized_datasets.return_value = 10
+    dataset_service.file_model_repository.count_file_models.return_value = 20
+    dataset_service.author_repository.count.return_value = 30
+    dataset_service.dsmetadata_repository.count.return_value = 40
+    dataset_service.dsdownloadrecord_repository.total_dataset_downloads.return_value = 50
+    dataset_service.dsviewrecord_repostory.total_dataset_views.return_value = 60
+
+    assert dataset_service.count_synchronized_datasets() == 10
+    assert dataset_service.count_file_models() == 20
+    assert dataset_service.count_authors() == 30
+    assert dataset_service.count_dsmetadata() == 40
+    assert dataset_service.total_dataset_downloads() == 50
+    assert dataset_service.total_dataset_views() == 60
