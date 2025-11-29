@@ -248,6 +248,11 @@ def upload_github():
 
     # Use GitHub API to list contents; traverse directories recursively
     session = requests.Session()
+    # Add GitHub token if available to increase rate limit
+    github_token = os.getenv("GITHUB_TOKEN")
+    if github_token:
+        session.headers.update({"Authorization": f"token {github_token}"})
+
     api_base = f"https://api.github.com/repos/{owner}/{repo}/contents"
 
     def _fetch_contents(api_url):
