@@ -1,7 +1,7 @@
 import os
 import time
 
-from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException
+from selenium.common.exceptions import ElementNotInteractableException, NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -11,9 +11,7 @@ from core.selenium.common import close_driver, initialize_driver
 
 
 def wait_for_page_to_load(driver, timeout=6):
-    WebDriverWait(driver, timeout).until(
-        lambda d: d.execute_script("return document.readyState") == "complete"
-    )
+    WebDriverWait(driver, timeout).until(lambda d: d.execute_script("return document.readyState") == "complete")
 
 
 def count_datasets(driver, host):
