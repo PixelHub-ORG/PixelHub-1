@@ -14,7 +14,13 @@ from app.modules.badge.routes import badge_bp, make_segment
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.models import Author, DataSet, DSMetaData, PublicationType
 from app.modules.dataset.repositories import DSDownloadRecordRepository
-from app.modules.dataset.services import DataSetService, DSDownloadRecordService
+from app.modules.dataset.services import (
+    DataSetComparisonService,
+    DataSetService,
+    DSDownloadRecordService,
+    DSViewRecordService,
+    SizeService,
+)
 
 FIXED_TIME = datetime(2025, 12, 1, 15, 0, 0, tzinfo=timezone.utc)
 
@@ -690,65 +696,66 @@ def test_upload_zip_with_case_insensitive_extension(mock_current_user):
 @patch("app.modules.dataset.routes.current_user")
 @patch("app.modules.dataset.routes.DSDownloadRecordService")
 @patch("app.modules.dataset.routes.dataset_service")
-def test_download_dataset(mock_dataset_service, mock_dsdownload_service, mock_current_user):
-    # Prepare an uploads tree
-    base_dir = os.getcwd()
-    user_id = 42
-    dataset_id = 99
-    uploads_path = os.path.join(base_dir, "uploads", f"user_{user_id}", f"dataset_{dataset_id}")
-    os.makedirs(uploads_path, exist_ok=True)
-    try:
-        # create a sample file in dataset folder
-        sample_file = os.path.join(uploads_path, "sample.txt")
-        with open(sample_file, "wb") as fh:
-            fh.write(b"hello world")
+@patch("app.modules.dataset.routes.tempfile.mkdtemp")
+@patch("app.modules.dataset.routes.ZipFile")
+@patch("app.modules.dataset.routes.send_from_directory")
+def test_download_dataset(
+    mock_send, mock_zipfile, mock_mkdtemp, mock_dataset_service, mock_dsdownload_service, mock_current_user
+):
+    # Mock dataset service
+    ds = MagicMock()
+    ds.id = 99
+    ds.user_id = 42
+    mock_dataset_service.get_or_404.return_value = ds
 
-        # mock dataset_service.get_or_404
-        ds = MagicMock()
-        ds.id = dataset_id
-        ds.user_id = user_id
-        mock_dataset_service.get_or_404.return_value = ds
+    # Mock download service
+    mock_service_instance = MagicMock()
+    mock_dsdownload_service.return_value = mock_service_instance
 
-        # mock DSDownloadRecordService().create to track calls
-        mock_service_instance = MagicMock()
-        mock_dsdownload_service.return_value = mock_service_instance
+    # Mock temp directory
+    mock_mkdtemp.return_value = "/tmp/test"
 
-        # current_user not authenticated -> cookie generated, user_id passed as None
-        mock_current_user.is_authenticated = False
-        mock_current_user.id = None
+    # Mock ZipFile to avoid actual file operations
+    mock_zip_instance = MagicMock()
+    mock_zipfile.return_value.__enter__.return_value = mock_zip_instance
 
-        app = Flask(__name__)
-        app.secret_key = "test-secret"
-        app.register_blueprint(dataset_bp)
-        # attach a real LoginManager so flask-login utilities work
-        lm = LoginManager()
-        lm.init_app(app)
-        # register a no-op user loader to satisfy flask-login internals
+    # Mock send_from_directory to return a real Response
+    from flask import Response
 
-        @lm.user_loader
-        def _load_user(user_id):
-            u = MagicMock()
-            u.is_authenticated = True
-            try:
-                u.id = int(user_id)
-            except Exception:
-                u.id = user_id
-            return u
+    mock_response = Response("zip content", mimetype="application/zip")
+    mock_send.return_value = mock_response
 
-        app.config["TESTING"] = True
-        client = app.test_client()
+    # current_user not authenticated
+    mock_current_user.is_authenticated = False
+    mock_current_user.id = None
 
-        resp = client.get(f"/dataset/download/{dataset_id}")
-        # should return the zip file for download
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    lm = LoginManager()
+    lm.init_app(app)
+
+    @lm.user_loader
+    def _load_user(user_id):
+        u = MagicMock()
+        u.is_authenticated = True
+        try:
+            u.id = int(user_id)
+        except Exception:
+            u.id = user_id
+        return u
+
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    with patch("app.modules.dataset.routes.os.walk") as mock_walk:
+        mock_walk.return_value = [("/fake/path", [], ["sample.txt"])]
+
+        resp = client.get("/dataset/download/99")
+
         assert resp.status_code == 200
-        # response should be an attachment with zip mimetype
         assert resp.mimetype == "application/zip"
-
-        # ensure download record was created
         mock_service_instance.create.assert_called()
-    finally:
-        # cleanup uploads
-        shutil.rmtree(os.path.join(base_dir, "uploads"), ignore_errors=True)
 
 
 @pytest.fixture
@@ -890,3 +897,849 @@ def test_recommendations_excludes_target_dataset(
     mock_dataset_query.filter.return_value.all.return_value = []
     recommendations = dataset_service.get_dataset_recommendations(mock_dataset_with_data, limit=5)
     assert len(recommendations) == 0
+
+
+# Test upload_github endpoint
+@patch("app.modules.dataset.routes.current_user")
+@patch("app.modules.dataset.routes.requests.Session")
+def test_upload_github_success(mock_session_class, mock_current_user):
+    tmp = tempfile.mkdtemp()
+    try:
+        mock_current_user.temp_folder = lambda: tmp
+        mock_current_user.is_authenticated = True
+
+        # Mock session.get for API calls
+        mock_session = MagicMock()
+        mock_session_class.return_value = mock_session
+
+        # Mock GitHub API response for contents
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            {"type": "file", "name": "test.pix", "download_url": "https://raw.example.com/test.pix"}
+        ]
+        mock_session.get.return_value = mock_response
+        # Second call for file download
+        mock_file_response = MagicMock()
+        mock_file_response.status_code = 200
+        mock_file_response.content = b"pix content"
+        mock_session.get.side_effect = [mock_response, mock_file_response]
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.register_blueprint(dataset_bp)
+        lm = LoginManager()
+        lm.init_app(app)
+
+        @lm.user_loader
+        def _load_user(user_id):
+            u = MagicMock()
+            u.is_authenticated = True
+            u.id = int(user_id) if user_id else None
+            return u
+
+        app.config["TESTING"] = True
+        client = app.test_client()
+
+        with client.session_transaction() as sess:
+            sess["_user_id"] = "1"
+
+        data = {"repo_url": "https://github.com/owner/repo", "path": ""}
+        resp = client.post("/dataset/file/upload_github", json=data)
+
+        assert resp.status_code == 200
+        j = resp.get_json()
+        assert "uploaded" in j["message"].lower()
+        assert j["filename"] == "test.pix"
+        assert "test.pix" in j["filenames"]
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+@patch("app.modules.dataset.routes.current_user")
+def test_upload_github_no_repo_url(mock_current_user):
+    tmp = tempfile.mkdtemp()
+    try:
+        mock_current_user.temp_folder = lambda: tmp
+        mock_current_user.is_authenticated = True
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.register_blueprint(dataset_bp)
+        lm = LoginManager()
+        lm.init_app(app)
+
+        @lm.user_loader
+        def _load_user(user_id):
+            return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+        app.config["TESTING"] = True
+        client = app.test_client()
+
+        with client.session_transaction() as sess:
+            sess["_user_id"] = "1"
+
+        data = {"path": "some/path"}
+        resp = client.post("/dataset/file/upload_github", json=data)
+
+        assert resp.status_code == 400
+        j = resp.get_json()
+        assert "repo_url is required" in j["message"]
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+@patch("app.modules.dataset.routes.current_user")
+def test_upload_github_invalid_url(mock_current_user):
+    tmp = tempfile.mkdtemp()
+    try:
+        mock_current_user.temp_folder = lambda: tmp
+        mock_current_user.is_authenticated = True
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.register_blueprint(dataset_bp)
+        lm = LoginManager()
+        lm.init_app(app)
+
+        @lm.user_loader
+        def _load_user(user_id):
+            return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+        app.config["TESTING"] = True
+        client = app.test_client()
+
+        with client.session_transaction() as sess:
+            sess["_user_id"] = "1"
+
+        data = {"repo_url": "https://invalid-url.com/not-github"}
+        resp = client.post("/dataset/file/upload_github", json=data)
+
+        assert resp.status_code == 400
+        j = resp.get_json()
+        assert "Could not parse" in j["message"]
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+@patch("app.modules.dataset.routes.current_user")
+@patch("app.modules.dataset.routes.requests.Session")
+def test_upload_github_no_pix_files(mock_session_class, mock_current_user):
+    tmp = tempfile.mkdtemp()
+    try:
+        mock_current_user.temp_folder = lambda: tmp
+        mock_current_user.is_authenticated = True
+
+        mock_session = MagicMock()
+        mock_session_class.return_value = mock_session
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            {"type": "file", "name": "test.txt", "download_url": "https://raw.example.com/test.txt"}
+        ]
+        mock_session.get.return_value = mock_response
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.register_blueprint(dataset_bp)
+        lm = LoginManager()
+        lm.init_app(app)
+
+        @lm.user_loader
+        def _load_user(user_id):
+            return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+        app.config["TESTING"] = True
+        client = app.test_client()
+
+        with client.session_transaction() as sess:
+            sess["_user_id"] = "1"
+
+        data = {"repo_url": "https://github.com/owner/repo"}
+        resp = client.post("/dataset/file/upload_github", json=data)
+
+        assert resp.status_code == 400
+        j = resp.get_json()
+        assert "No .pix files found" in j["message"]
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# Test delete endpoint
+@patch("app.modules.dataset.routes.current_user")
+def test_delete_file_success(mock_current_user):
+    tmp = tempfile.mkdtemp()
+    try:
+        mock_current_user.temp_folder = lambda: tmp
+        mock_current_user.is_authenticated = True
+
+        # Create a file to delete
+        test_file = os.path.join(tmp, "test_delete.pix")
+        with open(test_file, "w") as f:
+            f.write("test content")
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.register_blueprint(dataset_bp)
+        lm = LoginManager()
+        lm.init_app(app)
+
+        @lm.user_loader
+        def _load_user(user_id):
+            return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+        app.config["TESTING"] = True
+        client = app.test_client()
+
+        with client.session_transaction() as sess:
+            sess["_user_id"] = "1"
+
+        data = {"file": "test_delete.pix"}
+        resp = client.post("/dataset/file/delete", json=data)
+
+        assert resp.status_code == 200
+        j = resp.get_json()
+        assert "deleted" in j["message"].lower()
+        assert not os.path.exists(test_file)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+@patch("app.modules.dataset.routes.current_user")
+def test_delete_file_not_found(mock_current_user):
+    tmp = tempfile.mkdtemp()
+    try:
+        mock_current_user.temp_folder = lambda: tmp
+        mock_current_user.is_authenticated = True
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.register_blueprint(dataset_bp)
+        lm = LoginManager()
+        lm.init_app(app)
+
+        @lm.user_loader
+        def _load_user(user_id):
+            return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+        app.config["TESTING"] = True
+        client = app.test_client()
+
+        with client.session_transaction() as sess:
+            sess["_user_id"] = "1"
+
+        data = {"file": "nonexistent.pix"}
+        resp = client.post("/dataset/file/delete", json=data)
+
+        assert resp.status_code == 200
+        j = resp.get_json()
+        assert "error" in j
+        assert "not found" in j["error"].lower()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# Test list_dataset endpoint
+@patch("app.modules.dataset.routes.current_user")
+@patch("app.modules.dataset.routes.dataset_service")
+@patch("app.modules.dataset.routes.render_template")
+def test_list_dataset(mock_render_template, mock_dataset_service, mock_current_user):
+    mock_current_user.id = 1
+    mock_current_user.is_authenticated = True
+
+    mock_dataset_service.get_synchronized.return_value = [MagicMock(id=1)]
+    mock_dataset_service.get_unsynchronized.return_value = [MagicMock(id=2)]
+    mock_render_template.return_value = "<html>list</html>"
+
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    lm = LoginManager()
+    lm.init_app(app)
+
+    @lm.user_loader
+    def _load_user(user_id):
+        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    with client.session_transaction() as sess:
+        sess["_user_id"] = "1"
+
+    resp = client.get("/dataset/list")
+
+    assert resp.status_code == 200
+    mock_dataset_service.get_synchronized.assert_called_once_with(1)
+    mock_dataset_service.get_unsynchronized.assert_called_once_with(1)
+
+
+# Test home_leaderboard endpoint
+@patch("app.modules.dataset.routes.dataset_service")
+@patch("app.modules.dataset.routes.render_template")
+def test_home_leaderboard_default_period(mock_render_template, mock_dataset_service):
+    mock_dataset_service.get_dataset_leaderboard.return_value = [MagicMock(id=1, downloads=100)]
+    mock_render_template.return_value = "<html>leaderboard</html>"
+
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    resp = client.get("/home/leaderboard")
+
+    assert resp.status_code == 200
+    mock_dataset_service.get_dataset_leaderboard.assert_called_once_with(period="week")
+
+
+@patch("app.modules.dataset.routes.dataset_service")
+@patch("app.modules.dataset.routes.render_template")
+def test_home_leaderboard_custom_period(mock_render_template, mock_dataset_service):
+    mock_dataset_service.get_dataset_leaderboard.return_value = [MagicMock(id=1, downloads=100)]
+    mock_render_template.return_value = "<html>leaderboard</html>"
+
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    resp = client.get("/home/leaderboard?period=month")
+
+    assert resp.status_code == 200
+    mock_dataset_service.get_dataset_leaderboard.assert_called_once_with(period="month")
+
+
+# Test subdomain_index (DOI view)
+@patch("app.modules.dataset.routes.doi_mapping_service")
+@patch("app.modules.dataset.routes.dataset_service")
+@patch("app.modules.dataset.routes.dsmetadata_service")
+@patch("app.modules.dataset.routes.ds_view_record_service")
+@patch("app.modules.dataset.routes.render_template")
+def test_subdomain_index_success(
+    mock_render_template, mock_view_service, mock_dsmetadata_service, mock_dataset_service, mock_doi_mapping_service
+):
+    mock_doi_mapping_service.get_new_doi.return_value = None
+    mock_ds_meta = MagicMock()
+    mock_dataset = MagicMock(id=1)
+    mock_ds_meta.data_set = mock_dataset
+    mock_dsmetadata_service.filter_by_doi.return_value = mock_ds_meta
+    mock_view_service.create_cookie.return_value = "test-cookie"
+    mock_dataset_service.get_dataset_recommendations.return_value = []
+    mock_dataset_service.get_dataset_history.return_value = []
+    mock_render_template.return_value = "<html>dataset view</html>"
+
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    resp = client.get("/doi/10.1234/test/")
+
+    assert resp.status_code == 200
+    mock_dsmetadata_service.filter_by_doi.assert_called_once_with("10.1234/test")
+
+
+@patch("app.modules.dataset.routes.doi_mapping_service")
+@patch("app.modules.dataset.routes.dsmetadata_service")
+def test_subdomain_index_not_found(mock_dsmetadata_service, mock_doi_mapping_service):
+    mock_doi_mapping_service.get_new_doi.return_value = None
+    mock_dsmetadata_service.filter_by_doi.return_value = None
+
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    resp = client.get("/doi/10.1234/nonexistent/")
+
+    assert resp.status_code == 404
+
+
+# Test get_unsynchronized_dataset
+@patch("app.modules.dataset.routes.current_user")
+@patch("app.modules.dataset.routes.dataset_service")
+@patch("app.modules.dataset.routes.render_template")
+def test_get_unsynchronized_dataset_success(mock_render_template, mock_dataset_service, mock_current_user):
+    mock_current_user.id = 1
+    mock_current_user.is_authenticated = True
+
+    mock_dataset = MagicMock(id=5)
+    mock_dataset_service.get_unsynchronized_dataset.return_value = mock_dataset
+    mock_dataset_service.get_dataset_history.return_value = []
+    mock_render_template.return_value = "<html>dataset view</html>"
+
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    lm = LoginManager()
+    lm.init_app(app)
+
+    @lm.user_loader
+    def _load_user(user_id):
+        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    with client.session_transaction() as sess:
+        sess["_user_id"] = "1"
+
+    resp = client.get("/dataset/unsynchronized/5/")
+
+    assert resp.status_code == 200
+    mock_dataset_service.get_unsynchronized_dataset.assert_called_once_with(1, 5)
+
+
+@patch("app.modules.dataset.routes.current_user")
+@patch("app.modules.dataset.routes.dataset_service")
+def test_get_unsynchronized_dataset_not_found(mock_dataset_service, mock_current_user):
+    mock_current_user.id = 1
+    mock_current_user.is_authenticated = True
+
+    mock_dataset_service.get_unsynchronized_dataset.return_value = None
+
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    lm = LoginManager()
+    lm.init_app(app)
+
+    @lm.user_loader
+    def _load_user(user_id):
+        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    with client.session_transaction() as sess:
+        sess["_user_id"] = "1"
+
+    resp = client.get("/dataset/unsynchronized/999/")
+
+    assert resp.status_code == 404
+
+
+# Test compare_datasets
+@patch("app.modules.dataset.routes.current_user")
+@patch("app.modules.dataset.routes.dataset_service")
+@patch("app.modules.dataset.routes.DataSetComparisonService")
+@patch("app.modules.dataset.routes.render_template")
+def test_compare_datasets(mock_render_template, mock_comparison_service_class, mock_dataset_service, mock_current_user):
+    mock_current_user.is_authenticated = True
+
+    mock_old_ds = MagicMock(id=1)
+    mock_new_ds = MagicMock(id=2)
+    mock_dataset_service.get_or_404.side_effect = [mock_old_ds, mock_new_ds]
+
+    mock_comparison_service = MagicMock()
+    mock_comparison_service.compare.return_value = {"metadata": {}, "files": {}}
+    mock_comparison_service_class.return_value = mock_comparison_service
+    mock_render_template.return_value = "<html>compare</html>"
+
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    lm = LoginManager()
+    lm.init_app(app)
+
+    @lm.user_loader
+    def _load_user(user_id):
+        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    with client.session_transaction() as sess:
+        sess["_user_id"] = "1"
+
+    resp = client.get("/dataset/compare/1/2")
+
+    assert resp.status_code == 200
+    mock_comparison_service.compare.assert_called_once_with(mock_old_ds, mock_new_ds)
+
+
+# Test file_diff
+@patch("app.modules.dataset.routes.DataSetComparisonService")
+def test_file_diff(mock_comparison_service_class):
+    mock_comparison_service = MagicMock()
+    mock_comparison_service.generate_diff_html.return_value = "<div>diff</div>"
+    mock_comparison_service_class.return_value = mock_comparison_service
+
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    resp = client.get("/file/diff/1/2")
+
+    assert resp.status_code == 200
+    j = resp.get_json()
+    assert "diff_html" in j
+    assert j["diff_html"] == "<div>diff</div>"
+    mock_comparison_service.generate_diff_html.assert_called_once_with(1, 2)
+
+
+# Test create_dataset endpoint
+@patch("app.modules.dataset.routes.DataSetForm")
+@patch("app.modules.dataset.routes.render_template")
+@patch("app.modules.dataset.routes.current_user")
+def test_create_dataset_get(mock_current_user, mock_render_template, mock_form_class):
+    mock_current_user.is_authenticated = True
+    mock_form = MagicMock()
+    mock_form_class.return_value = mock_form
+    mock_render_template.return_value = "<html>upload</html>"
+
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    lm = LoginManager()
+    lm.init_app(app)
+
+    @lm.user_loader
+    def _load_user(user_id):
+        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    with client.session_transaction() as sess:
+        sess["_user_id"] = "1"
+
+    resp = client.get("/dataset/upload")
+
+    assert resp.status_code == 200
+    mock_render_template.assert_called_once()
+
+
+@patch("app.modules.dataset.routes.DataSetForm")
+@patch("app.modules.dataset.routes.zenodo_service")
+@patch("app.modules.dataset.routes.dataset_service")
+@patch("app.modules.dataset.routes.current_user")
+def test_create_dataset_post_success(mock_current_user, mock_dataset_service, mock_zenodo_service, mock_form_class):
+    mock_current_user.is_authenticated = True
+    mock_current_user.temp_folder.return_value = "/tmp/test_folder"
+
+    mock_form = MagicMock()
+    mock_form.validate_on_submit.return_value = True
+    mock_form_class.return_value = mock_form
+
+    mock_dataset = MagicMock()
+    mock_dataset.ds_meta_data_id = 1
+    mock_dataset.file_models = []
+    mock_dataset_service.create_from_form.return_value = mock_dataset
+
+    mock_zenodo_service.create_new_deposition.return_value = {"id": 123}
+    mock_zenodo_service.get_doi.return_value = "10.1234/zenodo.123"
+
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    lm = LoginManager()
+    lm.init_app(app)
+
+    @lm.user_loader
+    def _load_user(user_id):
+        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    with client.session_transaction() as sess:
+        sess["_user_id"] = "1"
+
+    with (
+        patch("app.modules.dataset.routes.os.path.exists") as mock_exists,
+        patch("app.modules.dataset.routes.os.path.isdir") as mock_isdir,
+    ):
+        mock_exists.return_value = True
+        mock_isdir.return_value = True
+
+        resp = client.post("/dataset/upload", data={})
+
+        assert resp.status_code == 200
+        j = resp.get_json()
+        assert "Everything works!" in j["message"]
+
+        mock_dataset_service.create_from_form.assert_called_once()
+        mock_zenodo_service.create_new_deposition.assert_called_once()
+        mock_zenodo_service.publish_deposition.assert_called_once()
+
+
+@patch("app.modules.dataset.routes.DataSetForm")
+@patch("app.modules.dataset.routes.current_user")
+def test_create_dataset_post_invalid_form(mock_current_user, mock_form_class):
+    mock_current_user.is_authenticated = True
+    mock_form = MagicMock()
+    mock_form.validate_on_submit.return_value = False
+    mock_form.errors = {"field": ["error"]}
+    mock_form_class.return_value = mock_form
+
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    lm = LoginManager()
+    lm.init_app(app)
+
+    @lm.user_loader
+    def _load_user(user_id):
+        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    with client.session_transaction() as sess:
+        sess["_user_id"] = "1"
+
+    resp = client.post("/dataset/upload", data={})
+    assert resp.status_code == 400
+    j = resp.get_json()
+    assert "field" in j["message"]
+    assert j["message"]["field"] == ["error"]
+
+
+@patch("app.modules.dataset.routes.current_user")
+def test_upload_no_file(mock_current_user):
+    mock_current_user.is_authenticated = True
+    mock_current_user.temp_folder.return_value = "/tmp/test_folder"
+
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(dataset_bp)
+    lm = LoginManager()
+    lm.init_app(app)
+
+    @lm.user_loader
+    def _load_user(user_id):
+        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+    app.config["TESTING"] = True
+    client = app.test_client()
+
+    with client.session_transaction() as sess:
+        sess["_user_id"] = "1"
+
+    resp = client.post("/dataset/file/upload", data={})
+    assert resp.status_code == 400
+    j = resp.get_json()
+    assert "No file provided" in j["message"]
+
+
+@patch("app.modules.dataset.routes.current_user")
+@patch("app.modules.dataset.routes.requests.Session")
+def test_upload_github_exception(mock_session_cls, mock_current_user):
+    tmp = tempfile.mkdtemp()
+    try:
+        mock_current_user.is_authenticated = True
+        mock_current_user.temp_folder = lambda: tmp
+
+        mock_session = MagicMock()
+        mock_session_cls.return_value = mock_session
+        mock_session.get.side_effect = Exception("GitHub API Error")
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.register_blueprint(dataset_bp)
+        lm = LoginManager()
+        lm.init_app(app)
+
+        @lm.user_loader
+        def _load_user(user_id):
+            return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+
+        app.config["TESTING"] = True
+        client = app.test_client()
+
+        with client.session_transaction() as sess:
+            sess["_user_id"] = "1"
+
+        data = {"repo_url": "https://github.com/user/repo"}
+        resp = client.post("/dataset/file/upload_github", json=data)
+
+        assert resp.status_code == 400
+        j = resp.get_json()
+        assert "GitHub API Error" in j["message"]
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_size_service():
+    service = SizeService()
+    assert service.get_human_readable_size(500) == "500 bytes"
+    assert service.get_human_readable_size(1024) == "1.0 KB"
+    assert service.get_human_readable_size(1024 * 1024) == "1.0 MB"
+    assert service.get_human_readable_size(1024 * 1024 * 1024) == "1.0 GB"
+    assert service.get_human_readable_size(1500) == "1.46 KB"
+
+
+def test_get_dataset_history(dataset_service):
+    # Create a chain of datasets: 1 -> 2 -> 3
+    ds1 = MagicMock(id=1, version=1, previous_version_id=None, next_versions=[])
+    ds2 = MagicMock(id=2, version=2, previous_version_id=1, next_versions=[])
+    ds3 = MagicMock(id=3, version=3, previous_version_id=2, next_versions=[])
+
+    ds1.next_versions = [ds2]
+    ds2.next_versions = [ds3]
+
+    # Mock repository get_by_id
+    dataset_service.repository = MagicMock()
+
+    def get_by_id_side_effect(id):
+        if id == 1:
+            return ds1
+        if id == 2:
+            return ds2
+        if id == 3:
+            return ds3
+        return None
+
+    dataset_service.repository.get_by_id.side_effect = get_by_id_side_effect
+
+    # Test getting history from middle
+    history = dataset_service.get_dataset_history(2)
+    assert len(history) == 3
+    assert history[0].id == 1
+    assert history[1].id == 2
+    assert history[2].id == 3
+
+
+def test_get_pixelhub_doi(dataset_service):
+    dataset = MagicMock()
+    dataset.ds_meta_data.dataset_doi = "10.1234/test"
+
+    with patch.dict(os.environ, {"FLASK_ENV": "production", "DOMAIN": "pixelhub.com"}):
+        doi_url = dataset_service.get_pixelhub_doi(dataset)
+        assert doi_url == "https://pixelhub.com/doi/10.1234/test"
+
+    with patch.dict(os.environ, {"FLASK_ENV": "development", "DOMAIN": "localhost:5000"}):
+        doi_url = dataset_service.get_pixelhub_doi(dataset)
+        assert doi_url == "http://localhost:5000/doi/10.1234/test"
+
+
+@patch("app.modules.dataset.services.AuthenticationService")
+def test_move_file_models(mock_auth_service, dataset_service):
+    mock_user = MagicMock()
+    mock_user.id = 1
+    mock_user.temp_folder.return_value = "/tmp/source"
+    mock_auth_service.return_value.get_authenticated_user.return_value = mock_user
+
+    dataset = MagicMock(id=10)
+    file_model = MagicMock()
+    file_model.fm_meta_data.filename = "test.txt"
+    dataset.file_models = [file_model]
+
+    with (
+        patch("app.modules.dataset.services.shutil.move") as mock_move,
+        patch("app.modules.dataset.services.os.makedirs") as mock_makedirs,
+        patch("app.modules.dataset.services.os.path.join") as mock_join,
+    ):
+
+        mock_join.side_effect = lambda *args: "/".join(args)
+
+        dataset_service.move_file_models(dataset)
+
+        mock_makedirs.assert_called()
+        mock_move.assert_called()
+
+
+def test_ds_view_record_service_create_cookie(app):
+    service = DSViewRecordService()
+    service.repository = MagicMock()
+    service.repository.the_record_exists.return_value = False
+
+    dataset = MagicMock()
+
+    with app.test_request_context():
+        # Case 1: No cookie in request
+        cookie = service.create_cookie(dataset)
+        assert cookie is not None
+        service.repository.create_new_record.assert_called()
+
+    with app.test_request_context(headers={"Cookie": "view_cookie=existing-cookie"}):
+        # Case 2: Cookie exists
+        service.repository.the_record_exists.return_value = True
+        cookie = service.create_cookie(dataset)
+        assert cookie == "existing-cookie"
+
+
+def test_dataset_comparison_service_compare():
+    service = DataSetComparisonService()
+
+    # Mock Old Dataset
+    old_ds = MagicMock()
+    old_ds.ds_meta_data.title = "Old Title"
+    old_ds.ds_meta_data.description = "Old Description"
+    old_ds.ds_meta_data.publication_type.name = "Journal Article"
+    old_ds.ds_meta_data.publication_doi = "10.1000/old"
+    old_ds.ds_meta_data.tags = "tag1,tag2"
+
+    author1 = MagicMock()
+    author1.name = "Author 1"
+    old_ds.ds_meta_data.authors = [author1]
+
+    file1 = MagicMock()
+    file1.name = "file1.txt"
+    file1.checksum = "123"
+
+    file2 = MagicMock()
+    file2.name = "file2.txt"
+    file2.checksum = "abc"
+
+    old_ds.files.return_value = [file1, file2]
+
+    # Mock New Dataset
+    new_ds = MagicMock()
+    new_ds.ds_meta_data.title = "New Title"
+    new_ds.ds_meta_data.description = "Old Description"  # Unchanged
+    new_ds.ds_meta_data.publication_type.name = "Conference Paper"
+    new_ds.ds_meta_data.publication_doi = "10.1000/new"
+    new_ds.ds_meta_data.tags = "tag1,tag3"
+
+    author2 = MagicMock()
+    author2.name = "Author 2"
+    new_ds.ds_meta_data.authors = [author2]
+
+    file1_mod = MagicMock()
+    file1_mod.name = "file1.txt"
+    file1_mod.checksum = "456"  # Modified
+
+    file3 = MagicMock()
+    file3.name = "file3.txt"
+    file3.checksum = "xyz"  # Added
+
+    # file2 is deleted
+
+    new_ds.files.return_value = [file1_mod, file3]
+
+    comparison = service.compare(old_ds, new_ds)
+
+    # Check Metadata Changes
+    metadata_changes = comparison["metadata"]
+    assert any(c["field"] == "Title" and c["old"] == "Old Title" and c["new"] == "New Title" for c in metadata_changes)
+    assert any(
+        c["field"] == "Publication Type" and c["old"] == "Journal Article" and c["new"] == "Conference Paper"
+        for c in metadata_changes
+    )
+    assert any(
+        c["field"] == "Publication DOI" and c["old"] == "10.1000/old" and c["new"] == "10.1000/new"
+        for c in metadata_changes
+    )
+    assert any(c["field"] == "Tags" and c["old"] == "tag1,tag2" and c["new"] == "tag1,tag3" for c in metadata_changes)
+    assert any(c["field"] == "Authors" and "Author 1" in c["old"] and "Author 2" in c["new"] for c in metadata_changes)
+
+    # Check File Changes
+    file_changes = comparison["files"]
+    assert len(file_changes["added"]) == 1
+    assert file_changes["added"][0].name == "file3.txt"
+
+    assert len(file_changes["deleted"]) == 1
+    assert file_changes["deleted"][0].name == "file2.txt"
+
+    assert len(file_changes["modified"]) == 1
+    assert file_changes["modified"][0]["old"].checksum == "123"
+    assert file_changes["modified"][0]["new"].checksum == "456"
