@@ -1,4 +1,5 @@
 from flask import Blueprint, Response, url_for
+
 from ..dataset.models import DataSet
 
 badge_bp = Blueprint("badge", __name__)
@@ -49,14 +50,10 @@ def badge_svg_download(dataset_id):
     c2 = w1 + w2 / 2
     c3 = w1 + w2 + w3 / 2
 
-    link_start = (
-        f'<a xlink:href="{ds["url"]}" target="_blank" rel="noopener">'
-        if ds["url"]
-        else ""
-    )
+    link_start = f'<a xlink:href="{ds["url"]}" target="_blank" rel="noopener">' if ds["url"] else ""
     link_end = "</a>" if ds["url"] else ""
 
-    svg = f'''<svg xmlns="http://www.w3.org/2000/svg"
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink"
      width="{total_w}" height="{h}" role="img" aria-label="{ds["title"]}: {ds["downloads"]} downloads, DOI {ds["doi"]}">
       <linearGradient id="b" x2="0" y2="100%">
@@ -77,13 +74,11 @@ def badge_svg_download(dataset_id):
         <text x="{c3}" y="14">{seg_doi["text"]}</text>
       </g>
       {link_end}
-    </svg>'''
+    </svg>"""
 
     # Descarga forzada
     resp = Response(svg, mimetype="image/svg+xml")
-    resp.headers["Content-Disposition"] = (
-        f'attachment; filename="badge_{dataset_id}.svg"'
-    )
+    resp.headers["Content-Disposition"] = f'attachment; filename="badge_{dataset_id}.svg"'
     resp.headers["Access-Control-Allow-Origin"] = "*"
     resp.headers["Cache-Control"] = "no-cache"
     return resp
@@ -109,14 +104,10 @@ def badge_svg(dataset_id):
     c2 = w1 + w2 / 2
     c3 = w1 + w2 + w3 / 2
 
-    link_start = (
-        f'<a xlink:href="{ds["url"]}" target="_blank" rel="noopener">'
-        if ds["url"]
-        else ""
-    )
+    link_start = f'<a xlink:href="{ds["url"]}" target="_blank" rel="noopener">' if ds["url"] else ""
     link_end = "</a>" if ds["url"] else ""
 
-    svg = f'''<svg xmlns="http://www.w3.org/2000/svg"
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg"
     xmlns:xlink="http://www.w3.org/1999/xlink"
     width="{total_w}" height="{h}" role="img" aria-label="{ds["title"]}: {ds["downloads"]} downloads, DOI {ds["doi"]}">
       <linearGradient id="b" x2="0" y2="100%">
@@ -137,7 +128,7 @@ def badge_svg(dataset_id):
         <text x="{c3}" y="14">{seg_doi["text"]}</text>
       </g>
       {link_end}
-    </svg>'''
+    </svg>"""
 
     resp = Response(svg, mimetype="image/svg+xml")
     resp.headers["Access-Control-Allow-Origin"] = "*"

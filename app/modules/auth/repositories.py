@@ -1,4 +1,5 @@
 from app.modules.auth.models import User
+from app.modules.cart.models import Cart
 from core.repositories.BaseRepository import BaseRepository
 
 
@@ -11,6 +12,8 @@ class UserRepository(BaseRepository):
         instance = self.model(**kwargs)
         instance.set_password(password)
         self.session.add(instance)
+        cart = Cart(user=instance)
+        self.session.add(cart)
         if commit:
             self.session.commit()
         else:

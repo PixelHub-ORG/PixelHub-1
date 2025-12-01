@@ -1,0 +1,135 @@
+name: Test Coverage
+
+on:
+  push:
+    branches:
+      - "**"     # cualquier rama
+  pull_request:
+    branches:
+      - "**"     # cualquier PR
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+
+    env:
+      FLASK_ENV: testing
+      MARIADB_DATABASE: pixelhubdb_test
+      MARIADB_HOSTNAME: 127.0.0.1
+      MARIADB_PASSWORD: pixelhubdb_password # pragma: allowlist secret
+      MARIADB_PORT: 3306
+      MARIADB_ROOT_PASSWORD: pixelhubdb_root_password # pragma: allowlist secret
+      MARIADB_TEST_DATABASE: pixelhubdb_test
+      MARIADB_USER: pixelhubdb_user
+
+    services:
+      mariadb:
+        image: mariadb:12.0.2
+        env:
+          MARIADB_DATABASE: ${{ env.MARIADB_DATABASE }}
+          MARIADB_PASSWORD: ${{ env.MARIADB_PASSWORD }}
+          MARIADB_ROOT_PASSWORD: ${{ env.MARIADB_ROOT_PASSWORD }}
+          MARIADB_USER: ${{ env.MARIADB_USER }}
+        ports:
+          - "3306:3306"
+        options: >-
+          --health-cmd="mariadb-admin ping -u root -p$MARIADB_ROOT_PASSWORD"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # necesario para ver bien los cambios
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Get changed files
+        id: changed
+        uses: tj-actions/changed-files@v45
+
+      - name: Compute modules to test
+        id: modules
+        run: |
+          MODULE_DIRS=""
+          # Recorremos todos los ficheros cambiados
+          for file in ${{ steps.changed.outputs.all_changed_files }}; do
+            case "$file" in
+              app/modules/*)
+                dir=$(echo "$file" | cut -d'/' -f1-3)   # app/modules/<modulo>
+                MODULE_DIRS="$MODULE_DIRS $dir"
+                ;;
+            esac
+          done
+
+          # Normalizar: quitar duplicados
+          MODULE_DIRS=$(echo "$MODULE_DIRS" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+
+          if [ -z "$MODULE_DIRS" ]; then
+            echo "NO_MODULES=true" >> $GITHUB_ENV
+            echo "No se han modificado módulos bajo app/modules. No se correrá coverage."
+          else
+            echo "NO_MODULES=false" >> $GITHUB_ENV
+            echo "MODULE_DIRS=$MODULE_DIRS" >> $GITHUB_ENV
+            echo "Módulos modificados: $MODULE_DIRS"
+
+            # Construimos lista de paquetes Python para --cov
+            COV_PKGS=""
+            for dir in $MODULE_DIRS; do
+              pkg=$(echo "$dir" | tr '/' '.')
+              COV_PKGS="$COV_PKGS --cov=$pkg"
+            done
+            echo "COV_PKGS=$COV_PKGS" >> $GITHUB_ENV
+          fi
+
+      - name: Skip coverage (no relevant modules changed)
+        if: env.NO_MODULES == 'true'
+        run: |
+          echo "Saltando ejecución de coverage porque no se han modificado módulos relevantes."
+
+      - name: Run tests with coverage (only changed modules, ignoring Selenium)
+        if: env.NO_MODULES != 'true'
+        env:
+          PYTHONUNBUFFERED: 1
+        run: |
+          echo "Ejecutando pytest sobre los módulos modificados: $MODULE_DIRS"
+          echo "Paquetes de cobertura: $COV_PKGS"
+
+          pytest $MODULE_DIRS \
+            $COV_PKGS \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=80 \
+            --ignore-glob="**/*selenium*" \
+            --ignore-glob="**/test_selenium.py"
+
+      - name: Upload coverage report
+        if: env.NO_MODULES != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml

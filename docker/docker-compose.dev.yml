@@ -3,11 +3,17 @@ services:
     container_name: web_app_container
     env_file:
       - ../.env
+    environment:
+      - MARIADB_HOSTNAME=db
+      - FAKENODO_URL=http://localhost:5001/api
+      - FAKENODO_BACKEND_URL=http://fakenodo:5001/api
+      - WORKING_DIR=
     expose:
       - "5000"
     depends_on:
       - db
       - selenium-hub
+      - fakenodo
     build:
       context: ../
       dockerfile: docker/images/Dockerfile.dev
@@ -16,7 +22,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: [ "sh", "-c", "sh /app/docker/entrypoints/development_entrypoint.sh" ]
     networks:
-      - uvlhub_network
+      - pixelhub_network
 
   db:
     container_name: mariadb_container
@@ -31,7 +37,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     networks:
-      - uvlhub_network
+      - pixelhub_network
 
   nginx:
     container_name: nginx_web_server_container
@@ -40,11 +46,11 @@ services:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf
       - ./nginx/html:/usr/share/nginx/html
     ports:
-      - "80:80"
+      - "5000:80"
     depends_on:
       - web
     networks:
-      - uvlhub_network
+      - pixelhub_network
 
   selenium-hub:
     container_name: selenium_hub_container
@@ -54,7 +60,7 @@ services:
       - "4443:4443"
       - "4444:4444"
     networks:
-      - uvlhub_network
+      - pixelhub_network
 
   selenium-chrome:
     container_name: selenium_chrome_container
@@ -67,7 +73,7 @@ services:
     depends_on:
       - selenium-hub
     networks:
-      - uvlhub_network
+      - pixelhub_network
 
   selenium-firefox:
     container_name: selenium_firefox_container
@@ -80,10 +86,22 @@ services:
     depends_on:
       - selenium-hub
     networks:
-      - uvlhub_network
+      - pixelhub_network
+
+  fakenodo:
+    container_name: fakenodo_container
+    build:
+      context: ../fakenodo
+      dockerfile: docker/images/Dockerfile.fakenodo.render
+    ports:
+      - "5001:5001"
+    networks:
+      - pixelhub_network
+    restart: unless-stopped
+  
 
 volumes:
   db_data:
 
 networks:
-  uvlhub_network:
+  pixelhub_network:

@@ -45,3 +45,9 @@ jobs:
       # Step 6: Verify import ordering with isort
       - name: Check import order with isort
         run: isort --check-only app rosemary core
+
+      # Step 7: Verify that the code compiles
+      - name: Check that all the code compiles
+        run: |
+          python -m compileall .
+

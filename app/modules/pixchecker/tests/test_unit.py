@@ -1,7 +1,8 @@
 import os
 from unittest.mock import MagicMock, patch
-from flask import Flask
+
 import pytest
+from flask import Flask
 
 from app.modules.pixchecker import pixchecker_bp
 

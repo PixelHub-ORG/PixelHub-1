@@ -18,11 +18,11 @@ jobs:
 
     # Global environment variables shared across services and steps
     env:
-      MARIADB_ROOT_PASSWORD: pixelhubdb_root_password
+      MARIADB_ROOT_PASSWORD: pixelhubdb_root_password # pragma: allowlist secret
       MARIADB_DATABASE: pixelhubdb_test
       MARIADB_TEST_DATABASE: pixelhubdb_test
       MARIADB_USER: pixelhubdb_user
-      MARIADB_PASSWORD: pixelhubdb_password
+      MARIADB_PASSWORD: pixelhubdb_password # pragma: allowlist secret
       MARIADB_HOSTNAME: 127.0.0.1
       MARIADB_PORT: 3306
       FLASK_ENV: testing

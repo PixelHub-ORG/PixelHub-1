@@ -23,6 +23,15 @@
         margin-bottom: 0;
         padding-bottom: 0;
     }
+    /* Estilos para el Timeline de versiones */
+    .timeline-item {
+        position: relative;
+    }
+    .timeline-item:last-child {
+        border-bottom: none !important;
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+    }
 </style>
 {% endblock %}
 
@@ -37,6 +46,15 @@
         </a>
     </div>
 
+    <div class="col-6 text-end">
+        {% if current_user.is_authenticated and current_user.id == dataset.user.id %}
+            <a href="{{ url_for('dataset.create_dataset_version', dataset_id=dataset.id) }}" class="btn btn-outline-primary btn-sm" style="border-radius: 5px;">
+                <i data-feather="plus-square" class="center-button-icon"></i>
+                Create new version
+            </a>
+        {% endif %}
+    </div>
+
 </div>
 
 <div class="row">
@@ -47,8 +65,13 @@
             <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center">
-                        <h1 class="m-0 me-7"><b>{{ dataset.ds_meta_data.title }}</b></h1>
-                        <span class="text-secondary small">
+                        <h1 class="m-0 me-7">
+                            <b>{{ dataset.ds_meta_data.title }}</b>
+                            {% if dataset.version > 1 %}
+                                <span class="badge bg-secondary fs-6 ms-2">v{{ dataset.version }}</span>
+                            {% endif %}
+                        </h1>
+                        <span class="text-secondary small ms-3">
                                         {{ dataset.get_download_count() }}
                                         <i data-feather="download" class="align-middle me-1"></i>
                         </span>
@@ -57,6 +80,18 @@
                         <span class="badge bg-secondary">{{ dataset.get_cleaned_publication_type() }}</span>
                     </div>
                 </div>
+                
+                {% if dataset.previous_version %}
+                <div class="mb-2">
+                    <small class="text-muted">
+                        This is a new version of 
+                        <a href="{{ url_for('dataset.subdomain_index', doi=dataset.previous_version.ds_meta_data.dataset_doi) }}">
+                            {{ dataset.previous_version.ds_meta_data.title }} (v{{ dataset.previous_version.version }})
+                        </a>
+                    </small>
+                </div>
+                {% endif %}
+
                 <p class="text-secondary">{{ dataset.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
 
                 <div class="row mb-4">
@@ -79,7 +114,9 @@
                         </span>
                     </div>
                     <div class="col-md-8 col-12">
-                        <a href="#">{{ dataset.user.profile.surname }}, {{ dataset.user.profile.name }}</a>
+                        <a href="/profile/{{ dataset.user.id }}"> 
+                            {{ dataset.user.profile.surname }}, {{ dataset.user.profile.name }}
+                        </a>
                     </div>
                 </div>
 
@@ -130,20 +167,20 @@
 
                         {% if FLASK_ENV == 'production' %}
                             <div class="col-md-8 col-12">
-                                <a href="https://zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
-                                    https://zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}
+                                <a href="{{ FAKENODO_URL }}/depositions/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
+                                {{ FAKENODO_URL }}/depositions/{{ dataset.ds_meta_data.deposition_id }}
                                 </a>
                             </div>
                         {% elif FLASK_ENV == 'development' %}
                             <div class="col-md-8 col-12">
-                                <a href="https://sandbox.zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
-                                    https://sandbox.zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}
+                                <a href="{{ FAKENODO_URL }}/depositions/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
+                                {{ FAKENODO_URL }}/depositions/{{ dataset.ds_meta_data.deposition_id }}
                                 </a>
                             </div>
                         {% else %}
                             <div class="col-md-8 col-12">
-                                <a href="https://zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
-                                    https://sandbox.zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}
+                                <a href="{{ FAKENODO_URL }}/depositions/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
+                                    {{ FAKENODO_URL }}/depositions/{{ dataset.ds_meta_data.deposition_id }}
                                 </a>
                             </div>
                         {% endif %}
@@ -232,7 +269,7 @@
                 <h3> Related publication </h3>
                 
                 David Romero-Organvidez, José A. Galindo, Chico Sundermann, Jose-Miguel Horcas, David Benavides,
-                <i>UVLHub: A feature model data repository using UVL and open science principles</i>,
+                <i>UVLHub: A file model data repository using UVL and open science principles</i>,
                 Journal of Systems and Software,
                 2024,
                 112150,
@@ -272,6 +309,53 @@
 
     <div class="col-xl-4 col-lg-12 col-md-12 col-sm-12">
 
+        {% if history and history|length > 1 %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Version History</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for version_ds in history %}
+                    <div class="timeline-item pb-3 mb-3 border-bottom position-relative">
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div>
+                                <span class="badge {% if version_ds.id == dataset.id %}bg-primary{% else %}bg-secondary{% endif %}">
+                                    v{{ version_ds.version }}
+                                </span>
+                                <small class="text-muted ms-1">{{ version_ds.created_at.strftime('%d %b %Y') }}</small>
+                            </div>
+                            
+                            {% if version_ds.id != dataset.id %}
+                                <div class="btn-group">
+                                    {% if version_ds.ds_meta_data.dataset_doi %}
+                                        <a href="{{ url_for('dataset.subdomain_index', doi=version_ds.ds_meta_data.dataset_doi) }}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem;">View</a>
+                                    {% else %}
+                                        <a href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=version_ds.id) }}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem;">View</a>
+                                    {% endif %}
+
+                                    <a href="{{ url_for('dataset.compare_datasets', old_id=version_ds.id, new_id=dataset.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       style="font-size: 0.7rem;" 
+                                       title="Compare with current view">
+                                        <i data-feather="git-pull-request" style="width: 12px; height: 12px; vertical-align: middle;"></i> Diff
+                                    </a>
+                                </div>
+                            {% else %}
+                                <span class="badge bg-light text-dark border">Current</span>
+                            {% endif %}
+                        </div>
+
+                        <p class="mb-0 small text-muted text-truncate" style="max-width: 250px;">
+                            {{ version_ds.ds_meta_data.title }}
+                        </p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
         <div class="list-group">
 
             <div class="list-group-item">
@@ -313,6 +397,12 @@
                                 <button onclick="viewFile('{{ file.id }}')" class="btn btn-outline-secondary btn-sm" style="border-radius: 5px;">
                                     <i data-feather="eye"></i> View
                                 </button>
+                                <button 
+                                    onclick="addCart('{{ file_model.id }}')"  
+                                    class="btn btn-outline-success btn-sm"
+                                    style="border-radius: 5px;">
+                                    <i data-feather="plus"></i> Add
+                                </button>
 
                                 <div class="btn-group" role="group">
                                     <button id="btnGroupDrop{{ file.id }}" type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style=" border-radius: 5px;">
@@ -322,11 +412,6 @@
                                         <li>
                                             <a class="dropdown-item" href="javascript:void(0);" onclick="checkPIX('{{ file.id }}')">Syntax check</a>
                                         </li>
-                                        <!--
-                                        <li>
-                                            <a class="dropdown-item" href="{{ url_for('pixchecker.valid', file_id=file.id) }}">SAT validity check</a>
-                                        </li>
-                                        -->
                                     </ul>
                                 </div>
                                 
@@ -408,6 +493,26 @@
             })
             .catch(error => console.error('Error loading file:', error));
     }
+
+    function addCart(modelId) {
+        fetch("/filemodel/cart/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ item_id: modelId })
+        })
+        .then(async response => {
+            const data = await response.json(); 
+            alert(data.message); 
+            if (response.ok) {
+                updateCartCount();
+            }
+        })
+        .catch(err => console.error("Error adding to cart:", err));
+    }
+
+
+
+
 
     function showLoading() {
         document.getElementById("loading").style.display = "initial";

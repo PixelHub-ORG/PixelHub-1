@@ -1,0 +1,73 @@
+# ----------------------------------------------------------------------------
+# Automated Pull Request workflow from repoA → PixelHub-X
+# - Preserves commit history, SHAs, and authors
+# - Excludes .github/workflows
+# - Creates PR in PixelHub-X automatically
+# ----------------------------------------------------------------------------
+
+name: Sync main to PixelHub-X
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    if: github.repository != 'PixelHub-ORG/PixelHub-X'
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout repoA fully
+      - name: Checkout repoA fully
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Remove default GitHub Actions credentials
+      - name: Remove default GitHub Actions credentials
+        run: git config --unset-all http.https://github.com/.extraheader || true
+
+      # Configure git user
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # Sparse checkout to exclude workflows
+      - name: Exclude .github/workflows from branch
+        run: |
+          git sparse-checkout init --no-cone
+          git sparse-checkout set '/*' '!.github/workflows'
+          git checkout main
+
+      # Add repoX as remote
+      - name: Add repoX as remote
+        run: |
+          git remote add target https://x-access-token:${{ secrets.REPOX_TOKEN }}@github.com/PixelHub-ORG/PixelHub-X.git
+          git fetch target --prune
+
+      # Delete old sync branch in repoX if exists
+      - name: Delete old sync branch in repoX (if exists)
+        continue-on-error: true
+        run: |
+          if git ls-remote --exit-code --heads target sync/PixelHub-2-main >/dev/null 2>&1; then
+            git push target --delete sync/PixelHub-2-main || true
+          fi
+
+      # Push commits to repoX (preserving history)
+      - name: Push branch to repoX
+        run: git push target main:sync/PixelHub-2-main --force
+
+      # Create PR using GitHub CLI
+      - name: Create Pull Request in repoX
+        env:
+          REPOX_TOKEN: ${{ secrets.REPOX_TOKEN }}
+        run: |
+          gh auth login --with-token <<< "${REPOX_TOKEN}"
+          gh pr create \
+            --repo PixelHub-ORG/PixelHub-X \
+            --head sync/PixelHub-2-main \
+            --base main \
+            --title "Sync from PixelHub-2 main (exact commit history)" \
+            --body "Automated PR syncing commits from PixelHub-2 → PixelHub-X.\n✅ Preserves commit SHAs and authors.\n🚫 Excludes .github/workflows."

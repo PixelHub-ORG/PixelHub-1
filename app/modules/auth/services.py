@@ -4,6 +4,7 @@ from flask_login import current_user, login_user
 
 from app.modules.auth.models import User
 from app.modules.auth.repositories import UserRepository
+from app.modules.cart.models import Cart
 from app.modules.profile.models import UserProfile
 from app.modules.profile.repositories import UserProfileRepository
 from core.configuration.configuration import uploads_folder_name
@@ -34,14 +35,18 @@ class AuthenticationService(BaseService):
 
             if not email:
                 raise ValueError("Email is required.")
-            if not password:
-                raise ValueError("Password is required.")
+
+            user_data = {"email": email}
+            if password:
+                user_data["password"] = password
+            else:
+                if not kwargs.get("orcid_id"):
+                    raise ValueError("Password is required for form signup.")
+
             if not name:
                 raise ValueError("Name is required.")
             if not surname:
                 raise ValueError("Surname is required.")
-
-            user_data = {"email": email, "password": password}
 
             profile_data = {
                 "name": name,
@@ -56,6 +61,37 @@ class AuthenticationService(BaseService):
             self.repository.session.rollback()
             raise exc
         return user
+
+    def find_or_create_by_orcid(self, orcid_id: str, full_name: str):
+        """
+        Finds a user by their ORCID iD. If they don't exist, creates a
+        new User and UserProfile for them.
+        """
+
+        user = User.query.filter_by(orcid_id=orcid_id).first()
+
+        if user:
+            return user
+
+        try:
+            parts = full_name.strip().split(" ", 1)
+            name = parts[0]
+            surname = parts[1] if len(parts) > 1 else ""
+
+            user_data = {"orcid_id": orcid_id}
+            user = User(**user_data)
+            self.repository.session.add(user)
+            self.repository.session.add(Cart(user=user))
+            self.repository.session.flush()
+
+            profile_data = {"name": name, "surname": surname, "user_id": user.id}
+            self.user_profile_repository.create(commit=False, **profile_data)
+
+            self.repository.session.commit()
+            return user
+        except Exception as exc:
+            self.repository.session.rollback()
+            raise exc
 
     def update_profile(self, user_profile_id, form):
         if form.validate():

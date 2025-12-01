@@ -1,0 +1,113 @@
+name: Workflow Completion Notifier
+
+on:
+  workflow_run:
+    workflows:
+      - "Publish image in Docker Hub"
+      - "Deploy on Render"
+      - "Sync main to PixelHub-X"
+      - "Commits Syntax Checker"
+      - "Test Coverage"
+      - "Python Lint"
+      - "Pytest"
+    types:
+      - completed
+
+concurrency:
+  group: completion-notify-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
+
+jobs:
+  check-and-notify:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+
+    steps:
+      - name: Set Context Variables
+        run: |
+          echo "CTX_SHA=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_ENV
+          echo "CTX_BRANCH=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_ENV
+          echo "CTX_ACTOR=${{ github.event.workflow_run.actor.login }}" >> $GITHUB_ENV
+          echo "CTX_COMMIT_URL=${{ github.event.workflow_run.head_commit.url }}" >> $GITHUB_ENV
+
+      - name: Check workflow statuses
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          THIS_WORKFLOW_NAME="${{ github.workflow }}"
+          sleep 15
+
+          runs=$(gh run list --commit "$CTX_SHA" -R "$REPO" --json status,conclusion,name,url)
+
+          if echo "$runs" | jq -e ".[] | select(.name != \"$THIS_WORKFLOW_NAME\" and .status != \"completed\")" > /dev/null; then
+            echo "all_complete=false" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          echo "all_complete=true" >> $GITHUB_ENV
+
+          if echo "$runs" | jq -e ".[] | select(.name != \"$THIS_WORKFLOW_NAME\" and .conclusion != \"success\")" > /dev/null; then
+            echo "final_status=failure" >> $GITHUB_ENV
+            echo "final_title=❌ Failed" >> $GITHUB_ENV
+            echo "final_color=15548997" >> $GITHUB_ENV
+          else
+            echo "final_status=success" >> $GITHUB_ENV
+            echo "final_title=✅ Success" >> $GITHUB_ENV
+            echo "final_color=5763719" >> $GITHUB_ENV
+          fi
+
+          summary=$(echo "$runs" | jq -r '
+            map(
+              (if .conclusion=="success" then "✅"
+               elif .conclusion=="failure" then "❌"
+               elif .conclusion=="cancelled" then "⏹️"
+               elif .conclusion=="skipped" then "➖"
+               else "❔" end)
+               + " **" + .name + "** → <" + .url + ">"
+            ) | join("\n")
+          ')
+
+          {
+            echo "summary<<EOF"
+            echo "$summary"
+            echo "EOF"
+          } >> $GITHUB_ENV
+
+      - name: Send Discord notification  # <-- CORRECTED INDENTATION (The hyphen is now correctly aligned)
+        if: env.all_complete == 'true'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.NOTIFY_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+
+          # Build a clean, beautiful embed
+          payload=$(jq -n \
+            --arg title "Workflows for ${CTX_BRANCH} ${final_title}" \
+            --arg commit "**Commit:** \`${CTX_SHA}\`\n**Author:** \`${CTX_ACTOR}\`\n**Branch:** \`${CTX_BRANCH}\`\n🔗 **View Commit:** ${CTX_COMMIT_URL}" \
+            --arg summary "$summary" \
+            --argjson color "${final_color}" \
+            '{
+              embeds: [
+                {
+                  title: $title,
+                  description: $commit,
+                  color: $color,
+                  fields: [
+                    {
+                      name: "Workflow Results",
+                      value: $summary
+                    }
+                  ],
+                  timestamp: (now | todate)
+                }
+              ]
+            }'
+          )
+
+          echo "Sending Discord notification..."
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d "$payload" \
+            "$DISCORD_WEBHOOK"
