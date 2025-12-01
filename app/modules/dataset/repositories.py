@@ -5,10 +5,16 @@ from typing import Optional
 from flask_login import current_user
 from sqlalchemy import desc, func
 
-from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord
-from core.repositories.BaseRepository import BaseRepository
 from app import db
-
+from app.modules.dataset.models import (
+    Author,
+    DataSet,
+    DOIMapping,
+    DSDownloadRecord,
+    DSMetaData,
+    DSViewRecord,
+)
+from core.repositories.BaseRepository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
@@ -38,10 +44,7 @@ class DSDownloadRecordRepository(BaseRepository):
         else:
             raise ValueError("Periodo no soportado: usa 'week' o 'month'")
         results = (
-            db.session.query(
-                DSDownloadRecord.dataset_id,
-                func.count(DSDownloadRecord.id).label("downloads")
-            )
+            db.session.query(DSDownloadRecord.dataset_id, func.count(DSDownloadRecord.id).label("downloads"))
             .filter(DSDownloadRecord.download_date >= since)
             .group_by(DSDownloadRecord.dataset_id)
             .order_by(desc("downloads"))

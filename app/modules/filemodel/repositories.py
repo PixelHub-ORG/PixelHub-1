@@ -1,5 +1,6 @@
 from sqlalchemy import func
-from app.modules.filemodel.models import FMMetaData, FileModel
+
+from app.modules.filemodel.models import FileModel, FMMetaData
 from core.repositories.BaseRepository import BaseRepository
 
 

@@ -1,0 +1,254 @@
+{% extends "base_template.html" %}
+
+{% block title %}Compare Datasets{% endblock %}
+
+{% block head_extra %}
+<style>
+    .option-button {
+        display: block;
+        width: 100%;
+        margin-bottom: 5px;
+    }
+    .option-button:last-child {
+        margin-bottom: 0;
+    }
+    
+    table.diff {
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 13px;
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #e1e4e8;
+        background-color: white;
+    }
+
+    table.diff td {
+        padding: 2px 8px;
+        vertical-align: top;
+        white-space: pre-wrap; 
+    }
+
+    .diff_header {
+        background-color: #f6f8fa;
+        color: #9da3a8;
+        text-align: right;
+        width: 40px;
+        border-right: 1px solid #e1e4e8;
+        user-select: none;
+    }
+
+    .diff_add {
+        background-color: #e6ffec;
+        color: #24292e;
+    }
+    
+    .diff_sub {
+        background-color: #ffebe9;
+        color: #24292e;
+    }
+    
+    .diff_chg {
+        background-color: #fff5b1;
+        color: #24292e;
+    }
+
+    span.diff_add {
+        background-color: #acf2bd;
+    }
+    span.diff_sub {
+        background-color: #ffc0c0;
+        text-decoration: none; 
+    }
+    span.diff_chg {
+        background-color: #ffea7f;
+    }
+
+    .diff_next {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">Comparison Report</h1>
+        <p class="text-muted">
+            Comparing 
+            <a href="{{ url_for('dataset.subdomain_index', doi=old_ds.ds_meta_data.dataset_doi) }}">v{{ old_ds.version }}</a> 
+            vs 
+            <a href="{{ url_for('dataset.subdomain_index', doi=new_ds.ds_meta_data.dataset_doi) }}">v{{ new_ds.version }}</a>
+        </p>
+    </div>
+    <a href="{{ url_for('dataset.subdomain_index', doi=new_ds.ds_meta_data.dataset_doi) }}" class="btn btn-outline-secondary">
+            Back to Dataset
+        </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i data-feather="list"></i> Metadata Changes</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if metadata_changes %}
+        <table class="table mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 20%">Field</th>
+                    <th style="width: 40%">Old Value (v{{ old_ds.version }})</th>
+                    <th style="width: 40%">New Value (v{{ new_ds.version }})</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for change in metadata_changes %}
+                <tr>
+                    <td class="fw-bold">{{ change.field }}</td>
+                    <td class="diff-deleted">{{ change.old }}</td>
+                    <td class="diff-added">{{ change.new }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3 text-muted text-center">No metadata changes detected.</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="fileTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="mod-tab" data-bs-toggle="tab" href="#modified" role="tab">
+                    Modified <span class="badge bg-warning text-dark">{{ file_changes.modified|length }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="add-tab" data-bs-toggle="tab" href="#added" role="tab">
+                    Added <span class="badge bg-success">{{ file_changes.added|length }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="del-tab" data-bs-toggle="tab" href="#deleted" role="tab">
+                    Deleted <span class="badge bg-danger">{{ file_changes.deleted|length }}</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body">
+        <div class="tab-content" id="fileTabsContent">
+            
+            <div class="tab-pane fade show active" id="modified" role="tabpanel">
+                {% if file_changes.modified %}
+                <div class="list-group list-group-flush">
+                    {% for item in file_changes.modified %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i data-feather="file-text"></i> <strong>{{ item.new.name }}</strong>
+                            <div class="small text-muted">Size: {{ item.old.get_formatted_size() }} &rarr; {{ item.new.get_formatted_size() }}</div>
+                        </div>
+                        <button class="btn btn-sm btn-primary"
+                                data-filename="{{ item.new.name }}"
+                                data-old-id="{{ item.old.id }}"
+                                data-new-id="{{ item.new.id }}"
+                                onclick="showDiff(this)">
+                            <i data-feather="code"></i> View Diff
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No modified files.</p>
+                {% endif %}
+            </div>
+
+            <div class="tab-pane fade" id="added" role="tabpanel">
+                {% if file_changes.added %}
+                <ul class="list-group list-group-flush">
+                    {% for file in file_changes.added %}
+                    <li class="list-group-item text-success">
+                        <i data-feather="plus-circle"></i> {{ file.name }} <span class="text-muted small">({{ file.get_formatted_size() }})</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">No files added.</p>
+                {% endif %}
+            </div>
+
+            <div class="tab-pane fade" id="deleted" role="tabpanel">
+                {% if file_changes.deleted %}
+                <ul class="list-group list-group-flush">
+                    {% for file in file_changes.deleted %}
+                    <li class="list-group-item text-danger">
+                        <i data-feather="minus-circle"></i> {{ file.name }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">No files deleted.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="diffModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">File Differences: <span id="diffFileName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="diffContent" class="table-responsive">
+                    <div class="text-center p-5"><div class="spinner-border text-primary"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ...existing code... -->
+
+<script>
+    function showDiff(btn) {
+        const filename = btn.dataset.filename || '';
+        const oldId = btn.dataset.oldId;
+        const newId = btn.dataset.newId;
+
+        document.getElementById('diffFileName').textContent = filename;
+        const modalEl = document.getElementById('diffModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+
+        document.getElementById('diffContent').innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary"></div> Loading diff...</div>';
+
+        if (!oldId || !newId) {
+            document.getElementById('diffContent').innerHTML = '<p class="text-danger">Invalid file identifiers.</p>';
+            return;
+        }
+
+        fetch(`/file/diff/${encodeURIComponent(oldId)}/${encodeURIComponent(newId)}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                // Expect data.diff_html to contain safe HTML produced server-side
+                document.getElementById('diffContent').innerHTML = data.diff_html || '<p class="text-muted">No diff available.</p>';
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('diffContent').innerHTML = '<p class="text-danger">Error loading diff.</p>';
+            });
+    }
+
+    // initialize feather icons after DOM load
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.feather) feather.replace();
+    });
+</script>
+
+{% endblock %}

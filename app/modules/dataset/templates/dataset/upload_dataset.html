@@ -1,10 +1,25 @@
 {% extends "base_template.html" %}
 
-{% block title %}Upload dataset{% endblock %}
+{% block title %}
+    {% if is_version_creation %}
+        Create Version {{ version_number }}
+    {% else %}
+        Upload dataset
+    {% endif %}
+{% endblock %}
 
 {% block content %}
 
-    <h1 class="h2 mb-3"><b>Upload</b> dataset</h1>
+    <div class="row mb-3">
+        <div class="col-12">
+            {% if is_version_creation %}
+                <h1 class="h2 mb-0"><b>Create Version {{ version_number }}</b> of "{{ parent_title }}"</h1>
+                <p class="text-muted">Upload the new files and update metadata for this version.</p>
+            {% else %}
+                <h1 class="h2 mb-3"><b>Upload</b> dataset</h1>
+            {% endif %}
+        </div>
+    </div>
 
     <div class="row">
         <div class="col-12 mb-3">
@@ -101,11 +116,10 @@
                         <h1 class="h3 mb-3 mt-4">
                           Authors
                           <a href="#" data-toggle="modal" data-target="#infoModal">
-                            <i data-feather="info"></i> <!-- Usamos "info" porque Feather no tiene un ícono específico llamado "feather" para más info -->
+                            <i data-feather="info"></i>
                           </a>
                         </h1>
 
-                        <!-- Modal -->
                         <div class="modal fade" id="infoModal" tabindex="-1" role="dialog" aria-labelledby="infoModalLabel" aria-hidden="true" style="display: none">
                           <div class="modal-dialog" role="document">
                             <div class="modal-content">
@@ -450,25 +464,44 @@
 
             <hr>
 
-            <h1 class="h3 mb-3 mt-2">Upload dataset</h1>
+            <h1 class="h3 mb-3 mt-2">
+                {% if is_version_creation %}
+                    Submit New Version
+                {% else %}
+                    Upload dataset
+                {% endif %}
+            </h1>
 
             <div style="padding-left: 2rem">
 
                 <label class="form-check">
                     <input id="agreeCheckbox" class="form-check-input" type="checkbox" value="">
                     <span class="form-check-label" style="font-size: 15px">
-                                I agree to have my feature models automatically uploaded to Zenodo and made available to the public according to the <a
+                                I agree to have my file models automatically uploaded to Zenodo and made available to the public according to the <a
                             href="https://en.wikipedia.org/wiki/Open_science" target="_blank">Open Science</a> manifesto
                             </span>
                 </label>
 
-                <button id="upload_button" class="btn btn-primary mt-2" disabled>
+                <button id="upload_button" 
+                        class="btn btn-primary mt-2" 
+                        disabled
+                        data-post-url="{% if is_version_creation %}{{ url_for('dataset.create_dataset_version', dataset_id=parent_dataset.id) }}{% else %}{{ url_for('dataset.create_dataset') }}{% endif %}">
+                    
                     <i data-feather="upload" class="center-button-icon"></i>
-                    Upload dataset</button>
+                    {% if is_version_creation %}
+                        Create version
+                    {% else %}
+                        Upload dataset
+                    {% endif %}
+                </button>
 
                 <div id="loading" style="display: none">
                     <img width="40px" src="{{ url_for("static", filename="gifs/loading.svg") }}"/>
-                    Uploading dataset, please wait...
+                    {% if is_version_creation %}
+                        Creating version, please wait...
+                    {% else %}
+                        Uploading dataset, please wait...
+                    {% endif %}
                 </div>
 
                 <div class="row">
@@ -509,9 +542,8 @@
                 </script>
 
             </div>
-
-
-
+            
+            <input type="hidden" id="is_version_creation" value="{{ 'true' if is_version_creation else 'false' }}">
 
         </div>
 

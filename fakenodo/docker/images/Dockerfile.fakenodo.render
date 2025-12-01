@@ -1,0 +1,21 @@
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=5001 \
+    PYTHONPATH=/app
+
+# Establece el directorio de trabajo dentro del contenedor
+WORKDIR /app/fakenodo
+
+# Copia todo el proyecto a ese directorio
+COPY . .
+
+# Instala dependencias
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Expone el puerto
+EXPOSE 5001
+
+# Ejecuta la app como módulo
+CMD ["python", "-m", "fakenodo"]

@@ -1,0 +1,121 @@
+{% extends "base_template.html" %}
+
+{% block title %}My Cart{% endblock %}
+
+{% block head_extra %}
+<style>
+    .cart-card {
+        margin-bottom: 20px;
+    }
+    .badge-tags {
+        margin-right: 5px;
+    }
+    /* Estilo para alinear el botón de eliminar y el título */
+    .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+
+{% if models %}
+<h1 class="mb-4">My Cart</h1>
+
+<div class="row">
+    <div class="col-12">
+        {% for model in models %}
+        <div class="card cart-card">
+            <div class="card-body">
+                
+                <div class="item-header mb-2">
+                    <div class="d-flex align-items-center">
+                        <h5><b>{{ model.name }}</b></h5>
+                        {% if model.tags %}
+                            {% for tag in model.tags.split(',') %}
+                                <span class="badge bg-secondary badge-tags ms-2">{{ tag.strip() }}</span>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <button 
+                        class="btn btn-sm btn-outline-danger" 
+                        onclick="deleteCartItem('{{ model.id }}')" 
+                        title="Delete from cart"
+                    >
+                        <i data-feather="trash-2"></i> Remove
+                    </button>
+                </div>
+                <p class="text-secondary">{{ model.description }}</p>
+
+                {% if model.authors %}
+                <div>
+                    <strong>Authors:</strong>
+                    {% for author in model.authors %}
+                        {{ author.name }}{% if author.affiliation %} ({{ author.affiliation }}){% endif %}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="d-flex mt-3 gap-2">
+            <form action="{{ url_for('cart.create_dataset') }}" method="get">
+                <button type="submit" class="btn btn-success btn-sm">
+                    <i data-feather="plus-square"></i> Create my own dataset
+                </button>
+            </form>
+
+            <a href="{{ url_for('cart.download_cart') }}" class="btn btn-primary btn-sm">
+                <i data-feather="download"></i> Download models
+            </a>
+        </div>
+    </div>
+</div>
+{% else %}
+<h1 class="mb-4">Your cart is empty.</h1>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        feather.replace();
+    });
+
+    function addCart(modelId) {
+        fetch("/filemodel/cart/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ item_id: modelId })
+        })
+        .then(async response => {
+            const data = await response.json(); 
+            alert(data.message); 
+            if (response.ok) {
+                updateCartCount();
+            }
+        })
+        .catch(err => console.error("Error adding to cart:", err));
+    }
+
+    function deleteCartItem(modelID) {
+        fetch("/user/cart/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ item_id: modelID })
+        })
+        .then(async response => {
+            const data = await response.json(); 
+            alert("File removed from cart."); 
+            if (response.ok) {
+                location.reload();
+            }
+        })
+        .catch(err => console.error("Error deleting from cart:", err));
+    }
+</script>
+{% endblock %}

@@ -23,7 +23,9 @@ def test_client(test_client):
 
 def test_login_success(test_client):
     response = test_client.post(
-        "/login", data=dict(email="test@example.com", password="test1234"), follow_redirects=True
+        "/login",
+        data=dict(email="test@example.com", password="test1234"),
+        follow_redirects=True,
     )
 
     assert response.request.path != url_for("auth.login"), "Login was unsuccessful"
@@ -33,7 +35,9 @@ def test_login_success(test_client):
 
 def test_login_unsuccessful_bad_email(test_client):
     response = test_client.post(
-        "/login", data=dict(email="bademail@example.com", password="test1234"), follow_redirects=True
+        "/login",
+        data=dict(email="bademail@example.com", password="test1234"),
+        follow_redirects=True,
     )
 
     assert response.request.path == url_for("auth.login"), "Login was unsuccessful"
@@ -43,7 +47,9 @@ def test_login_unsuccessful_bad_email(test_client):
 
 def test_login_unsuccessful_bad_password(test_client):
     response = test_client.post(
-        "/login", data=dict(email="test@example.com", password="basspassword"), follow_redirects=True
+        "/login",
+        data=dict(email="test@example.com", password="basspassword"),
+        follow_redirects=True,
     )
 
     assert response.request.path == url_for("auth.login"), "Login was unsuccessful"
@@ -53,7 +59,9 @@ def test_login_unsuccessful_bad_password(test_client):
 
 def test_signup_user_no_name(test_client):
     response = test_client.post(
-        "/signup", data=dict(surname="Foo", email="test@example.com", password="test1234"), follow_redirects=True
+        "/signup",
+        data=dict(surname="Foo", email="test@example.com", password="test1234"),
+        follow_redirects=True,
     )
     assert response.request.path == url_for("auth.show_signup_form"), "Signup was unsuccessful"
     assert b"This field is required" in response.data, response.data
@@ -62,7 +70,9 @@ def test_signup_user_no_name(test_client):
 def test_signup_user_unsuccessful(test_client):
     email = "test@example.com"
     response = test_client.post(
-        "/signup", data=dict(name="Test", surname="Foo", email=email, password="test1234"), follow_redirects=True
+        "/signup",
+        data=dict(name="Test", surname="Foo", email=email, password="test1234"),
+        follow_redirects=True,
     )
     assert response.request.path == url_for("auth.show_signup_form"), "Signup was unsuccessful"
     assert f"Email {email} in use".encode("utf-8") in response.data
@@ -78,7 +88,12 @@ def test_signup_user_successful(test_client):
 
 
 def test_service_create_with_profie_success(clean_database):
-    data = {"name": "Test", "surname": "Foo", "email": "service_test@example.com", "password": "test1234"}
+    data = {
+        "name": "Test",
+        "surname": "Foo",
+        "email": "service_test@example.com",
+        "password": "test1234",
+    }  # pragma: allowlist secret
 
     AuthenticationService().create_with_profile(**data)
 
@@ -97,7 +112,12 @@ def test_service_create_with_profile_fail_no_email(clean_database):
 
 
 def test_service_create_with_profile_fail_no_password(clean_database):
-    data = {"name": "Test", "surname": "Foo", "email": "test@example.com", "password": ""}
+    data = {
+        "name": "Test",
+        "surname": "Foo",
+        "email": "test@example.com",
+        "password": "",
+    }
 
     with pytest.raises(ValueError, match="Password is required."):
         AuthenticationService().create_with_profile(**data)

@@ -25,6 +25,9 @@ jobs:
           if [ "${{ github.event_name }}" = "release" ]; then
             echo "Deploying release from main"
             echo "DEPLOY=main" >> $GITHUB_ENV
+          elif [ "${{ github.event.workflow_run.conclusion }}" = "success" ] && [ "${{ github.repository }}" = "PixelHub-ORG/PixelHub-X" ]; then
+            echo "Deploying main from Repo X (Integration)"
+            echo "DEPLOY=main" >> $GITHUB_ENV
           elif [ "${{ github.event.workflow_run.conclusion }}" = "success" ] && [ "${{ github.event.workflow_run.head_branch }}" = "trunk" ]; then
             echo "Deploying from trunk (development)"
             echo "DEPLOY=trunk" >> $GITHUB_ENV

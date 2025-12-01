@@ -1,4 +1,4 @@
-var currentId = 0;
+        var currentId = 0;
         var amount_authors = 0;
 
         function show_upload_dataset() {
@@ -197,7 +197,15 @@ var currentId = 0;
 
 
                     if (checked_orcid && checked_name) {
-                        fetch('/dataset/upload', {
+                        
+                        let uploadButton = document.getElementById('upload_button');
+                        let submitUrl = uploadButton.getAttribute('data-post-url');
+                        
+                        if (!submitUrl) {
+                            submitUrl = '/dataset/upload';
+                        }
+
+                        fetch(submitUrl, {
                             method: 'POST',
                             body: formUploadData
                         })

@@ -3,4 +3,4 @@ from wtforms import SubmitField
 
 
 class PixcheckerForm(FlaskForm):
-    submit = SubmitField('Save pixchecker')
+    submit = SubmitField("Save pixchecker")

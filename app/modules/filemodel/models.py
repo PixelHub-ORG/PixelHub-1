@@ -8,12 +8,9 @@ class FileModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     data_set_id = db.Column(db.Integer, db.ForeignKey("data_set.id"), nullable=False)
     fm_meta_data_id = db.Column(db.Integer, db.ForeignKey("fm_meta_data.id"))
-    files = db.relationship(
-        "Hubfile", backref="file_model", lazy=True, cascade="all, delete"
-    )
-    fm_meta_data = db.relationship(
-        "FMMetaData", uselist=False, backref="file_model", cascade="all, delete"
-    )
+    files = db.relationship("Hubfile", backref="file_model", lazy=True, cascade="all, delete")
+    fm_meta_data = db.relationship("FMMetaData", uselist=False, backref="file_model", cascade="all, delete")
+    items = db.relationship("CartItem", backref="file_model", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"FileModel<{self.id}>"

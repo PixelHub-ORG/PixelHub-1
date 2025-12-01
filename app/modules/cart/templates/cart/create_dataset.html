@@ -1,0 +1,268 @@
+{% extends "base_template.html" %}
+
+{% block title %}Create dataset{% endblock %}
+
+{% block content %}
+
+<div class="row">
+
+    <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+        <form id="cart-create-dataset-form"
+              method="post"
+              action="{{ url_for('cart.create_dataset') }}">
+
+            {{ form.hidden_tag() }}
+
+            <div class="row">
+                <div class="col-12">
+                    <h1 class="h3 mb-3">Basic info</h1>
+
+                    <div class="row" style="padding-left: 2rem">
+
+                        <div class="col-lg-6 col-xs-12 col-md-12">
+                            <div class="mb-3">
+                                {{ form.title.label(class="form-label") }} *
+                                {{ form.title(class="form-control") }}
+                                {% for error in form.title.errors %}
+                                    <span style="color: red;">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="mb-3">
+                                {{ form.desc.label(class="form-label") }} *
+                                {{ form.desc(rows=4, class="form-control") }}
+                                {% for error in form.desc.errors %}
+                                    <span style="color: red;">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 col-6">
+                            <div class="mb-3">
+                                {{ form.publication_type.label(class="form-label") }}
+                                {{ form.publication_type(class="form-control") }}
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 col-6">
+                            <div class="mb-3">
+                                {{ form.publication_doi.label(class="form-label") }}
+                                {{ form.publication_doi(class="form-control") }}
+                                {% for error in form.publication_doi.errors %}
+                                    <span style="color: red;">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="mb-3">
+                                {{ form.tags.label(class="form-label") }}
+                                {{ form.tags(class="form-control") }}
+                                {% for error in form.tags.errors %}
+                                    <span style="color: red;">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <h1 class="h3 mb-3 mt-4">
+                        Authors
+                        <a href="#" data-toggle="modal" data-target="#infoModal">
+                            <i data-feather="info"></i>
+                        </a>
+                    </h1>
+
+                    <div class="modal fade" id="infoModal" tabindex="-1" role="dialog" aria-labelledby="infoModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="infoModalLabel">Información Importante</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>No incluyas datos personales si no quieres compartir tu identidad.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row" style="padding-left: 2rem">
+                        {% if current_user.is_authenticated and current_user.profile %}
+                            <div class="col-lg-6 col-12 mb-3">
+                                <label class="form-label">Author name</label>
+                                <input class="form-control"
+                                       disabled
+                                       value="{{ current_user.profile.surname }}, {{ current_user.profile.name }}">
+                            </div>
+
+                            <div class="col-lg-6 col-12 mb-3">
+                                <label class="form-label">Author affiliation</label>
+                                <input class="form-control"
+                                       disabled
+                                       value="{{ current_user.profile.affiliation }}">
+                            </div>
+
+                            <div class="col-lg-6 col-12 mb-3">
+                                <label class="form-label">Author ORCID</label>
+                                <input class="form-control"
+                                       disabled
+                                       value="{{ current_user.profile.orcid }}">
+                            </div>
+                        {% endif %}
+
+                        <div class="col-12">
+                            <div class="mb-3">
+                                {% for subform in form.authors %}
+                                    <div class="row mb-2">
+                                        <div class="col-md-6">
+                                            {{ subform.name.label(class="form-label") }}
+                                            {{ subform.name(class="form-control") }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            {{ subform.affiliation.label(class="form-label") }}
+                                            {{ subform.affiliation(class="form-control") }}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end mt-3">
+                        {% if models %}
+                            <button type="button" class="btn btn-success" onclick="submitCartDatasetForm()">
+                                <i data-feather='plus-square'></i> Create Dataset
+                            </button>
+                        {% else %}
+                            <button type="button" class="btn btn-success" disabled>
+                                <i data-feather='plus-square'></i> Create Dataset
+                            </button>
+                        {% endif %}
+                    </div>
+
+
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+
+        {% if models %}
+        <div id="cart-list">
+            {% for model in models %}
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0"><b>{{ model.name }}</b></h5>
+                            <p class="text-muted small mb-1">{{ model.description|truncate(80) }}</p>
+                            <p class="small mb-0">
+                                Authors:
+                                {% for author in model.authors %}
+                                    {{ author.name }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            </p>
+                        </div>
+                        <div> 
+                            <button type="button"
+                                    class="btn btn-outline-danger btn-sm"
+                                    onclick="deleteCartItem('{{ model.id }}')">
+                                <i data-feather="trash-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info" role="alert">
+            Your cart is empty. Add some models to get started!
+        </div>
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+
+function deleteCartItem(modelID) {
+    fetch("/user/cart/delete", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ "item_id": modelID })
+    })
+    .then(async (response) => {
+        const data = await response.json();
+        alert("File removed from cart.");
+        if (response.ok) {
+            location.reload();
+        }
+    })
+    .catch((err) => {
+        console.error("Error deleting from cart:", err);
+    });
+}
+
+function submitCartDatasetForm() {
+    const formElement = document.getElementById("cart-create-dataset-form");
+    if (!formElement) {
+        alert("Form not found");
+        return;
+    }
+
+    const formData = new FormData(formElement);
+
+    fetch("/user/cart/create", {
+        method: "POST",
+        body: formData
+    })
+    .then(async (response) => {
+        const data = await response.json();
+
+        if (response.ok) {
+            alert("Dataset created successfully!");
+            if (data.dataset_id) {
+                window.location.href = "/dataset/unsynchronized/" + data.dataset_id + "/";
+            } else {
+                window.location.reload();
+            }
+        } else {
+            let msg = "unknown error";
+            if (data && data.message) {
+                if (typeof data.message === "object") {
+                    msg = JSON.stringify(data.message);
+                } else {
+                    msg = data.message;
+                }
+            }
+            alert("Error creating dataset: " + msg);
+        }
+    })
+    .catch((err) => {
+        console.error("Error creating dataset:", err);
+        alert("Error creating dataset");
+    });
+}
+</script>
+{% endblock %}
+
