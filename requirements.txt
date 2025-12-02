@@ -89,11 +89,11 @@ pyflakes==3.4.0
 Pygments==2.19.2
 PyMySQL==1.1.1
 pyOpenSSL==25.1.0
+pyotp==2.9.0
 pyparsing==3.2.3
 PySocks==1.7.1
 pytest==8.4.1
 pytest-cov==6.2.1
-pytest-mock==3.15.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
 python-engineio==4.12.2
@@ -102,9 +102,11 @@ python-socketio==5.13.0
 pytz==2025.2
 PyYAML==6.0.2
 pyzmq==27.0.0
+qrcode==8.2
 redis==6.2.0
 referencing==0.36.2
 requests==2.32.4
+-e git+ssh://git@github.com/PixelHub-ORG/PixelHub-1@935165b19090e97145ee947c2eff377a27d81849#egg=rosemary
 rpds-py==0.26.0
 rq==2.4.1
 selenium==4.34.2
