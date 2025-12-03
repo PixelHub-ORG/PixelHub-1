@@ -6,11 +6,12 @@ from core.environment.host import get_host_for_locust_testing
 
 app = create_app()
 
+
 class ProfileBehavior(TaskSet):
-    
+
     def on_start(self):
         self.user_id = self.get_first_available_user_id()
-        
+
         if self.user_id:
             self.view_public_profile()
         else:
@@ -27,7 +28,7 @@ class ProfileBehavior(TaskSet):
                     return user.id
         except Exception as e:
             print(f"Error conectando a la BBDD desde Locust: {e}")
-        
+
         return None
 
     @task
@@ -36,7 +37,7 @@ class ProfileBehavior(TaskSet):
             return
 
         response = self.client.get(f"/profile/{self.user_id}")
-        
+
         if response.status_code != 200:
             print(f"Profile view failed for User ID {self.user_id}: {response.status_code}")
 
