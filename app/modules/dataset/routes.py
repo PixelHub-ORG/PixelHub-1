@@ -5,8 +5,10 @@ import shutil
 import tempfile
 import uuid
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 from zipfile import ZipFile
 
+import requests
 from flask import (
     abort,
     jsonify,
@@ -187,6 +189,130 @@ def upload():
                     os.remove(temp_zip_path)
     except Exception as e:
         return jsonify({"message": str(e)}), 500
+
+    return (
+        jsonify(
+            {
+                "message": "Files uploaded successfully",
+                "filename": saved_filenames[0] if saved_filenames else None,
+                "filenames": saved_filenames,
+            }
+        ),
+        200,
+    )
+
+
+@dataset_bp.route("/dataset/file/upload_github", methods=["POST"])
+@login_required
+def upload_github():
+    """Import .pix files from a public GitHub repository folder.
+
+    Expects JSON body with `repo_url` and `path` (path within the repo).
+    Returns the same response format as `upload()` for compatibility.
+    """
+    data = request.get_json() or {}
+    repo_url = data.get("repo_url")
+    folder_path = data.get("path") or ""
+
+    if not repo_url:
+        return jsonify({"message": "repo_url is required"}), 400
+
+    # parse owner/repo from common GitHub URL formats
+    def _parse_owner_repo(url: str):
+        # https://github.com/owner/repo or https://github.com/owner/repo/
+        parsed = urlparse(url)
+        if parsed.netloc and parsed.netloc.lower().endswith("github.com"):
+            parts = parsed.path.strip("/").split("/")
+            if len(parts) >= 2:
+                owner = parts[0]
+                repo = parts[1].replace(".git", "")
+                return owner, repo
+        # git@github.com:owner/repo.git
+        if url.startswith("git@github.com:"):
+            tail = url.split(":", 1)[1]
+            parts = tail.split("/")
+            if len(parts) >= 2:
+                owner, repo = parts[0], parts[1].replace(".git", "")
+                return owner, repo
+        return None, None
+
+    owner, repo = _parse_owner_repo(repo_url)
+    if not owner or not repo:
+        return jsonify({"message": "Could not parse GitHub repo URL"}), 400
+
+    temp_folder = current_user.temp_folder()
+    if not os.path.exists(temp_folder):
+        os.makedirs(temp_folder)
+
+    def _generate_unique_filename(original_name: str) -> str:
+        base_name, ext = os.path.splitext(original_name)
+        candidate = original_name
+        i = 1
+        while os.path.exists(os.path.join(temp_folder, candidate)):
+            candidate = f"{base_name} ({i}){ext}"
+            i += 1
+        return candidate
+
+    saved_filenames = []
+
+    # Use GitHub API to list contents; traverse directories recursively
+    session = requests.Session()
+    # Add GitHub token if available to increase rate limit
+    github_token = os.getenv("GITHUB_TOKEN")
+    if github_token:
+        session.headers.update({"Authorization": f"token {github_token}"})
+
+    api_base = f"https://api.github.com/repos/{owner}/{repo}/contents"
+
+    def _fetch_contents(api_url):
+        try:
+            resp = session.get(api_url, timeout=10)
+            if resp.status_code != 200:
+                return None, f"GitHub API error: {resp.status_code}"
+            return resp.json(), None
+        except Exception as e:
+            return None, str(e)
+
+    def _process_dir(rel_path):
+        url = api_base
+        if rel_path:
+            url = f"{api_base}/{rel_path.strip('/')}"
+        items, err = _fetch_contents(url)
+        if err:
+            return err
+        if not isinstance(items, list):
+            return f"Unexpected response for path: {rel_path}"
+
+        for item in items:
+            t = item.get("type")
+            if t == "file":
+                name = item.get("name")
+                if name and name.lower().endswith(".pix"):
+                    download_url = item.get("download_url")
+                    if not download_url:
+                        continue
+                    r = session.get(download_url, timeout=10)
+                    if r.status_code != 200:
+                        continue
+                    new_filename = _generate_unique_filename(name)
+                    file_path = os.path.join(temp_folder, new_filename)
+                    with open(file_path, "wb") as fh:
+                        fh.write(r.content)
+                    saved_filenames.append(new_filename)
+            elif t == "dir":
+                subpath = item.get("path")
+                err = _process_dir(subpath)
+                if err:
+                    return err
+        return None
+
+    # start processing
+    err = _process_dir(folder_path)
+    if err:
+        return jsonify({"message": err}), 400
+
+    if not saved_filenames:
+        return jsonify({"message": "No .pix files found in the given GitHub path"}), 400
 
     return (
         jsonify(

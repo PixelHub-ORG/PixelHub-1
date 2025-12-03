@@ -36,10 +36,18 @@ jobs:
             echo "DEPLOY=none" >> $GITHUB_ENV
           fi
 
-      - name: Deploy to Render
+      - name: Deploy App to Render
         if: env.DEPLOY != 'none'
         env:
           deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
-          echo "Deploying branch: $DEPLOY"
+          echo "Deploying App branch: $DEPLOY"
           curl "$deploy_url"
+
+      - name: Deploy Fakenodo to Render
+        if: env.DEPLOY != 'none'
+        env:
+          fakenodo_deploy_url: ${{ secrets.FAKENODO_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering Fakenodo deploy..."
+          curl "$fakenodo_deploy_url"
