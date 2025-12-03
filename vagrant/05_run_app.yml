@@ -34,19 +34,16 @@
         executable: /bin/bash
       environment: "{{ common_environment }}"
 
-    # --- NUEVA TAREA: Run Fakenodo Service ---
     - name: Run Fakenodo Service
       shell: |
         source {{ working_dir }}vagrant_venv/bin/activate
         cd {{ working_dir }}fakenodo
-        # Ejecutamos en el puerto 5001, en segundo plano, ignorando la salida (o guardándola en log)
         nohup flask run --host=0.0.0.0 --port=5001 > fakenodo.log 2>&1 &
       args:
         executable: /bin/bash
       environment: "{{ common_environment }}"
       async: 1
       poll: 0
-    # -----------------------------------------
 
     - name: Run Flask application
       shell: |
