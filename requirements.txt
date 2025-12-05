@@ -113,7 +113,6 @@ qrcode==8.2
 redis==6.2.0
 referencing==0.36.2
 requests==2.32.4
--e git+ssh://git@github.com/PixelHub-ORG/PixelHub-1@008896e16972311586e3b36ac4f5ab673e66a1ba#egg=rosemary
 rpds-py==0.26.0
 rq==2.4.1
 ruff==0.14.5
