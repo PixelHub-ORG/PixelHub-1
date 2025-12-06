@@ -1,0 +1,28 @@
+{% extends "base_template.html" %} {% block title %}Enable Two-Factor
+Authentication{% endblock %} {% block content %}
+<div class="container">
+  <h2>Enable Two-Factor Authentication</h2>
+  <p>
+    Scan the QR code below with your authenticator app (e.g., Google
+    Authenticator) to enable two-factor authentication.
+  </p>
+
+  <div class="qr-code">
+    <img src="{{ qr_code }}" alt="QR Code" />
+  </div>
+
+  <p><strong>Or enter the secret manually:</strong> {{ secret }}</p>
+
+  <form method="POST" action="{{ url_for('auth.enable_2fa') }}">
+    <label for="code"
+      >Enter the 6-digit code from your authenticator app:</label
+    >
+    <input type="text" id="code" name="code" required autofocus />
+    <button type="submit">Verify Code</button>
+  </form>
+
+  {% if error %}
+  <div style="color: red">{{ error }}</div>
+  {% endif %}
+</div>
+{% endblock %}

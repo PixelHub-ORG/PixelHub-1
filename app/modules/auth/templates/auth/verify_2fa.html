@@ -1,0 +1,19 @@
+
+{% block content %}
+  <div class="container">
+    <h2>Verify Your 2FA Code</h2>
+    <p>To complete the login process, please enter the code from your authenticator app.</p>
+
+    {% if error %}
+      <div class="alert alert-danger">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <form method="POST">
+      <label for="code">Enter the 6-digit code from your authenticator app:</label>
+      <input type="text" id="code" name="code" required autofocus />
+      <button type="submit">Verify Code</button>
+    </form>
+  </div>
+{% endblock %}
