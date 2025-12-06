@@ -66,11 +66,7 @@ class AuthenticationService(BaseService):
             user.two_factor_secret = pyotp.random_base32()
             user.is_two_factor_enabled = False
 
-            profile_data = {
-                "name": name,
-                "surname": surname,
-                "user_id": user.id
-            }
+            profile_data = {"name": name, "surname": surname, "user_id": user.id}
             self.user_profile_repository.create(**profile_data)
 
             self.repository.session.commit()
@@ -149,7 +145,7 @@ class AuthenticationService(BaseService):
         buffer = io.BytesIO()
         img.save(buffer, format="PNG")
         buffer.seek(0)
-        qr_code_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+        qr_code_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
         return f"data:image/png;base64,{qr_code_base64}"
 

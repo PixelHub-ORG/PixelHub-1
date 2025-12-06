@@ -27,7 +27,7 @@ def show_signup_form():
         except Exception as exc:
             return render_template("auth/signup_form.html", form=form, error=f"Error creating user: {exc}")
 
-        session['setup_2fa_user_id'] = user.id
+        session["setup_2fa_user_id"] = user.id
 
         return redirect(url_for("auth.enable_2fa"))
 
@@ -54,10 +54,10 @@ def login():
         login_user(user, remember=form.remember_me.data)
 
         if user.is_two_factor_enabled:
-            session['two_factor_user_id'] = user.id
+            session["two_factor_user_id"] = user.id
             return redirect(url_for("auth.verify_2fa"))
         else:
-            session['setup_2fa_user_id'] = user.id
+            session["setup_2fa_user_id"] = user.id
             return redirect(url_for("auth.enable_2fa"))
 
     return render_template("auth/login_form.html", form=form, error=error)
@@ -66,8 +66,8 @@ def login():
 @auth_bp.route("/logout", endpoint="logout")
 def logout():
     logout_user()
-    session.pop('setup_2fa_user_id', None)
-    session.pop('two_factor_user_id', None)
+    session.pop("setup_2fa_user_id", None)
+    session.pop("two_factor_user_id", None)
     return redirect(url_for("public.index"))
 
 
@@ -79,7 +79,7 @@ def enable_2fa():
         if user.is_two_factor_enabled:
             return render_template("auth/enabled_2fa.html")
     else:
-        user_id = session.get('setup_2fa_user_id')
+        user_id = session.get("setup_2fa_user_id")
         if user_id:
             user = authentication_service.repository.get(user_id)
         else:
@@ -101,7 +101,7 @@ def enable_2fa():
         if code and authentication_service.verify_two_factor_code(user, code):
             authentication_service.enable_two_factor(user)
             login_user(user)
-            session.pop('setup_2fa_user_id', None)
+            session.pop("setup_2fa_user_id", None)
             return redirect(url_for("public.index"))
         else:
             error = "Invalid code, please try again."
@@ -111,7 +111,7 @@ def enable_2fa():
 
 @auth_bp.route("/2fa/verify", methods=["GET", "POST"], endpoint="verify_2fa")
 def verify_2fa():
-    user_id = session.get('two_factor_user_id')
+    user_id = session.get("two_factor_user_id")
     if not user_id:
         return redirect(url_for("auth.login"))
 
@@ -124,7 +124,7 @@ def verify_2fa():
             error = "Please enter the 2FA code."
         elif authentication_service.verify_two_factor_code(user, code):
             login_user(user)
-            session.pop('two_factor_user_id', None)
+            session.pop("two_factor_user_id", None)
             return redirect(url_for("public.index"))
         else:
             error = "Invalid 2FA code, please try again."

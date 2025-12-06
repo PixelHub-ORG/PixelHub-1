@@ -11,8 +11,8 @@ from app.modules.auth.services import AuthenticationService
 # SERVICIO
 @pytest.fixture(scope="session", autouse=True)
 def configure_app(test_app):
-    test_app.config['SERVER_NAME'] = 'localhost.localdomain'
-    test_app.config['APPLICATION_ROOT'] = '/'
+    test_app.config["SERVER_NAME"] = "localhost.localdomain"
+    test_app.config["APPLICATION_ROOT"] = "/"
 
 
 @pytest.fixture(scope="session")
@@ -285,10 +285,7 @@ def test_verify_2fa_wrong_code_stays_on_page(test_client):
     assert resp.status_code == 200
     assert resp.request.path == "/2fa/verify"
 
-    assert (
-        b"Invalid 2FA code" in resp.data
-        or b"Invalid 2FA code, please try again." in resp.data
-    )
+    assert b"Invalid 2FA code" in resp.data or b"Invalid 2FA code, please try again." in resp.data
 
 
 def test_disable_2fa_requires_authentication(test_client):

@@ -74,9 +74,7 @@ class DataSetService(BaseService):
             score = dataset.calculate_similarity_score(ds)
             scored_datasets.append((ds, score))
         scored_datasets_sorted = sorted(
-            scored_datasets,
-            key=lambda x: (x[1], x[0].get_download_count(), x[0].created_at),
-            reverse=True
+            scored_datasets, key=lambda x: (x[1], x[0].get_download_count(), x[0].created_at), reverse=True
         )
         datasets_with_doi = [d for d, _ in scored_datasets_sorted if d.ds_meta_data and d.ds_meta_data.dataset_doi]
         return [ds for ds in datasets_with_doi[:limit]]
