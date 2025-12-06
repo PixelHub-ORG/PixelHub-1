@@ -1,15 +1,13 @@
+import logging
 import random
 
+from bs4 import BeautifulSoup
 from locust import HttpUser, TaskSet, between, task
 
 from app import create_app, db
 from app.modules.dataset.models import DSMetaData
 from core.environment.host import get_host_for_locust_testing
 from core.locust.common import get_csrf_token
-
-import logging
-
-from bs4 import BeautifulSoup
 
 DATASET_V1_ID = 9991
 DATASET_V2_ID = 9992
@@ -41,14 +39,21 @@ class WebsiteUser(HttpUser):
             return
 
         response = self.client.post(
-            "/login", data={"email": USER_EMAIL, "password": USER_PASSWORD, "csrf_token": csrf_token}
+            "/login",
+            data={
+                "email": USER_EMAIL,
+                "password": USER_PASSWORD,
+                "csrf_token": csrf_token,
+            },
         )
 
         if response.status_code == 200 and "login" not in response.url:
             logging.info(f"Login Exitoso: {USER_EMAIL}")
         else:
             if "/login" in response.url:
-                logging.error("!!! Login Fallido: Credenciales incorrectas o error de servidor !!!")
+                logging.error(
+                    "!!! Login Fallido: Credenciales incorrectas o error de servidor !!!"
+                )
             else:
                 logging.info("Login parece exitoso (Redirección correcta)")
 
@@ -67,7 +72,9 @@ class WebsiteUser(HttpUser):
         """
         url = f"/dataset/compare/{DATASET_V1_ID}/{DATASET_V2_ID}"
 
-        with self.client.get(url, catch_response=True, name="/dataset/compare/[id]/[id]") as response:
+        with self.client.get(
+            url, catch_response=True, name="/dataset/compare/[id]/[id]"
+        ) as response:
             if response.status_code == 200:
                 self.extract_and_request_file_diff(response.text)
             elif response.status_code == 404:
@@ -83,7 +90,11 @@ class WebsiteUser(HttpUser):
         """
         Entra a la página de crear nueva versión desde la V2
         """
-        self.client.get(f"/dataset/{DATASET_V2_ID}/create_version", name="/dataset/[id]/create_version")
+        self.client.get(
+            f"/dataset/{DATASET_V2_ID}/create_version",
+            name="/dataset/[id]/create_version",
+        )
+
 
 class DatasetBehavior(TaskSet):
     def on_start(self):
@@ -122,7 +133,9 @@ class DatasetUser(HttpUser):
                     .limit(20)
                     .all()
                 )
-                DatasetUser._cached_dois = [doi[0] for doi in datasets_with_doi if doi[0]]
+                DatasetUser._cached_dois = [
+                    doi[0] for doi in datasets_with_doi if doi[0]
+                ]
         except Exception:
             DatasetUser._cached_dois = []
 
