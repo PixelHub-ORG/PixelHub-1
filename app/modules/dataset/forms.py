@@ -75,7 +75,6 @@ class DataSetForm(FlaskForm):
         choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in PublicationType],
         validators=[DataRequired()],
     )
-    publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
     dataset_doi = StringField("Dataset DOI", validators=[Optional(), URL()])
     tags = StringField("Tags (separated by commas)")
     authors = FieldList(FormField(AuthorForm))
@@ -91,7 +90,6 @@ class DataSetForm(FlaskForm):
             "title": self.title.data,
             "description": self.desc.data,
             "publication_type": publication_type_converted,
-            "publication_doi": self.publication_doi.data,
             "dataset_doi": self.dataset_doi.data,
             "tags": self.tags.data,
         }
