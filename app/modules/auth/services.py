@@ -1,5 +1,10 @@
+import base64
+import io
 import os
 
+# importes del doble factor
+import pyotp
+import qrcode
 from flask_login import current_user, login_user
 
 from app.modules.auth.models import User
@@ -9,11 +14,7 @@ from app.modules.profile.models import UserProfile
 from app.modules.profile.repositories import UserProfileRepository
 from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
-#importes del doble factor
-import pyotp
-import qrcode
-import io
-import base64
+
 
 class AuthenticationService(BaseService):
     def __init__(self):
@@ -33,7 +34,6 @@ class AuthenticationService(BaseService):
 
         login_user(user, remember=remember)
         return {"success": True, "2fa_required": False, "user": user}
-
 
     def is_email_available(self, email: str) -> bool:
         return self.repository.get_by_email(email) is None
@@ -131,13 +131,12 @@ class AuthenticationService(BaseService):
     def temp_folder_by_user(self, user: User) -> str:
         return os.path.join(uploads_folder_name(), "temp", str(user.id))
     
-    #doble factor
+    # doble factor
     def generate_two_factor_secret(self, user: User) -> str:
         secret = pyotp.random_base32()
         user.two_factor_secret = secret
         self.repository.session.commit()
         return secret
-
 
     def generate_qr_code_for_two_factor(self, user: User, app_name: str = "PixelHub") -> str:
         if not user.two_factor_secret:
