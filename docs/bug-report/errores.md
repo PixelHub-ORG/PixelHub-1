@@ -30,5 +30,27 @@ Adjunta **capturas de pantalla**, **videos** o **logs** que ayuden a entender el
 
 ---
 
+## Roles
+
+A continuación se detallan los roles implicados en la gestión y desarrollo de esta issue.  
+El único campo que debe rellenar la persona que crea la issue es **Autor de la issue**.  
+**El resto de roles serán completados exclusivamente por el equipo de desarrollo.**
+
+#### Autor de la issue
+Indica quién ha creado la issue y ha proporcionado el contexto inicial.
+#### Asignante
+Miembro del equipo de desarrollo que determina la prioridad de la issue y decide quién debe asumirla.
+
+#### Desarrollador asignado
+Persona encargada de implementar la solución técnica correspondiente a esta issue.
+
+#### Revisor/a técnico/a
+Responsable de llevar a cabo la revisión técnica y de asegurar que la solución cumple los estándares del proyecto.
+
+#### Responsable de cierre
+Miembro del equipo que confirma la correcta implementación, aprobación y validación, y procede a cerrar la issue de manera formal.
+
+---
+
 ## Información adicional
 Cualquier otro detalle que pueda ayudar a reproducir o entender el error.
