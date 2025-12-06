@@ -65,7 +65,7 @@ def login():
 
 @auth_bp.route("/logout", endpoint="logout")
 def logout():
-    logout_user() 
+    logout_user()
     session.pop('setup_2fa_user_id', None)
     session.pop('two_factor_user_id', None)
     return redirect(url_for("public.index"))
@@ -94,13 +94,13 @@ def enable_2fa():
 
     qr_code = authentication_service.generate_qr_code_for_two_factor(user)
 
-    error = None 
+    error = None
 
     if request.method == "POST":
         code = request.form.get("code")
         if code and authentication_service.verify_two_factor_code(user, code):
             authentication_service.enable_two_factor(user)
-            login_user(user) 
+            login_user(user)
             session.pop('setup_2fa_user_id', None)
             return redirect(url_for("public.index"))
         else:
@@ -123,8 +123,8 @@ def verify_2fa():
         if not code:
             error = "Please enter the 2FA code."
         elif authentication_service.verify_two_factor_code(user, code):
-            login_user(user) 
-            session.pop('two_factor_user_id', None) 
+            login_user(user)
+            session.pop('two_factor_user_id', None)
             return redirect(url_for("public.index"))
         else:
             error = "Invalid 2FA code, please try again."

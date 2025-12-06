@@ -1,18 +1,19 @@
-import pytest
 import pyotp
+import pytest
 from flask import url_for
 
-from app import db, create_app
+from app import create_app, db
+from app.modules.auth.models import User
 from app.modules.auth.repositories import UserRepository
 from app.modules.auth.services import AuthenticationService
-from app.modules.profile.repositories import UserProfileRepository
-from app.modules.auth.models import User
 
-#SERVICIO
+
+# SERVICIO
 @pytest.fixture(scope="session", autouse=True)
 def configure_app(test_app):
     test_app.config['SERVER_NAME'] = 'localhost.localdomain'
     test_app.config['APPLICATION_ROOT'] = '/'
+
 
 @pytest.fixture(scope="session")
 def test_app():
@@ -20,9 +21,11 @@ def test_app():
     with app.app_context():
         yield app
 
+
 @pytest.fixture(scope="session")
 def test_client(test_app):
     return test_app.test_client()
+
 
 @pytest.fixture(scope="function")
 def clean_database(test_app):
@@ -34,9 +37,11 @@ def clean_database(test_app):
         db.session.remove()
         db.drop_all()
 
+
 @pytest.fixture(scope="function")
 def auth_service():
     return AuthenticationService()
+
 
 def test_enable_and_disable_two_factor(auth_service, clean_database):
     user = User(email="toggle_2fa@example.com", password="dummy", two_factor_secret="ABCDEF")
@@ -118,12 +123,11 @@ def test_login_with_2fa_requires_code(clean_database, auth_service, monkeypatch)
     assert called["login_called"] is True
 
 
-#RUTAS
+# RUTAS
 @pytest.fixture(scope="module")
-
-def test_client(test_client):
+def test_client(test_client):  # noqa: F811
     with test_client.application.app_context():
-        db.session.query(User).delete() 
+        db.session.query(User).delete()
 
         auth_service = AuthenticationService()
 
@@ -146,6 +150,7 @@ def test_client(test_client):
 
     yield test_client
 
+
 def test_signup_redirects_to_enable_2fa(test_client):
     response = test_client.post(
         "/signup",
@@ -156,7 +161,7 @@ def test_signup_redirects_to_enable_2fa(test_client):
     assert response.request.path == url_for("auth.enable_2fa")
 
 
-#AQUI
+# AQUI
 def test_login_without_2fa_redirects_to_enable_2fa(test_client):
     response = test_client.post(
         "/login",
@@ -166,6 +171,7 @@ def test_login_without_2fa_redirects_to_enable_2fa(test_client):
 
     assert response.request.path == url_for("auth.enable_2fa")
 
+
 def test_login_with_2fa_redirects_to_verify_2fa(test_client):
     response = test_client.post(
         "/login",
@@ -174,6 +180,7 @@ def test_login_with_2fa_redirects_to_verify_2fa(test_client):
     )
 
     assert response.request.path == url_for("auth.enable_2fa")
+
 
 def test_enable_2fa_success_flow(test_client, monkeypatch):
     auth_service = AuthenticationService()
@@ -211,6 +218,7 @@ def test_enable_2fa_success_flow(test_client, monkeypatch):
 
     updated_user = repo.get_by_email("enable_2fa_flow@example.com")
     assert updated_user.is_two_factor_enabled is True
+
 
 def test_enable_2fa_wrong_code_shows_error(test_client, monkeypatch):
     auth_service = AuthenticationService()
@@ -260,6 +268,7 @@ def test_verify_2fa_success(test_client):
     assert resp.status_code in (301, 302)
     assert resp.headers["Location"].endswith("/")
 
+
 def test_verify_2fa_wrong_code_stays_on_page(test_client):
     repo = UserRepository()
     user = repo.get_by_email("with2fa@example.com")
@@ -281,6 +290,7 @@ def test_verify_2fa_wrong_code_stays_on_page(test_client):
         or b"Invalid 2FA code, please try again." in resp.data
     )
 
+
 def test_disable_2fa_requires_authentication(test_client):
     with test_client.session_transaction() as sess:
         sess.clear()
@@ -290,6 +300,7 @@ def test_disable_2fa_requires_authentication(test_client):
     assert resp.status_code in (301, 302)
     location = resp.headers.get("Location", "")
     assert location.endswith("/login") or location.endswith("/")
+
 
 def test_disable_2fa_turns_off_flag(test_client):
     repo = UserRepository()

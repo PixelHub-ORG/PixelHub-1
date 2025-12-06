@@ -130,7 +130,7 @@ class AuthenticationService(BaseService):
 
     def temp_folder_by_user(self, user: User) -> str:
         return os.path.join(uploads_folder_name(), "temp", str(user.id))
-    
+
     # doble factor
     def generate_two_factor_secret(self, user: User) -> str:
         secret = pyotp.random_base32()
@@ -155,7 +155,7 @@ class AuthenticationService(BaseService):
 
     def verify_two_factor_code(self, user: User, code: str) -> bool:
         totp = pyotp.TOTP(user.two_factor_secret)
-        return totp.verify(code)  
+        return totp.verify(code)
 
     def enable_two_factor(self, user: User):
         user.is_two_factor_enabled = True
@@ -163,5 +163,5 @@ class AuthenticationService(BaseService):
 
     def disable_two_factor(self, user: User):
         user.is_two_factor_enabled = False
-        user.two_factor_secret = None  
+        user.two_factor_secret = None
         self.repository.session.commit()
