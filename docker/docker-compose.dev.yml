@@ -7,7 +7,10 @@ services:
       - MARIADB_HOSTNAME=db
       - FAKENODO_URL=http://localhost:5001/api
       - FAKENODO_BACKEND_URL=http://fakenodo:5001/api
-      - WORKING_DIR=
+      - WORKING_DIR=/app/
+      - PYTHONPATH=/app
+      - DOMAIN=localhost
+
     expose:
       - "5000"
     depends_on:
@@ -46,7 +49,7 @@ services:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf
       - ./nginx/html:/usr/share/nginx/html
     ports:
-      - "5000:80"
+      - "80:80"
     depends_on:
       - web
     networks:
@@ -74,6 +77,8 @@ services:
       - selenium-hub
     networks:
       - pixelhub_network
+    volumes:
+      - ../:/app
 
   selenium-firefox:
     container_name: selenium_firefox_container
@@ -87,6 +92,8 @@ services:
       - selenium-hub
     networks:
       - pixelhub_network
+    volumes:
+      - ../:/app
 
   fakenodo:
     container_name: fakenodo_container

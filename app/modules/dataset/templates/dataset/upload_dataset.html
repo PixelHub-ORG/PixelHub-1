@@ -232,9 +232,30 @@
 
             <div id="uploaded_models_form" style="padding-left: 2rem">
 
+                <div class="mb-3">
+                    <label class="form-label">Import from GitHub</label>
+                    <div class="text-muted mb-2">
+                        If no path is specified, the application will search for .pix files in all folders of the repository.
+                        <br>Example: <code>https://github.com/JoseLu2121/pix_files.git</code>
+                    </div>
+                    <input id="github-repo" class="form-control mb-1" placeholder="https://github.com/owner/repo">
+                    <input id="github-path" class="form-control mb-1" placeholder="path/within/repo (optional)">
+                    <button id="github-add-btn" class="btn btn-primary btn-sm">
+                        <span id="github-btn-text">Add from GitHub</span>
+                        <span id="github-loading" style="display: none;">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            Loading...
+                        </span>
+                    </button>
+                    <span id="github-progress" class="ms-2 text-muted" style="display: none;"></span>
+                </div>
+
                 <form action="{{ url_for('dataset.upload') }}" class="dropzone" id="myDropzone">
                     <div id="dropzone-text"></div>
                 </form>
+                <div class="text-muted mt-2">
+                    You can upload .pix or .zip files
+                </div>
 
                 <span class="text-danger" id="alerts" style="display: none">
                     </span>
@@ -246,17 +267,186 @@
                         url: "/dataset/file/upload",
                         paramName: 'file',
                         maxFilesize: 10,
-                        acceptedFiles: '.pix',
+                        acceptedFiles: '.pix,.zip',
                         init: function () {
 
                             let fileList = document.getElementById('file-list');
                             let dropzoneText = document.getElementById('dropzone-text');
                             let alerts = document.getElementById('alerts');
+                            // GitHub import controls
+                            let githubBtn = document.getElementById('github-add-btn');
+                            let githubRepoInput = document.getElementById('github-repo');
+                            let githubPathInput = document.getElementById('github-path');
+
+                            // helper to create list items for GitHub-imported files (no dropzone parent)
+                            function createListItemForGithub(savedFilename) {
+                                if (!savedFilename) return;
+
+                                // actions when UVL model is uploaded
+                                let listItem = document.createElement('li');
+                                let h4Element = document.createElement('h4');
+                                h4Element.textContent = savedFilename;
+                                listItem.appendChild(h4Element);
+
+                                // generate incremental id for form
+                                let formUniqueId = generateIncrementalId();
+
+                                let formButton = document.createElement('button');
+                                formButton.innerHTML = 'Show info';
+                                formButton.classList.add('info-button', 'btn', 'btn-outline-secondary', "btn-sm");
+                                formButton.style.borderRadius = '5px';
+                                formButton.id = formUniqueId + "_button";
+
+                                // create specific form for UVL
+                                let formContainer = document.createElement('div');
+                                formContainer.id = formUniqueId + "_form";
+                                formContainer.classList.add('uvl_form', "mt-3");
+                                formContainer.style.display = "none";
+
+                                formButton.addEventListener('click', function () {
+                                    if (formContainer.style.display === "none") {
+                                        formContainer.style.display = "block";
+                                        formButton.innerHTML = 'Hide info';
+                                    } else {
+                                        formContainer.style.display = "none";
+                                        formButton.innerHTML = 'Add info';
+                                    }
+                                });
+
+                                let space = document.createTextNode(" ");
+                                listItem.appendChild(space);
+
+                                // remove button (for GitHub imports we don't have a dropzone file to remove)
+                                let removeButton = document.createElement('button');
+                                removeButton.innerHTML = 'Delete model';
+                                removeButton.classList.add("remove-button", "btn", "btn-outline-danger", "btn-sm", "remove-button");
+                                removeButton.style.borderRadius = '5px';
+
+                                // append space
+                                space = document.createTextNode(" ");
+                                listItem.appendChild(space);
+
+                                removeButton.addEventListener('click', function () {
+                                    fileList.removeChild(listItem);
+
+                                    // Ajax request to delete file on server
+                                    let xhr = new XMLHttpRequest();
+                                    xhr.open('POST', '/dataset/file/delete', true);
+                                    xhr.setRequestHeader('Content-Type', 'application/json');
+                                    xhr.onload = function () {
+                                        if (xhr.status === 200) {
+                                            console.log('Deleted file from server');
+
+                                            if (fileList.children.length === 0) {
+                                                document.getElementById("upload_dataset").style.display = "none";
+                                                clean_upload_errors();
+                                            }
+
+                                        }
+                                    };
+                                    xhr.send(JSON.stringify({file: savedFilename}));
+                                });
+
+                                listItem.appendChild(formButton);
+                                listItem.appendChild(removeButton);
+
+                                formContainer.innerHTML = `
+                                    <div class="row">
+                                        <input type="hidden" value="${savedFilename}" name="file_models-${formUniqueId}-filename">
+                                        <div class="col-12">
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Title</label>
+                                                        <input type="text" class="form-control" name="file_models-${formUniqueId}-title">
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Description</label>
+                                                        <textarea rows="4" class="form-control" name="file_models-${formUniqueId}-desc"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+
+                                listItem.appendChild(formContainer);
+                                fileList.appendChild(listItem);
+                                show_upload_dataset();
+                            }
+
+                            // GitHub import button handler
+                            githubBtn.addEventListener('click', function (e) {
+                                e.preventDefault();
+                                clean_upload_errors();
+
+                                const repo = githubRepoInput.value.trim();
+                                const path = githubPathInput.value.trim();
+                                if (!repo) {
+                                    alerts.innerHTML = 'Please provide a GitHub repository URL';
+                                    alerts.style.display = 'block';
+                                    return;
+                                }
+
+                                // Show loading state
+                                githubBtn.disabled = true;
+                                document.getElementById('github-btn-text').style.display = 'none';
+                                document.getElementById('github-loading').style.display = 'inline-block';
+                                const progressSpan = document.getElementById('github-progress');
+                                progressSpan.style.display = 'inline-block';
+                                progressSpan.textContent = 'Fetching file list...';
+
+                                fetch('/dataset/file/upload_github', {
+                                    method: 'POST',
+                                    credentials: 'same-origin',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({repo_url: repo, path: path})
+                                }).then(function (res) {
+                                    if (!res.ok) {
+                                        return res.text().then(function (text) {
+                                            try {
+                                                const json = JSON.parse(text);
+                                                throw new Error(json.message || 'Error importing from GitHub');
+                                            } catch (e) {
+                                                throw new Error(text || 'Error importing from GitHub');
+                                            }
+                                        });
+                                    }
+                                    return res.json();
+                                }).then(function (response) {
+                                    const filenames = Array.isArray(response.filenames) ? response.filenames : (response.filename ? [response.filename] : []);
+                                    const total = filenames.length;
+                                    progressSpan.textContent = `Imported 0/${total}`;
+                                    
+                                    let imported = 0;
+                                    filenames.forEach(function (savedFilename) {
+                                        createListItemForGithub(savedFilename);
+                                        imported++;
+                                        progressSpan.textContent = `Imported ${imported}/${total}`;
+                                    });
+                                }).catch(function (err) {
+                                    alerts.innerHTML = 'Error: ' + err.message;
+                                    alerts.style.display = 'block';
+                                }).finally(function () {
+                                    // Hide loading state
+                                    githubBtn.disabled = false;
+                                    document.getElementById('github-btn-text').style.display = 'inline-block';
+                                    document.getElementById('github-loading').style.display = 'none';
+                                    setTimeout(function() {
+                                        progressSpan.style.display = 'none';
+                                        progressSpan.textContent = '';
+                                    }, 3000);
+                                });
+                            });
 
                             this.on('addedfile', function (file) {
 
-                                let ext = file.name.split('.').pop();
-                                if (ext !== 'pix') {
+                                let ext = file.name.split('.').pop().toLowerCase();
+                                if (ext !== 'pix' && ext !== 'zip') {
                                     this.removeFile(file);
 
                                     let alert = document.createElement('p');
@@ -274,10 +464,21 @@
                                 show_upload_dataset();
 
                                 console.log("File uploaded: ", response);
+                                
+                                // Handle both single file and multiple files from zip
+                                const filenames = Array.isArray(response.filenames) 
+                                    ? response.filenames 
+                                    : (response.filename ? [response.filename] : []);
+                                
+                                let processedCount = 0;
+                                filenames.forEach(function(savedFilename) {
+                                    if (!savedFilename) return;
+                                    processedCount++;
+                                    
                                 // actions when UVL model is uploaded
                                 let listItem = document.createElement('li');
                                 let h4Element = document.createElement('h4');
-                                h4Element.textContent = response.filename;
+                                h4Element.textContent = savedFilename;
                                 listItem.appendChild(h4Element);
 
                                 // generate incremental id for form
@@ -326,7 +527,12 @@
 
                                 removeButton.addEventListener('click', function () {
                                     fileList.removeChild(listItem);
-                                    this.removeFile(file);
+                                    
+                                    processedCount--;
+                                    // Remove the original file from dropzone when all extracted files are deleted
+                                    if (processedCount === 0) {
+                                        dropzone.removeFile(file);
+                                    }
 
                                     // Ajax request
                                     let xhr = new XMLHttpRequest();
@@ -336,14 +542,14 @@
                                         if (xhr.status === 200) {
                                             console.log('Deleted file from server');
 
-                                            if (dropzone.files.length === 0) {
+                                            if (fileList.children.length === 0) {
                                                 document.getElementById("upload_dataset").style.display = "none";
                                                 clean_upload_errors();
                                             }
 
                                         }
                                     };
-                                    xhr.send(JSON.stringify({file: file.name}));
+                                    xhr.send(JSON.stringify({file: savedFilename}));
                                 }.bind(this));
 
                                 /*
@@ -368,7 +574,7 @@
 
                                 formContainer.innerHTML = `
                                     <div class="row">
-                                        <input type="hidden" value="${response.filename}" name="file_models-${formUniqueId}-filename">
+                                        <input type="hidden" value="${savedFilename}" name="file_models-${formUniqueId}-filename">
                                         <div class="col-12">
                                             <div class="row">
                                                 <div class="col-12">
@@ -436,6 +642,8 @@
 
                                 listItem.appendChild(formContainer);
                                 fileList.appendChild(listItem);
+                                
+                                }); // end forEach
 
                             });
 
