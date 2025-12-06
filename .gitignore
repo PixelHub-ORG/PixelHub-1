@@ -57,4 +57,5 @@ ubuntu-bionic-18.04-cloudimg-console.log
 
 .flask.pid
 .husky
-
+.locust_env
+.tours/
