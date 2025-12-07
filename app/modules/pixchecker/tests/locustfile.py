@@ -7,14 +7,6 @@ class PixcheckerBehavior(TaskSet):
     def on_start(self):
         self.index()
 
-    @task
-    def index(self):
-        response = self.client.get("/pixchecker")
-
-        if response.status_code != 200:
-            print(f"Pixchecker index failed: {response.status_code}")
-
-
 class PixcheckerUser(HttpUser):
     tasks = [PixcheckerBehavior]
     min_wait = 5000
