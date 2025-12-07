@@ -1,11 +1,31 @@
-{% extends "base_template.html" %} {% block title %}2FA Already Enabled{%
-endblock %} {% block content %}
-<div class="container">
-  <h2>Two-Factor Authentication (2FA) Enabled</h2>
-  <p>
-    Your account is now protected with Two-Factor Authentication. You will be
-    prompted to enter a verification code each time you log in.
-  </p>
-  <a href="{{ url_for('auth.logout') }}">Log out</a>
+{% extends "base_template.html" %}
+
+{% block title %}2FA Enabled{% endblock %}
+
+{% block content %}
+
+<h1 class="h2 mb-3"><b>Two-Factor Authentication</b> Enabled</h1>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-body">
+
+                <p class="mb-3">
+                    Your account is now protected with Two-Factor Authentication.
+                </p>
+
+                <a href="{{ url_for('public.index') }}" class="btn btn-primary">
+                    Go to Home
+                </a>
+
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary ms-2">
+                    Log out
+                </a>
+
+            </div>
+        </div>
+    </div>
 </div>
+
 {% endblock %}
