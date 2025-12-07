@@ -70,8 +70,8 @@ class DatasetUser(HttpUser):
         if old_id != new_id:
             self.client.get(f"/dataset/compare/{old_id}/{new_id}")
 
-    @task(1)
-    def view_by_doi(self):
+    @task(3)  # Aumento de peso para simular más tráfico en esta ruta
+    def view_dataset_and_recommendations(self):
         if DatasetUser._cached_dois:
             doi = random.choice(DatasetUser._cached_dois)
             self.client.get(f"/doi/{doi}/")
