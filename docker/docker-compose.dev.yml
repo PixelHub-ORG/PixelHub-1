@@ -20,7 +20,8 @@ services:
     volumes:
       - ../:/app
       - /var/run/docker.sock:/var/run/docker.sock
-    command: [ "sh", "-c", "sh /app/docker/entrypoints/development_entrypoint.sh" ]
+    command:
+      ["sh", "-c", "sh /app/docker/entrypoints/development_entrypoint.sh"]
     networks:
       - pixelhub_network
 
@@ -62,19 +63,6 @@ services:
     networks:
       - pixelhub_network
 
-  selenium-chrome:
-    container_name: selenium_chrome_container
-    image: selenium/node-chrome:latest
-    shm_size: 2gb
-    ports:
-      - "5900:5900"
-    env_file:
-      - ../.env.selenium
-    depends_on:
-      - selenium-hub
-    networks:
-      - pixelhub_network
-
   selenium-firefox:
     container_name: selenium_firefox_container
     image: selenium/node-firefox:latest
@@ -98,7 +86,6 @@ services:
     networks:
       - pixelhub_network
     restart: unless-stopped
-  
 
 volumes:
   db_data:
