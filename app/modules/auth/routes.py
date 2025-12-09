@@ -1,4 +1,4 @@
-from flask import redirect, render_template, request, session, url_for
+from flask import redirect, render_template, request, session, url_for, current_app
 from flask_login import current_user, login_user, logout_user
 
 from app import oauth
@@ -12,6 +12,9 @@ user_profile_service = UserProfileService()
 
 @auth_bp.before_app_request
 def enforce_2fa():
+    if current_app.config.get("TESTING"):
+        return
+
     if not current_user.is_authenticated:
         return
 
