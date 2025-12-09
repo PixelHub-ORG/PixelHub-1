@@ -7,6 +7,7 @@ class PixcheckerBehavior(TaskSet):
     def on_start(self):
         self.index()
 
+
 class PixcheckerUser(HttpUser):
     tasks = [PixcheckerBehavior]
     min_wait = 5000
