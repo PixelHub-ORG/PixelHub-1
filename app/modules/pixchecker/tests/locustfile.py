@@ -1,4 +1,4 @@
-from locust import HttpUser, TaskSet, task
+from locust import HttpUser, TaskSet
 
 from core.environment.host import get_host_for_locust_testing
 
@@ -6,6 +6,7 @@ from core.environment.host import get_host_for_locust_testing
 class PixcheckerBehavior(TaskSet):
     def on_start(self):
         self.index()
+
 
 class PixcheckerUser(HttpUser):
     tasks = [PixcheckerBehavior]
