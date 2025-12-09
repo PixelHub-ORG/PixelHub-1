@@ -1,4 +1,4 @@
-from flask import redirect, render_template, request, session, url_for, current_app
+from flask import current_app, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 
 from app import oauth
@@ -10,6 +10,7 @@ from app.modules.profile.services import UserProfileService
 authentication_service = AuthenticationService()
 user_profile_service = UserProfileService()
 
+
 @auth_bp.before_app_request
 def enforce_2fa():
     if current_app.config.get("TESTING"):
@@ -18,13 +19,7 @@ def enforce_2fa():
     if not current_user.is_authenticated:
         return
 
-    allowed = {
-        'auth.enable_2fa',
-        'auth.verify_2fa',
-        'auth.logout',
-        'auth.login',
-        'static'
-    }
+    allowed = {"auth.enable_2fa", "auth.verify_2fa", "auth.logout", "auth.login", "static"}
 
     if request.endpoint is None:
         return
@@ -36,6 +31,7 @@ def enforce_2fa():
         return
 
     return redirect(url_for("auth.enable_2fa"))
+
 
 @auth_bp.route("/signup/", methods=["GET", "POST"], endpoint="show_signup_form")
 def show_signup_form():
@@ -86,12 +82,14 @@ def login():
 
     return render_template("auth/login_form.html", form=form, error=error)
 
+
 @auth_bp.route("/logout", endpoint="logout")
 def logout():
     logout_user()
     session.pop("setup_2fa_user_id", None)
     session.pop("two_factor_user_id", None)
     return redirect(url_for("public.index"))
+
 
 @auth_bp.route("/2fa/enable", methods=["GET", "POST"], endpoint="enable_2fa")
 def enable_2fa():
@@ -129,6 +127,7 @@ def enable_2fa():
 
     return render_template("auth/enable_2fa.html", qr_code=qr_code, secret=secret, error=error)
 
+
 @auth_bp.route("/2fa/verify", methods=["GET", "POST"], endpoint="verify_2fa")
 def verify_2fa():
     user_id = session.get("two_factor_user_id")
@@ -150,6 +149,7 @@ def verify_2fa():
             error = "Invalid 2FA code, please try again."
 
     return render_template("auth/verify_2fa.html", error=error)
+
 
 @auth_bp.route("/2fa/disable", methods=["POST"], endpoint="disable_2fa")
 def disable_2fa():
