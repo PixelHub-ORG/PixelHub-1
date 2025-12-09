@@ -11,6 +11,7 @@ CACHED_2FA_USERS = []
 
 @events.init.add_listener
 def on_locust_init(environment, **kwargs):
+    # noqa: F824
     global CACHED_2FA_USERS
     try:
         from app import create_app, db
@@ -177,6 +178,7 @@ class TwoFactorLoginBehavior(TaskSet):
     @task(5)
     def login_with_2fa_valid_code(self):
         """Complete 2FA login with valid TOTP code"""
+        # noqa: F824
         global CACHED_2FA_USERS
 
         if not CACHED_2FA_USERS:
@@ -223,6 +225,7 @@ class TwoFactorLoginBehavior(TaskSet):
     @task(2)
     def login_with_2fa_invalid_code(self):
         """Try 2FA login with invalid code (should fail)"""
+        # noqa: F824
         global CACHED_2FA_USERS
 
         if not CACHED_2FA_USERS:
@@ -256,6 +259,7 @@ class TwoFactorLoginBehavior(TaskSet):
     @task(1)
     def login_with_2fa_empty_code(self):
         """Try 2FA login with empty code"""
+        # noqa: F824
         global CACHED_2FA_USERS
 
         if not CACHED_2FA_USERS:
@@ -294,6 +298,7 @@ class TwoFactorDisableBehavior(TaskSet):
 
     def login_with_2fa(self):
         """Helper: Complete 2FA login"""
+        # noqa: F824
         global CACHED_2FA_USERS
 
         if not CACHED_2FA_USERS:
