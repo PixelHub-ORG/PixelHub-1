@@ -51,9 +51,7 @@ class WebsiteUser(HttpUser):
             logging.info(f"Login Exitoso: {USER_EMAIL}")
         else:
             if "/login" in response.url:
-                logging.error(
-                    "!!! Login Fallido: Credenciales incorrectas o error de servidor !!!"
-                )
+                logging.error("!!! Login Fallido: Credenciales incorrectas o error de servidor !!!")
             else:
                 logging.info("Login parece exitoso (Redirección correcta)")
 
@@ -72,9 +70,7 @@ class WebsiteUser(HttpUser):
         """
         url = f"/dataset/compare/{DATASET_V1_ID}/{DATASET_V2_ID}"
 
-        with self.client.get(
-            url, catch_response=True, name="/dataset/compare/[id]/[id]"
-        ) as response:
+        with self.client.get(url, catch_response=True, name="/dataset/compare/[id]/[id]") as response:
             if response.status_code == 200:
                 self.extract_and_request_file_diff(response.text)
             elif response.status_code == 404:
@@ -133,9 +129,7 @@ class DatasetUser(HttpUser):
                     .limit(20)
                     .all()
                 )
-                DatasetUser._cached_dois = [
-                    doi[0] for doi in datasets_with_doi if doi[0]
-                ]
+                DatasetUser._cached_dois = [doi[0] for doi in datasets_with_doi if doi[0]]
         except Exception:
             DatasetUser._cached_dois = []
 
@@ -146,7 +140,7 @@ class DatasetUser(HttpUser):
     @task(3)
     def view_dataset(self):
         dataset_id = random.randint(1, 2)
-        if (dataset_id == 1):
+        if dataset_id == 1:
             dataset_id = DATASET_V1_ID
         else:
             dataset_id = DATASET_V2_ID
@@ -155,7 +149,7 @@ class DatasetUser(HttpUser):
     @task(2)
     def download_dataset(self):
         dataset_id = random.randint(1, 2)
-        if (dataset_id == 1):
+        if dataset_id == 1:
             dataset_id = DATASET_V1_ID
         else:
             dataset_id = DATASET_V2_ID
@@ -193,7 +187,7 @@ class DatasetUser(HttpUser):
     @task(1)
     def create_version_page(self):
         dataset_id = random.randint(1, 2)
-        if (dataset_id == 1):
+        if dataset_id == 1:
             dataset_id = DATASET_V1_ID
         else:
             dataset_id = DATASET_V2_ID
@@ -202,7 +196,7 @@ class DatasetUser(HttpUser):
     @task(1)
     def create_version_post(self):
         dataset_id = random.randint(1, 2)
-        if (dataset_id == 1):
+        if dataset_id == 1:
             dataset_id = DATASET_V1_ID
         else:
             dataset_id = DATASET_V2_ID
