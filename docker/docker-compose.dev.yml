@@ -11,8 +11,10 @@ services:
       - PYTHONPATH=/app
       - DOMAIN=localhost
 
-    expose:
-      - "5000"
+  #cambiado
+    ports:
+      - "5000:5000"
+    #tenía expose: 5000
     depends_on:
       - db
       - selenium-hub
