@@ -145,20 +145,27 @@ class DatasetUser(HttpUser):
 
     @task(3)
     def view_dataset(self):
-        dataset_id = random.randint(1, 4)
+        dataset_id = random.randint(1, 2)
+        if (dataset_id == 1):
+            dataset_id = DATASET_V1_ID
+        else:
+            dataset_id = DATASET_V2_ID
         self.client.get(f"/dataset/unsynchronized/{dataset_id}/")
 
     @task(2)
     def download_dataset(self):
-        dataset_id = random.randint(1, 4)
+        dataset_id = random.randint(1, 2)
+        if (dataset_id == 1):
+            dataset_id = DATASET_V1_ID
+        else:
+            dataset_id = DATASET_V2_ID
         self.client.get(f"/dataset/download/{dataset_id}")
 
     @task(1)
     def compare_datasets(self):
-        old_id = random.randint(1, 4)
-        new_id = random.randint(1, 4)
-        if old_id != new_id:
-            self.client.get(f"/dataset/compare/{old_id}/{new_id}")
+        old_id = DATASET_V1_ID
+        new_id = DATASET_V2_ID
+        self.client.get(f"/dataset/compare/{old_id}/{new_id}")
 
     @task(3)  # Aumento de peso para simular más tráfico en esta ruta
     def view_dataset_and_recommendations(self):
@@ -185,12 +192,20 @@ class DatasetUser(HttpUser):
 
     @task(1)
     def create_version_page(self):
-        dataset_id = random.randint(1, 4)
+        dataset_id = random.randint(1, 2)
+        if (dataset_id == 1):
+            dataset_id = DATASET_V1_ID
+        else:
+            dataset_id = DATASET_V2_ID
         self.client.get(f"/dataset/{dataset_id}/create_version")
 
     @task(1)
     def create_version_post(self):
-        dataset_id = random.randint(1, 4)
+        dataset_id = random.randint(1, 2)
+        if (dataset_id == 1):
+            dataset_id = DATASET_V1_ID
+        else:
+            dataset_id = DATASET_V2_ID
         payload = {
             "title": f"Version dataset {dataset_id}",
             "desc": "Descripción versión",
@@ -208,7 +223,7 @@ class DatasetUser(HttpUser):
 
     @task(1)
     def view_file_diff(self):
-        old_file_id = random.randint(1, 4)
-        new_file_id = random.randint(1, 4)
+        old_file_id = DATASET_V1_ID
+        new_file_id = DATASET_V2_ID
         if old_file_id != new_file_id:
             self.client.get(f"/file/diff/{old_file_id}/{new_file_id}")
