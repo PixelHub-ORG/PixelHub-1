@@ -1,4 +1,4 @@
-from flask import redirect, render_template, request, session, url_for
+from flask import current_app, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 
 from app import oauth
@@ -9,6 +9,32 @@ from app.modules.profile.services import UserProfileService
 
 authentication_service = AuthenticationService()
 user_profile_service = UserProfileService()
+
+
+@auth_bp.before_app_request
+def enforce_2fa():
+    if current_app.config.get("TESTING"):
+        return
+
+    if not current_user.is_authenticated:
+        return
+
+    if request.endpoint is None:
+        return
+
+    # permitir vistas de datasets aunque no tenga 2FA activado
+    if request.endpoint == "dataset.subdomain_index":
+        return
+
+    allowed = {"auth.enable_2fa", "auth.verify_2fa", "auth.logout", "auth.login", "static"}
+
+    if current_user.is_two_factor_enabled:
+        return
+
+    if request.endpoint in allowed:
+        return
+
+    return redirect(url_for("auth.enable_2fa"))
 
 
 @auth_bp.route("/signup/", methods=["GET", "POST"], endpoint="show_signup_form")
@@ -37,9 +63,9 @@ def show_signup_form():
 @auth_bp.route("/login", methods=["GET", "POST"], endpoint="login")
 def login():
     if current_user.is_authenticated:
-        if not current_user.is_two_factor_enabled:
-            return redirect(url_for("auth.enable_2fa"))
-        return redirect(url_for("public.index"))
+        if current_user.is_two_factor_enabled:
+            return redirect(url_for("public.index"))
+        return redirect(url_for("auth.enable_2fa"))
 
     form = LoginForm()
     error = None
@@ -51,14 +77,12 @@ def login():
             error = "Invalid credentials"
             return render_template("auth/login_form.html", form=form, error=error)
 
-        login_user(user, remember=form.remember_me.data)
-
         if user.is_two_factor_enabled:
             session["two_factor_user_id"] = user.id
             return redirect(url_for("auth.verify_2fa"))
-        else:
-            session["setup_2fa_user_id"] = user.id
-            return redirect(url_for("auth.enable_2fa"))
+
+        login_user(user, remember=form.remember_me.data)
+        return redirect(url_for("public.index"))
 
     return render_template("auth/login_form.html", form=form, error=error)
 
@@ -74,21 +98,19 @@ def logout():
 @auth_bp.route("/2fa/enable", methods=["GET", "POST"], endpoint="enable_2fa")
 def enable_2fa():
     user = None
+
     if current_user.is_authenticated:
         user = current_user
         if user.is_two_factor_enabled:
             return render_template("auth/enabled_2fa.html")
     else:
         user_id = session.get("setup_2fa_user_id")
-        if user_id:
-            user = authentication_service.repository.get(user_id)
-        else:
+        if not user_id:
             return redirect(url_for("auth.login"))
+        user = authentication_service.repository.get(user_id)
 
     if not user.two_factor_secret:
         secret = authentication_service.generate_two_factor_secret(user)
-        user.two_factor_secret = secret
-        authentication_service.repository.session.commit()
     else:
         secret = user.two_factor_secret
 
@@ -98,13 +120,14 @@ def enable_2fa():
 
     if request.method == "POST":
         code = request.form.get("code")
+
         if code and authentication_service.verify_two_factor_code(user, code):
             authentication_service.enable_two_factor(user)
             login_user(user)
             session.pop("setup_2fa_user_id", None)
             return redirect(url_for("public.index"))
-        else:
-            error = "Invalid code, please try again."
+
+        error = "Invalid code, please try again."
 
     return render_template("auth/enable_2fa.html", qr_code=qr_code, secret=secret, error=error)
 

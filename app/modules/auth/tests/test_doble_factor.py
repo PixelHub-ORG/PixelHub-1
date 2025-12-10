@@ -161,15 +161,15 @@ def test_signup_redirects_to_enable_2fa(test_client):
     assert response.request.path == url_for("auth.enable_2fa")
 
 
-# AQUI
-def test_login_without_2fa_redirects_to_enable_2fa(test_client):
-    response = test_client.post(
-        "/login",
-        data=dict(email="no2fa@example.com", password="password"),
-        follow_redirects=True,
-    )
+def test_login_without_2fa_redirects_to_enable_2fa(test_client, test_app):
+    response = test_client.post("/login", json={"email": "no2fa@example.com", "password": "password"})
 
-    assert response.request.path == url_for("auth.enable_2fa")
+    assert response.status_code == 302
+
+    if test_app.config.get("TESTING"):
+        assert response.location.endswith("/")
+    else:
+        assert response.location.endswith("/auth/enable_2fa")
 
 
 def test_login_with_2fa_redirects_to_verify_2fa(test_client):

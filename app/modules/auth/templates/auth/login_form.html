@@ -51,21 +51,6 @@
                 </div>
 
             </div>
-
-                    {% if current_user.is_authenticated and current_user.is_two_factor_enabled %}
-                    <div class="row">
-                        <div class="col-md-6 col-lg-6 col-xs-12">
-                            <div class="mb-3">
-                                <label for="two_factor_code" class="form-label">Enter the 2FA code</label>
-                                <input type="text" id="two_factor_code" name="two_factor_code" class="form-control" placeholder="Enter 6-digit code" required autofocus>
-                                {% if error %}
-                                    <span style="color: red;">{{ error }}</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
                     <div class="row">
                         <div class="col-lg-6 col-12">
                             {{ form.submit(class="btn btn-primary") }}

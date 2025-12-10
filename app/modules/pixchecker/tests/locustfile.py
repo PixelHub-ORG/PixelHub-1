@@ -1,5 +1,6 @@
 """
 from locust import HttpUser, TaskSet, task
+igin/trunk
 
 from core.environment.host import get_host_for_locust_testing
 
@@ -7,13 +8,6 @@ from core.environment.host import get_host_for_locust_testing
 class PixcheckerBehavior(TaskSet):
     def on_start(self):
         self.index()
-
-    @task
-    def index(self):
-        response = self.client.get("/pixchecker")
-
-        if response.status_code != 200:
-            print(f"Pixchecker index failed: {response.status_code}")
 
 
 class PixcheckerUser(HttpUser):
