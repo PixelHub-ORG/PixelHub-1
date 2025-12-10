@@ -19,10 +19,14 @@ def enforce_2fa():
     if not current_user.is_authenticated:
         return
 
-    allowed = {"auth.enable_2fa", "auth.verify_2fa", "auth.logout", "auth.login", "static"}
-
     if request.endpoint is None:
         return
+
+    # permitir vistas de datasets aunque no tenga 2FA activado
+    if request.endpoint == "dataset.subdomain_index":
+        return
+
+    allowed = {"auth.enable_2fa", "auth.verify_2fa", "auth.logout", "auth.login", "static"}
 
     if current_user.is_two_factor_enabled:
         return
