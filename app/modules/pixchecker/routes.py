@@ -1,6 +1,7 @@
 import re
 
 from flask import jsonify
+from werkzeug.exceptions import HTTPException
 
 from app.modules.hubfile.services import HubfileService
 from app.modules.pixchecker import pixchecker_bp
@@ -101,6 +102,9 @@ def check_pix(file_id):
 
         return jsonify({"message": "Valid Model"}), 200
 
+    except HTTPException as http_exc:
+        # Let Flask handle HTTP-specific errors such as 404.
+        raise http_exc
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
