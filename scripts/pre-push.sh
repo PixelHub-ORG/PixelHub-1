@@ -24,6 +24,8 @@ fi
 # Revisar si hay cambios después de formatear
 if [ -n "$(git status --porcelain)" ]; then
     echo "⚡ Cambios detectados tras formatear, haciendo commit automático..."
+    git add .
+    git commit -m "chore: formateo automático de código"
 else
     echo "✅ No hay cambios adicionales."
 fi

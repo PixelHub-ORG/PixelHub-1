@@ -4,6 +4,7 @@ repos:
     hooks:
       - id: ruff
         args: [--fix]
+        pass_filenames: true
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -21,4 +22,24 @@ repos:
         stages: [commit-msg]
         additional_dependencies: ['@commitlint/config-conventional']
 
+  - repo: local
+    hooks:
+      - id: rosemary
+        name: Rosemary linter
+        entry: rosemary
+        language: system
+        types: [python]
+        args: ["linter"]
+        pass_filenames: false  # revisa la carpeta completa, no archivos individuales
 
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        pass_filenames: true  # solo archivos staged
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        pass_filenames: true  # solo archivos staged
