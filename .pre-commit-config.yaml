@@ -38,11 +38,11 @@ repos:
     rev: 24.10.0
     hooks:
       - id: black
-        pass_filenames: true  # solo archivos staged
+        pass_filenames: false  # solo archivos staged
 
   # isort
   - repo: https://github.com/PyCQA/isort
     rev: 5.13.2
     hooks:
       - id: isort
-        pass_filenames: true  # solo archivos staged
+        pass_filenames: false  # solo archivos staged
