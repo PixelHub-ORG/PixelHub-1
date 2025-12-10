@@ -21,31 +21,4 @@ repos:
         stages: [commit-msg]
         additional_dependencies: ['@commitlint/config-conventional']
 
-  # Rosemary (como estaba antes)
-  - repo: local
-    hooks:
-      - id: rosemary
-        name: Rosemary linter
-        entry: rosemary
-        language: system
-        args: ["linter"]
-        pass_filenames: false
-        types: [python]
 
-  # Black → siempre sobre toda app/
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
-    hooks:
-      - id: black
-        entry: black app/
-        pass_filenames: false
-        types_or: [python]
-
-  # isort → siempre sobre toda app/
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        entry: isort app/
-        pass_filenames: false
-        types_or: [python]
