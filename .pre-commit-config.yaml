@@ -4,9 +4,6 @@ repos:
     hooks:
       - id: ruff
         args: [--fix]
-        pass_filenames: true
-        types_or: [python]
-        files: ^app/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -24,7 +21,7 @@ repos:
         stages: [commit-msg]
         additional_dependencies: ['@commitlint/config-conventional']
 
-  # Rosemary linter
+  # Rosemary (como estaba antes)
   - repo: local
     hooks:
       - id: rosemary
@@ -34,22 +31,21 @@ repos:
         args: ["linter"]
         pass_filenames: false
         types: [python]
-        files: ^app/
 
-  # Black
+  # Black → siempre sobre toda app/
   - repo: https://github.com/psf/black
     rev: 24.10.0
     hooks:
       - id: black
-        pass_filenames: true
+        entry: black app/
+        pass_filenames: false
         types_or: [python]
-        files: ^app/
 
-  # isort
+  # isort → siempre sobre toda app/
   - repo: https://github.com/PyCQA/isort
     rev: 5.13.2
     hooks:
       - id: isort
-        pass_filenames: true
+        entry: isort app/
+        pass_filenames: false
         types_or: [python]
-        files: ^app/
