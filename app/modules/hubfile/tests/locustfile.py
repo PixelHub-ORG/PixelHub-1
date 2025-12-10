@@ -9,14 +9,12 @@ class HubfileBehavior(TaskSet):
     def on_start(self):
         self.index()
 
-    
     @task
     def index(self):
         response = self.client.get("/hubfile")
 
         if response.status_code != 200:
             print(f"Hubfile index failed: {response.status_code}")
-    
 
 
 class HubfileUser(HttpUser):
