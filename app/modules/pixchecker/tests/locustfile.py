@@ -1,6 +1,7 @@
 import random
 
 from locust import HttpUser, TaskSet, between, events, task
+
 from core.environment.host import get_host_for_locust_testing
 
 CACHED_FILE_IDS = []
