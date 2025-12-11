@@ -2,15 +2,18 @@ import socket
 import uuid
 from threading import Thread
 from unittest.mock import patch
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
 from app import create_app, db
 from app.modules.auth.models import User
 from app.modules.auth.services import AuthenticationService
-from core.selenium.common import initialize_driver
 from app.modules.profile.models import UserProfile
+from core.selenium.common import initialize_driver
+
 
 def get_free_port():
     s = socket.socket()
@@ -18,6 +21,7 @@ def get_free_port():
     port = s.getsockname()[1]
     s.close()
     return port
+
 
 class TestSelenium2FA:
 
@@ -29,36 +33,28 @@ class TestSelenium2FA:
         db.create_all()
 
         unique_email = f"user_{uuid.uuid4().hex}@example.com"
-        self.user = User(
-            email=unique_email,
-            is_two_factor_enabled=True,
-            two_factor_secret="MOCKSECRET"
-        )
+        self.user = User(email=unique_email, is_two_factor_enabled=True, two_factor_secret="MOCKSECRET")
         self.user.set_password("1234")
         db.session.add(self.user)
         db.session.commit()
 
         profile = UserProfile(
-            user_id=self.user.id,
-            name="Sypha",
-            surname="Belnades",
-            orcid="0000-0001-2345-6789",
-            affiliation="Test Lab"
+            user_id=self.user.id, name="Sypha", surname="Belnades", orcid="0000-0001-2345-6789", affiliation="Test Lab"
         )
         db.session.add(profile)
         db.session.commit()
         assert self.user.id is not None
         self.port = get_free_port()
         self.base_url = f"http://127.0.0.1:{self.port}"
+
         def run_app():
             self.app.run(port=self.port, debug=False, use_reloader=False)
+
         self.server_thread = Thread(target=run_app)
         self.server_thread.daemon = True
         self.server_thread.start()
         self.driver = initialize_driver()
-        self.patcher = patch.object(
-            AuthenticationService, "verify_two_factor_code", return_value=True
-        )
+        self.patcher = patch.object(AuthenticationService, "verify_two_factor_code", return_value=True)
         self.patcher.start()
 
     def teardown_method(self, method):
