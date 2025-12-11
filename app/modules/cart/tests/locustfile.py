@@ -1,5 +1,6 @@
 # app/modules/cart/tests/locustfile.py
 from locust import HttpUser, between, task
+
 from core.environment.host import get_host_for_locust_testing
 
 

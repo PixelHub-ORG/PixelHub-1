@@ -230,3 +230,71 @@ def test_dataset_versioning_and_comparison_flow():
 
     finally:
         close_driver(driver)
+
+
+def test_upload_dataset_from_github():
+    driver = initialize_driver()
+
+    try:
+        host = get_host_for_selenium_testing()
+
+        login_as_user1(driver, host)
+
+        initial_datasets = count_datasets(driver, host)
+
+        driver.get(f"{host}/dataset/upload")
+        wait_for_page_to_load(driver)
+
+        unique_title = f"Test dataset GitHub {int(time.time())}"
+
+        driver.find_element(By.NAME, "title").send_keys(unique_title)
+        driver.find_element(By.NAME, "desc").send_keys("Description for selenium upload test from GitHub")
+        driver.find_element(By.NAME, "tags").send_keys("tag1,tag2,github")
+
+        # Fill GitHub info
+        repo_input = driver.find_element(By.ID, "github-repo")
+        repo_input.clear()
+        repo_input.send_keys("https://github.com/JoseLu2121/pix_files.git")
+
+        path_input = driver.find_element(By.ID, "github-path")
+        path_input.clear()
+        path_input.send_keys("files/")
+
+        add_btn = driver.find_element(By.ID, "github-add-btn")
+        add_btn.click()
+
+        # Wait for files to be processed and listed
+        # The JS adds elements to 'file-list'
+        # We can wait for at least one list item in file-list
+        WebDriverWait(driver, 30).until(lambda d: len(d.find_elements(By.CSS_SELECTOR, "#file-list li")) > 0)
+
+        # Check if file1.pix or file2.pix is present
+        file_list = driver.find_element(By.ID, "file-list")
+        file_list_text = file_list.text
+        # Check for presence of base filenames, ignoring potential numeric suffixes added by the system
+        assert "file_github_path1" in file_list_text or "file_github_path2" in file_list_text
+
+        click_agree_checkbox_if_present(driver)
+        click_upload_button(driver)
+
+        expected = initial_datasets + 1
+        final_datasets = count_datasets(driver, host)
+
+        for _ in range(10):  # Increased wait time as GitHub fetch might take time
+            if final_datasets == expected:
+                break
+            time.sleep(1)
+            final_datasets = count_datasets(driver, host)
+
+        assert final_datasets == expected
+
+        driver.get(f"{host}/dataset/list")
+        wait_for_page_to_load(driver)
+        links = driver.find_elements(
+            By.XPATH,
+            f"//table[1]//tbody//tr//td[1]//a[normalize-space(text())='{unique_title}']",
+        )
+        assert links
+
+    finally:
+        close_driver(driver)
