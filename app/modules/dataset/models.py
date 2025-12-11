@@ -7,7 +7,7 @@ from sqlalchemy import Enum as SQLAlchemyEnum
 
 from app import db
 
-#fixthis3
+#fixthis4
 class PublicationType(Enum):
     NONE = "none"
     ANNOTATION_COLLECTION = "annotationcollection"
