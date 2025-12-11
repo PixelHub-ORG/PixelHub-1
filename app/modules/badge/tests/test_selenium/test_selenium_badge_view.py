@@ -79,7 +79,7 @@ class TestDownloadSVG:
         db.drop_all()
         self.app_context.pop()
 
-    def test_downloadsvg(self):
+    def test_viewsvg(self):
         self.driver.get(f"{self.base_url}/badge/{self.dataset.id}/svg")
         svg_element = WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located((By.TAG_NAME, "svg"))
