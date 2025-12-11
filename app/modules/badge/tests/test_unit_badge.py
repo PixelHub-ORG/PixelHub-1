@@ -1,10 +1,13 @@
 from datetime import datetime, timezone
 from unittest.mock import patch
+
 import pytest
 from flask import Flask
+
 from app.modules.badge.routes import badge_bp, make_segment
 
 FIXED_TIME = datetime(2025, 12, 1, 15, 0, 0, tzinfo=timezone.utc)
+
 
 # badge
 @pytest.fixture
@@ -31,6 +34,7 @@ def mock_dataset():
         "url": "http://example.com/dataset",
     }
     return ds_mock
+
 
 # badge feature
 @patch("app.modules.badge.routes.get_dataset")
