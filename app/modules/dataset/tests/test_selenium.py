@@ -56,6 +56,14 @@ def get_pix_file_paths():
     return file1_path, file2_path
 
 
+def get_zip_file_path():
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    zip_dir = os.path.join(base_dir, "pix_examples")
+    zip_path = os.path.abspath(os.path.join(zip_dir, "files1.zip"))
+    assert os.path.exists(zip_path)
+    return zip_path
+
+
 def login_as_user1(driver, host):
     driver.get(f"{host}/login")
     wait_for_page_to_load(driver)
@@ -284,6 +292,82 @@ def test_upload_dataset_from_github():
             if final_datasets == expected:
                 break
             time.sleep(1)
+            final_datasets = count_datasets(driver, host)
+
+        assert final_datasets == expected
+
+        driver.get(f"{host}/dataset/list")
+        wait_for_page_to_load(driver)
+        links = driver.find_elements(
+            By.XPATH,
+            f"//table[1]//tbody//tr//td[1]//a[normalize-space(text())='{unique_title}']",
+        )
+        assert links
+
+    finally:
+        close_driver(driver)
+
+
+def test_upload_dataset_from_zip():
+    driver = initialize_driver()
+
+    try:
+        host = get_host_for_selenium_testing()
+
+        login_as_user1(driver, host)
+
+        initial_datasets = count_datasets(driver, host)
+
+        driver.get(f"{host}/dataset/upload")
+        wait_for_page_to_load(driver)
+
+        unique_title = f"Test dataset {int(time.time())}"
+
+        driver.find_element(By.NAME, "title").send_keys(unique_title)
+        driver.find_element(By.NAME, "desc").send_keys("Dataset from zip upload test")
+        driver.find_element(By.NAME, "tags").send_keys("tag1,tag2")
+
+        add_author_button = driver.find_element(By.ID, "add_author")
+        add_author_button.send_keys(Keys.RETURN)
+        wait_for_page_to_load(driver)
+        add_author_button.send_keys(Keys.RETURN)
+        wait_for_page_to_load(driver)
+
+        driver.find_element(By.NAME, "authors-0-name").send_keys("Author0")
+        driver.find_element(By.NAME, "authors-0-affiliation").send_keys("Club0")
+        driver.find_element(By.NAME, "authors-0-orcid").send_keys("0000-0000-0000-0000")
+
+        driver.find_element(By.NAME, "authors-1-name").send_keys("Author1")
+        driver.find_element(By.NAME, "authors-1-affiliation").send_keys("Club1")
+
+        zip_path = get_zip_file_path()
+
+        dropzone = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
+        dropzone.send_keys(zip_path)
+        wait_for_page_to_load(driver)
+
+        agree_checkbox = driver.find_element(By.ID, "agreeCheckbox")
+        driver.execute_script("arguments[0].click();", agree_checkbox)
+
+        # Esperar a que el botón de subida exista
+        upload_button = WebDriverWait(driver, 10).until(lambda d: d.find_element(By.ID, "upload_button"))
+
+        # Asegurar visibilidad
+        driver.execute_script("arguments[0].scrollIntoView(true);", upload_button)
+        time.sleep(1)
+
+        # Hacer click con JS
+        driver.execute_script("arguments[0].click();", upload_button)
+        time.sleep(5)
+        wait_for_page_to_load(driver)
+
+        expected = initial_datasets + 1
+        final_datasets = count_datasets(driver, host)
+
+        for _ in range(5):
+            if final_datasets == expected:
+                break
+            time.sleep(5)
             final_datasets = count_datasets(driver, host)
 
         assert final_datasets == expected
