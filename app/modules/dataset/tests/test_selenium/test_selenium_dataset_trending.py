@@ -27,9 +27,7 @@ class TestTrendingDataSets:
         self.driver.get("http://127.0.0.1:5000/")
         self.driver.set_window_size(1085, 693)
 
-        self.driver.find_element(
-            By.CSS_SELECTOR,
-            ".nav-link:nth-child(1)").click()
+        self.driver.find_element(By.CSS_SELECTOR, ".nav-link:nth-child(1)").click()
 
         email_field = self.driver.find_element(By.ID, "email")
         email_field.click()
@@ -40,22 +38,18 @@ class TestTrendingDataSets:
         password_field.send_keys("1234")
         password_field.send_keys(Keys.ENTER)
 
-        WebDriverWait(
-            self.driver, 10).until(
-            EC.presence_of_element_located(
-                (By.ID, "code")))
+        WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.ID, "code")))
         code_field = self.driver.find_element(By.ID, "code")
         code_field.send_keys("262314")
 
         self.driver.find_element(By.CSS_SELECTOR, ".btn-primary").click()
 
-        WebDriverWait(self.driver, 10).until(EC.presence_of_element_located(
-            (By.CSS_SELECTOR, ".sidebar-item:nth-child(5) .align-middle:nth-child(2)")))
+        WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".sidebar-item:nth-child(5) .align-middle:nth-child(2)"))
+        )
 
         print("\n🔍 Clickeando en sidebar item 5...")
-        self.driver.find_element(
-            By.CSS_SELECTOR,
-            ".sidebar-item:nth-child(5) .align-middle:nth-child(2)").click()
+        self.driver.find_element(By.CSS_SELECTOR, ".sidebar-item:nth-child(5) .align-middle:nth-child(2)").click()
 
         time.sleep(2)
 
@@ -80,29 +74,25 @@ class TestTrendingDataSets:
             print("✓ Encontrado link 'Home'")
         except BaseException:
             try:
-                home_link = self.driver.find_element(
-                    By.PARTIAL_LINK_TEXT, "Home")
+                home_link = self.driver.find_element(By.PARTIAL_LINK_TEXT, "Home")
                 print("✓ Encontrado link parcial 'Home'")
             except BaseException:
                 try:
-                    home_link = self.driver.find_element(
-                        By.CSS_SELECTOR, "a[href='/']")
+                    home_link = self.driver.find_element(By.CSS_SELECTOR, "a[href='/']")
                     print("✓ Encontrado link a raíz")
                 except BaseException:
                     print("❌ No se encontró link a Home")
                     all_links = self.driver.find_elements(By.TAG_NAME, "a")
                     print(f"📎 Links disponibles ({len(all_links)}):")
                     for link in all_links[:10]:
-                        print(
-                            f"   - {link.text[:50]} → {link.get_attribute('href')}")
+                        print(f"   - {link.text[:50]} → {link.get_attribute('href')}")
 
         if home_link:
             home_link.click()
             time.sleep(2)
 
         print("\n🔍 Buscando links de descarga...")
-        download_links = self.driver.find_elements(
-            By.PARTIAL_LINK_TEXT, "Download")
+        download_links = self.driver.find_elements(By.PARTIAL_LINK_TEXT, "Download")
         print(f"📥 Links de descarga encontrados: {len(download_links)}")
 
         for i, link in enumerate(download_links[:6]):
@@ -117,16 +107,14 @@ class TestTrendingDataSets:
         for link_text in download_texts:
             try:
                 size = link_text.split("(")[1].split(")")[0]
-                link = self.driver.find_element(
-                    By.PARTIAL_LINK_TEXT, f"Download ({size}")
+                link = self.driver.find_element(By.PARTIAL_LINK_TEXT, f"Download ({size}")
                 link.click()
                 print(f"✓ Descargado: {link_text}")
                 time.sleep(0.5)
             except Exception as e:
                 print(f"⚠ No se pudo hacer click en {link_text}: {e}")
                 try:
-                    any_download = self.driver.find_element(
-                        By.PARTIAL_LINK_TEXT, "Download")
+                    any_download = self.driver.find_element(By.PARTIAL_LINK_TEXT, "Download")
                     any_download.click()
                     print(f"✓ Descargado link alternativo")
                 except BaseException:
@@ -134,16 +122,12 @@ class TestTrendingDataSets:
 
         print("\n🔍 Navegando a Leaderboard...")
         try:
-            WebDriverWait(
-                self.driver, 10).until(
-                EC.element_to_be_clickable(
-                    (By.LINK_TEXT, "Leaderboard")))
+            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.LINK_TEXT, "Leaderboard")))
             self.driver.find_element(By.LINK_TEXT, "Leaderboard").click()
             print("✓ Clickeado en Leaderboard")
         except BaseException:
             try:
-                self.driver.find_element(
-                    By.PARTIAL_LINK_TEXT, "Leaderboard").click()
+                self.driver.find_element(By.PARTIAL_LINK_TEXT, "Leaderboard").click()
                 print("✓ Clickeado en Leaderboard (búsqueda parcial)")
             except Exception as e:
                 print(f"❌ No se encontró link a Leaderboard: {e}")
@@ -152,10 +136,7 @@ class TestTrendingDataSets:
 
         print("\n🔍 Seleccionando periodo en dropdown...")
         try:
-            WebDriverWait(
-                self.driver, 10).until(
-                EC.presence_of_element_located(
-                    (By.ID, "period")))
+            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.ID, "period")))
             dropdown = self.driver.find_element(By.ID, "period")
 
             options = dropdown.find_elements(By.TAG_NAME, "option")
@@ -163,8 +144,7 @@ class TestTrendingDataSets:
             for opt in options:
                 print(f"   - {opt.text}")
 
-            dropdown.find_element(
-                By.XPATH, "//option[. = 'This Month']").click()
+            dropdown.find_element(By.XPATH, "//option[. = 'This Month']").click()
             print("✓ Seleccionado 'This Month'")
         except Exception as e:
             print(f"❌ Error al seleccionar periodo: {e}")
