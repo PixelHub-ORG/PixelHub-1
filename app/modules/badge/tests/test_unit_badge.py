@@ -1,15 +1,9 @@
 from datetime import datetime, timezone
 from unittest.mock import patch
-
 import pytest
 from flask import Flask
-
 from app.modules.badge.routes import badge_bp, make_segment
 
-FIXED_TIME = datetime(2025, 12, 1, 15, 0, 0, tzinfo=timezone.utc)
-
-
-# badge
 @pytest.fixture
 def app():
     app = Flask(__name__)
@@ -17,14 +11,10 @@ def app():
     app.config["TESTING"] = True
     return app
 
-
-# badge
 @pytest.fixture
 def client(app):
     return app.test_client()
 
-
-# badge
 @pytest.fixture
 def mock_dataset():
     ds_mock = {
@@ -35,8 +25,6 @@ def mock_dataset():
     }
     return ds_mock
 
-
-# badge feature
 @patch("app.modules.badge.routes.get_dataset")
 def test_badge_svg_download_success(mock_get_dataset, client, mock_dataset):
     mock_get_dataset.return_value = mock_dataset
