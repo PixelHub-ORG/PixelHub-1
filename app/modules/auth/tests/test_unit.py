@@ -134,7 +134,7 @@ def test_find_or_create_by_orcid_new_user(clean_database):
     assert user is not None
     assert user.orcid_id == orcid_id
     assert UserRepository().count() == 1
-    
+
     # Verify profile creation
     profile = user.profile
     assert profile is not None
