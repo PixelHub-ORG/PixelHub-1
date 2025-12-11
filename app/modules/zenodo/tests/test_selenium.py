@@ -50,7 +50,7 @@ def test_dataset_creation_with_fakenodo_enabled():
         wait_for_page_to_load(driver)
 
         file_input_element = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
-        file_path = os.path.abspath("app/modules/dataset/uvl_examples/file1.uvl")
+        file_path = os.path.abspath("app/modules/dataset/uvl_examples/file1.pix")
         file_input_element.send_keys(file_path)
 
         agree_checkbox = driver.find_element(By.ID, "agreeCheckbox")

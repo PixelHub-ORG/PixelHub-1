@@ -2,10 +2,90 @@ import pytest
 
 from app import db
 from app.modules.auth.models import User
+from app.modules.cart.services import CartService
 from app.modules.conftest import login, logout
 from app.modules.dataset.models import DataSet, DSMetaData, PublicationType
 from app.modules.filemodel.models import FileModel, FMMetaData
 from app.modules.profile.models import UserProfile
+
+
+@pytest.fixture(scope="module")
+def test_data(test_client):
+    """
+    Crea un usuario, un dataset y un filemodel.
+    """
+    with test_client.application.app_context():
+        user = User(email="cart_test@example.com", password="password123")
+        db.session.add(user)
+        db.session.commit()
+
+        ds_meta = DSMetaData(title="Test DS", description="D", publication_type=PublicationType.NONE)
+        dataset = DataSet(user_id=user.id, ds_meta_data=ds_meta)
+        db.session.add(dataset)
+        db.session.commit()
+
+        fm_meta = FMMetaData(filename="test.uvl", title="Test FM", description="D",
+                             publication_type=PublicationType.NONE, uvl_version="1.0")
+        file_model = FileModel(data_set_id=dataset.id, fm_meta_data=fm_meta)
+        db.session.add(file_model)
+        db.session.commit()
+
+        yield user, file_model
+
+        db.session.delete(file_model)
+        db.session.delete(dataset)
+        db.session.delete(user)
+        db.session.commit()
+
+
+def test_cart_service_add_and_remove(test_client, test_data):
+    """
+    Prueba la lógica de CartService.
+    """
+    user, file_model = test_data
+    service = CartService()
+
+    with test_client.application.app_context():
+        response, code = service.add_to_cart(user.id, file_model.id)
+        assert code == 200
+        assert "added to cart" in response["message"]
+
+        cart = service.cart_repository.get_cart_by_user_id(user.id)
+        assert len(cart.items) == 1
+        assert cart.items[0].file_model_id == file_model.id
+
+        response, code = service.add_to_cart(user.id, file_model.id)
+        assert code == 400
+        assert "already in cart" in response["message"]
+
+        response, code = service.delete_from_cart(user.id, file_model.id)
+        assert code == 200
+        assert len(cart.items) == 0
+
+
+def test_route_add_to_cart(test_client, test_data):
+    """
+    Prueba el POST /filemodel/cart/add
+    """
+    user, file_model = test_data
+
+    test_client.post("/login", data={"email": "cart_test@example.com", "password": "password123"})
+
+    response = test_client.post("/filemodel/cart/add", json={"item_id": file_model.id})
+    assert response.status_code == 200
+    assert response.is_json
+    assert "added to cart" in response.get_json()["message"]
+
+
+def test_route_view_cart_page(test_client, test_data):
+    """
+    Prueba que la página del carrito carga correctamente (GET).
+    """
+    test_client.post("/login", data={"email": "cart_test@example.com", "password": "password123"})
+
+    response = test_client.get("/user/cart/view_page")
+    assert response.status_code == 200
+    assert b"Test FM" in response.data
 
 
 @pytest.fixture(scope="module")
