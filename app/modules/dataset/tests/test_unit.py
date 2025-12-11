@@ -282,6 +282,7 @@ def test_get_dataset_leaderboard_with_special_characters_in_period(dataset_servi
 
     assert len(leaderboard_data) == 3
 
+
 @patch("app.modules.dataset.routes.current_user")
 def test_upload_valid(mock_current_user):
     tmp = tempfile.mkdtemp()
