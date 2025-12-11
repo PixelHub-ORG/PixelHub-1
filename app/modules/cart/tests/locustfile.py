@@ -1,6 +1,5 @@
 # app/modules/cart/tests/locustfile.py
 from locust import HttpUser, task, between
-from core.locust.common import get_csrf_token
 from core.environment.host import get_host_for_locust_testing
 
 
@@ -11,7 +10,7 @@ class CartUser(HttpUser):
 
     def on_start(self):
         # 1. Loguearse al iniciar
-        response = self.client.post("/login", data={"email": "user1@example.com", "password": "1234"})
+        # response = self.client.post("/login", data={"email": "user1@example.com", "password": "1234"})
 
         # 2. Asegurar que el carro tiene algo (Añadimos el feature model con ID 1)
         self.client.post("/featuremodel/cart/add", json={"item_id": 1})
