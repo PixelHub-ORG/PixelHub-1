@@ -14,23 +14,37 @@ def create_zip(uvus):
 
     # Check if the zip file already exists
     if zip_path.exists():
-        if click.confirm(f"The zip file {zip_name} already exists. Do you want to overwrite it?", default=False):
+        if click.confirm(
+                f"The zip file {zip_name} already exists. Do you want to overwrite it?",
+                default=False):
             try:
                 zip_path.unlink()  # Remove the existing zip file
-                click.echo(click.style(f"Existing zip file {zip_name} removed.", fg="yellow"))
+                click.echo(
+                    click.style(
+                        f"Existing zip file {zip_name} removed.",
+                        fg="yellow"))
             except Exception as e:
-                click.echo(click.style(f"Failed to remove existing zip file: {e}", fg="red"))
+                click.echo(
+                    click.style(
+                        f"Failed to remove existing zip file: {e}",
+                        fg="red"))
                 return
         else:
-            click.echo(click.style("Operation cancelled. No zip file was created.", fg="yellow"))
+            click.echo(
+                click.style(
+                    "Operation cancelled. No zip file was created.",
+                    fg="yellow"))
             return
 
     # Check for exactly one .pdf file
     pdf_files = list(project_root.glob("*.pdf"))
     if len(pdf_files) != 1:
         click.echo(
-            click.style(f"Error: Expected exactly one .pdf file in the project root. Found {len(pdf_files)}.", fg="red")
-        )
+            click.style(
+                f"Error: Expected exactly one .pdf file in the project root. Found {
+                    len(pdf_files)}.",
+                fg="red",
+            ))
         return
 
     pdf_file = pdf_files[0]
@@ -50,9 +64,13 @@ def create_zip(uvus):
                     for file in files:
                         file_path = Path(root) / file
                         try:
-                            zf.write(file_path, file_path.relative_to(project_root))
+                            zf.write(
+                                file_path, file_path.relative_to(project_root))
                         except Exception as e:
-                            click.echo(click.style(f"Failed to add {file_path} to zip: {e}", fg="red"))
+                            click.echo(
+                                click.style(
+                                    f"Failed to add {file_path} to zip: {e}",
+                                    fg="red"))
             # Exclude specific files
             elif item.name == ".env":  # Exclude only the .env file
                 continue
@@ -65,7 +83,13 @@ def create_zip(uvus):
                 try:
                     zf.write(item, item.relative_to(project_root))
                 except Exception as e:
-                    click.echo(click.style(f"Failed to add {item.name} to zip: {e}", fg="red"))
+                    click.echo(
+                        click.style(
+                            f"Failed to add {
+                                item.name} to zip: {e}",
+                            fg="red",
+                        )
+                    )
 
         # Ensure the .pdf is included only once
         if pdf_file.name not in zf.namelist():

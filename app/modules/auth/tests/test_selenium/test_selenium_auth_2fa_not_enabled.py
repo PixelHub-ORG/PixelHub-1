@@ -1,17 +1,14 @@
 import socket
 import uuid
 from threading import Thread
-from unittest.mock import patch
 
 import pytest
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from app import create_app, db
 from app.modules.auth.models import User
-from app.modules.auth.services import AuthenticationService
 from app.modules.profile.models import UserProfile
 from core.selenium.common import initialize_driver
 
@@ -33,7 +30,9 @@ class TestSelenium2FA:
         db.drop_all()
         db.create_all()
         unique_email_no2fa = f"user_no2fa_{uuid.uuid4().hex}@example.com"
-        self.user_no2fa = User(email=unique_email_no2fa, is_two_factor_enabled=False)
+        self.user_no2fa = User(
+            email=unique_email_no2fa,
+            is_two_factor_enabled=False)
         self.user_no2fa.set_password("1234")
         db.session.add(self.user_no2fa)
         db.session.commit()
@@ -68,16 +67,19 @@ class TestSelenium2FA:
         self.driver.get(self.base_url)
         self.driver.find_element(By.LINK_TEXT, "Login").click()
 
-        self.driver.find_element(By.ID, "email").send_keys(self.user_no2fa.email)
+        self.driver.find_element(
+            By.ID, "email").send_keys(
+            self.user_no2fa.email)
         self.driver.find_element(By.ID, "password").send_keys("1234")
         self.driver.find_element(By.ID, "submit").click()
 
         with pytest.raises(Exception):
             self.driver.find_element(By.ID, "code")
 
-        user_span = WebDriverWait(self.driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "span.text-dark"))
-        )
+        user_span = WebDriverWait(
+            self.driver, 10).until(
+            EC.visibility_of_element_located(
+                (By.CSS_SELECTOR, "span.text-dark")))
 
         assert "Trevor" in user_span.text
         assert "Belmont" in user_span.text

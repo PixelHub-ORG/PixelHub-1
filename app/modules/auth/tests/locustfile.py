@@ -27,8 +27,12 @@ def on_locust_init(environment, **kwargs):
                 .all()
             )
             for user in users_with_2fa:
-                CACHED_2FA_USERS.append({"email": user.email, "secret": user.two_factor_secret, "password": "1234"})
-            print(f"✓ Loaded {len(CACHED_2FA_USERS)} users with 2FA for testing")
+                CACHED_2FA_USERS.append(
+                    {"email": user.email, "secret": user.two_factor_secret, "password": "1234"})
+            print(
+                f"✓ Loaded {
+                    len(CACHED_2FA_USERS)} users with 2FA for testing"
+            )
             if not CACHED_2FA_USERS:
                 print("⚠ WARNING: No users with 2FA enabled found.")
     except Exception as e:
@@ -125,7 +129,10 @@ class TwoFactorSetupBehavior(TaskSet):
             return
         with self.client.get("/2fa/enable", catch_response=True, name="GET /2fa/enable") as response:
             if response.status_code != 200:
-                response.failure(f"Failed to access 2FA setup: {response.status_code}")
+                response.failure(
+                    f"Failed to access 2FA setup: {
+                        response.status_code}"
+                )
                 return
             response.success()
             try:
@@ -146,7 +153,12 @@ class TwoFactorSetupBehavior(TaskSet):
     def test_2fa_enable_with_code(self):
         response = self.client.get("/login")
         csrf_token = get_csrf_token(response)
-        self.client.post("/login", data={"email": "user1@example.com", "password": "1234", "csrf_token": csrf_token})
+        self.client.post(
+            "/login",
+            data={
+                "email": "user1@example.com",
+                "password": "1234",
+                "csrf_token": csrf_token})
         response = self.client.get("/2fa/enable")
         try:
             csrf_token = get_csrf_token(response)
@@ -194,13 +206,19 @@ class TwoFactorLoginBehavior(TaskSet):
             name="POST /login (with 2FA enabled)",
         ) as response:
             if response.status_code not in [200, 302]:
-                response.failure(f"Login step 1 failed: {response.status_code}")
+                response.failure(
+                    f"Login step 1 failed: {
+                        response.status_code}"
+                )
                 return
             response.success()
 
         with self.client.get("/2fa/verify", catch_response=True, name="GET /2fa/verify") as response:
             if response.status_code != 200:
-                response.failure(f"2FA verify page not accessible: {response.status_code}")
+                response.failure(
+                    f"2FA verify page not accessible: {
+                        response.status_code}"
+                )
                 return
             response.success()
 
@@ -218,7 +236,10 @@ class TwoFactorLoginBehavior(TaskSet):
             if response.status_code in [200, 302]:
                 response.success()
             else:
-                response.failure(f"2FA verification failed: {response.status_code}")
+                response.failure(
+                    f"2FA verification failed: {
+                        response.status_code}"
+                )
 
     @task(2)
     def login_with_2fa_invalid_code(self):
@@ -233,8 +254,11 @@ class TwoFactorLoginBehavior(TaskSet):
         csrf_token = get_csrf_token(response)
 
         self.client.post(
-            "/login", data={"email": user["email"], "password": user["password"], "csrf_token": csrf_token}
-        )
+            "/login",
+            data={
+                "email": user["email"],
+                "password": user["password"],
+                "csrf_token": csrf_token})
 
         response = self.client.get("/2fa/verify")
         csrf_token = get_csrf_token(response)
@@ -265,8 +289,11 @@ class TwoFactorLoginBehavior(TaskSet):
         csrf_token = get_csrf_token(response)
 
         self.client.post(
-            "/login", data={"email": user["email"], "password": user["password"], "csrf_token": csrf_token}
-        )
+            "/login",
+            data={
+                "email": user["email"],
+                "password": user["password"],
+                "csrf_token": csrf_token})
 
         response = self.client.get("/2fa/verify")
         csrf_token = get_csrf_token(response)
@@ -302,15 +329,22 @@ class TwoFactorDisableBehavior(TaskSet):
         csrf_token = get_csrf_token(response)
 
         self.client.post(
-            "/login", data={"email": user["email"], "password": user["password"], "csrf_token": csrf_token}
-        )
+            "/login",
+            data={
+                "email": user["email"],
+                "password": user["password"],
+                "csrf_token": csrf_token})
         response = self.client.get("/2fa/verify")
         csrf_token = get_csrf_token(response)
 
         totp = pyotp.TOTP(user["secret"])
         code = totp.now()
 
-        self.client.post("/2fa/verify", data={"code": code, "csrf_token": csrf_token})
+        self.client.post(
+            "/2fa/verify",
+            data={
+                "code": code,
+                "csrf_token": csrf_token})
 
         return True
 
@@ -409,7 +443,10 @@ class ORCIDLoginBehavior(TaskSet):
             if response.status_code in [302, 303, 307]:
                 response.success()
             else:
-                response.failure(f"ORCID login didn't redirect: {response.status_code}")
+                response.failure(
+                    f"ORCID login didn't redirect: {
+                        response.status_code}"
+                )
 
 
 class AuthUser(HttpUser):
@@ -448,7 +485,11 @@ class SecurityTestUser(HttpUser):
 class MixedAuthUser(HttpUser):
     """Mixed authentication tests including ORCID"""
 
-    tasks = [LoginBehavior, TwoFactorLoginBehavior, ORCIDLoginBehavior, TwoFactorDisableBehavior]
+    tasks = [
+        LoginBehavior,
+        TwoFactorLoginBehavior,
+        ORCIDLoginBehavior,
+        TwoFactorDisableBehavior]
     min_wait = 4000
     max_wait = 8000
     host = get_host_for_locust_testing()

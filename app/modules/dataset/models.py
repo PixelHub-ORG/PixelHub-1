@@ -7,8 +7,10 @@ from sqlalchemy import Enum as SQLAlchemyEnum
 
 from app import db
 
-#fixthisss
-x  = 3 + 5 
+# fixthisss
+x = 3 + 5
+
+
 class PublicationType(Enum):
     NONE = "none"
     ANNOTATION_COLLECTION = "annotationcollection"
@@ -40,7 +42,10 @@ class Author(db.Model):
     fm_meta_data_id = db.Column(db.Integer, db.ForeignKey("fm_meta_data.id"))
 
     def to_dict(self):
-        return {"name": self.name, "affiliation": self.affiliation, "orcid": self.orcid}
+        return {
+            "name": self.name,
+            "affiliation": self.affiliation,
+            "orcid": self.orcid}
 
 
 class DSMetrics(db.Model):
@@ -49,7 +54,9 @@ class DSMetrics(db.Model):
     number_of_files = db.Column(db.String(120))
 
     def __repr__(self):
-        return f"DSMetrics<models={self.number_of_models}, files={self.number_of_files}>"
+        return f"DSMetrics<models={
+            self.number_of_models}, files={
+            self.number_of_files}>"
 
 
 class DSMetaData(db.Model):
@@ -57,13 +64,23 @@ class DSMetaData(db.Model):
     deposition_id = db.Column(db.Integer)
     title = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    publication_type = db.Column(SQLAlchemyEnum(PublicationType), nullable=False)
+    publication_type = db.Column(
+        SQLAlchemyEnum(PublicationType),
+        nullable=False)
     publication_doi = db.Column(db.String(120))
     dataset_doi = db.Column(db.String(120))
     tags = db.Column(db.String(120))
     ds_metrics_id = db.Column(db.Integer, db.ForeignKey("ds_metrics.id"))
-    ds_metrics = db.relationship("DSMetrics", uselist=False, backref="ds_meta_data", cascade="all, delete")
-    authors = db.relationship("Author", backref="ds_meta_data", lazy=True, cascade="all, delete")
+    ds_metrics = db.relationship(
+        "DSMetrics",
+        uselist=False,
+        backref="ds_meta_data",
+        cascade="all, delete")
+    authors = db.relationship(
+        "Author",
+        backref="ds_meta_data",
+        lazy=True,
+        cascade="all, delete")
 
 
 class BaseDataSet(db.Model):
@@ -72,16 +89,38 @@ class BaseDataSet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
-    ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("ds_meta_data.id"), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    ds_meta_data_id = db.Column(
+        db.Integer,
+        db.ForeignKey("ds_meta_data.id"),
+        nullable=False)
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow)
 
-    ds_meta_data = db.relationship("DSMetaData", backref=db.backref("data_set", uselist=False))
-    type = db.Column(db.String(50), nullable=False, server_default="pix", index=True)
+    ds_meta_data = db.relationship(
+        "DSMetaData", backref=db.backref(
+            "data_set", uselist=False))
+    type = db.Column(
+        db.String(50),
+        nullable=False,
+        server_default="pix",
+        index=True)
 
     version = db.Column(db.Integer, default=1, nullable=False)
-    previous_version_id = db.Column(db.Integer, db.ForeignKey("data_set.id", ondelete="SET NULL"), nullable=True)
+    previous_version_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            "data_set.id",
+            ondelete="SET NULL"),
+        nullable=True)
 
-    next_versions = db.relationship("BaseDataSet", backref=db.backref("previous_version", remote_side=[id]), lazy=True)
+    next_versions = db.relationship(
+        "BaseDataSet",
+        backref=db.backref(
+            "previous_version",
+            remote_side=[id]),
+        lazy=True)
 
     __mapper_args__ = {
         "polymorphic_on": type,
@@ -90,7 +129,8 @@ class BaseDataSet(db.Model):
     }
 
     def get_cleaned_publication_type(self):
-        return self.ds_meta_data.publication_type.name.replace("_", " ").title()
+        return self.ds_meta_data.publication_type.name.replace(
+            "_", " ").title()
 
     def get_files_count(self):
         """
@@ -103,12 +143,14 @@ class BaseDataSet(db.Model):
         return 1  # By default, datasets have at least one file
 
     def get_download_count(self):
-        return db.session.query(DSDownloadRecord).filter_by(dataset_id=self.id).count()
+        return db.session.query(DSDownloadRecord).filter_by(
+            dataset_id=self.id).count()
 
     def get_pixelhub_doi(self):
         from app.modules.dataset.services import DataSetService
 
-        return DataSetService().get_pixelhub_doi(self)  # TODO: Corregir nombre método en services
+        # TODO: Corregir nombre método en services
+        return DataSetService().get_pixelhub_doi(self)
 
     def validate_domain(self):
         """Validates whether the metadata is valid for the current file type.
@@ -127,12 +169,21 @@ class PixDataset(BaseDataSet):
     }
     __tablename__ = "pix_data_set"
 
-    # required for joined-table inheritance: link child table PK to parent table PK
+    # required for joined-table inheritance: link child table PK to parent
+    # table PK
     id = db.Column(db.Integer, db.ForeignKey("data_set.id"), primary_key=True)
 
-    pix_meta_data = db.relationship("PixMetaData", backref="dataset", uselist=False, cascade="all, delete-orphan")
+    pix_meta_data = db.relationship(
+        "PixMetaData",
+        backref="dataset",
+        uselist=False,
+        cascade="all, delete-orphan")
 
-    file_models = db.relationship("FileModel", backref="data_set", lazy=True, cascade="all, delete")
+    file_models = db.relationship(
+        "FileModel",
+        backref="data_set",
+        lazy=True,
+        cascade="all, delete")
 
     def name(self):
         return self.ds_meta_data.title
@@ -145,13 +196,15 @@ class PixDataset(BaseDataSet):
         db.session.commit()
 
     def get_cleaned_publication_type(self):
-        return self.ds_meta_data.publication_type.name.replace("_", " ").title()
+        return self.ds_meta_data.publication_type.name.replace(
+            "_", " ").title()
 
     def get_zenodo_url(self):
         if not self.ds_meta_data.dataset_doi:
             return None
 
-        base_url = os.getenv("FAKENODO_URL", "https://zenodo.org")  # valor por defecto
+        base_url = os.getenv("FAKENODO_URL",
+                             "https://zenodo.org")  # valor por defecto
         return f"{base_url}/api/depositions/{self.ds_meta_data.deposition_id}"
 
     def get_files_count(self):
@@ -181,10 +234,12 @@ class PixDataset(BaseDataSet):
         return None
 
     def get_authors_set(self):
-        return set(self.ds_meta_data.authors) if self.ds_meta_data.authors else set()
+        return set(
+            self.ds_meta_data.authors) if self.ds_meta_data.authors else set()
 
     def get_tags_set(self):
-        return set(self.ds_meta_data.tags.split(",")) if self.ds_meta_data.tags else set()
+        return set(self.ds_meta_data.tags.split(",")
+                   ) if self.ds_meta_data.tags else set()
 
     def get_publication_type(self):
         return self.ds_meta_data.publication_type
@@ -253,8 +308,12 @@ class DSDownloadRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"))
-    download_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    download_cookie = db.Column(db.String(36), nullable=False)  # Assuming UUID4 strings
+    download_date = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow)
+    download_cookie = db.Column(db.String(36),
+                                nullable=False)  # Assuming UUID4 strings
 
     def __repr__(self):
         return (
@@ -270,10 +329,15 @@ class DSViewRecord(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"))
     view_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    view_cookie = db.Column(db.String(36), nullable=False)  # Assuming UUID4 strings
+    view_cookie = db.Column(db.String(36),
+                            nullable=False)  # Assuming UUID4 strings
 
     def __repr__(self):
-        return f"<View id={self.id} dataset_id={self.dataset_id} date={self.view_date} cookie={self.view_cookie}>"
+        return f"<View id={
+            self.id} dataset_id={
+            self.dataset_id} date={
+            self.view_date} cookie={
+                self.view_cookie}>"
 
 
 class DOIMapping(db.Model):

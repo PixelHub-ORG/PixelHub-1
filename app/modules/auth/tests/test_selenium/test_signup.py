@@ -21,6 +21,7 @@ class TestSignup:
         self.driver.find_element(By.ID, "name").click()
         self.driver.find_element(By.ID, "name").send_keys("Hola")
         self.driver.find_element(By.ID, "surname").send_keys("Juan")
-        self.driver.find_element(By.ID, "email").send_keys("holajuan@example.com")
+        self.driver.find_element(
+            By.ID, "email").send_keys("holajuan@example.com")
         self.driver.find_element(By.ID, "password").send_keys("holajuan")
         self.driver.find_element(By.ID, "submit").click()

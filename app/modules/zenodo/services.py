@@ -26,11 +26,16 @@ class ZenodoService(BaseService):
         ZENODO_API_URL = ""
 
         if FLASK_ENV == "development":
-            ZENODO_API_URL = os.getenv("FAKENODO_BACKEND_URL", "http://localhost:5001/api")
+            ZENODO_API_URL = os.getenv(
+                "FAKENODO_BACKEND_URL",
+                "http://localhost:5001/api")
         elif FLASK_ENV == "production":
-            ZENODO_API_URL = os.getenv("FAKENODO_URL", "https://pixelhub-2-51iz.onrender.com/api/")
+            ZENODO_API_URL = os.getenv(
+                "FAKENODO_URL", "https://pixelhub-2-51iz.onrender.com/api/")
         else:
-            ZENODO_API_URL = os.getenv("FAKENODO_BACKEND_URL", "http://localhost:5001/api")
+            ZENODO_API_URL = os.getenv(
+                "FAKENODO_BACKEND_URL",
+                "http://localhost:5001/api")
 
         return ZENODO_API_URL
 
@@ -39,7 +44,8 @@ class ZenodoService(BaseService):
         self.ZENODO_API_URL = self.get_zenodo_url()
         # Ensure we target the depositions collection
         if not self.ZENODO_API_URL.rstrip("/").endswith("/depositions"):
-            self.ZENODO_API_URL = f"{self.ZENODO_API_URL.rstrip('/')}/depositions"
+            self.ZENODO_API_URL = f"{
+                self.ZENODO_API_URL.rstrip('/')}/depositions"
         self.headers = {"Content-Type": "application/json"}
         # Ensure params is always defined (e.g., access_token or empty)
         token = (
@@ -56,7 +62,10 @@ class ZenodoService(BaseService):
         Returns:
             bool: True if the connection is successful, False otherwise.
         """
-        response = requests.get(self.ZENODO_API_URL, params=self.params, headers=self.headers)
+        response = requests.get(
+            self.ZENODO_API_URL,
+            params=self.params,
+            headers=self.headers)
         return response.status_code == 200
 
     def test_full_connection(self) -> Response:
@@ -88,16 +97,21 @@ class ZenodoService(BaseService):
             }
         }
 
-        response = requests.post(self.ZENODO_API_URL, json=data, params=self.params, headers=self.headers)
+        response = requests.post(
+            self.ZENODO_API_URL,
+            json=data,
+            params=self.params,
+            headers=self.headers)
 
         if response.status_code != 201:
             return jsonify(
                 {
                     "success": False,
                     "messages": "Failed to create test deposition on Zenodo.\n"
-                    "Response code: {}. Body: {}".format(response.status_code, response.text),
-                }
-            )
+                    "Response code: {}. Body: {}".format(
+                        response.status_code,
+                        response.text),
+                })
 
         deposition_id = response.json()["id"]
 
@@ -105,7 +119,11 @@ class ZenodoService(BaseService):
         data = {"name": "test_file.txt"}
         files = {"file": open(file_path, "rb")}
         publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/files"
-        response = requests.post(publish_url, params=self.params, data=data, files=files)
+        response = requests.post(
+            publish_url,
+            params=self.params,
+            data=data,
+            files=files)
         files["file"].close()  # Close the file after uploading
 
         logger.info(f"Publish URL: {publish_url}")
@@ -116,11 +134,15 @@ class ZenodoService(BaseService):
         logger.info(f"Response Content: {response.content}")
 
         if response.status_code != 201:
-            messages.append(f"Failed to upload test file to Zenodo. Response code: {response.status_code}")
+            messages.append(
+                f"Failed to upload test file to Zenodo. Response code: {
+                    response.status_code}"
+            )
             success = False
 
         # Step 3: Delete the deposition
-        response = requests.delete(f"{self.ZENODO_API_URL}/{deposition_id}", params=self.params)
+        response = requests.delete(
+            f"{self.ZENODO_API_URL}/{deposition_id}", params=self.params)
 
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -134,9 +156,16 @@ class ZenodoService(BaseService):
         Returns:
             dict: The response in JSON format with the depositions.
         """
-        response = requests.get(self.ZENODO_API_URL, params=self.params, headers=self.headers)
+        response = requests.get(
+            self.ZENODO_API_URL,
+            params=self.params,
+            headers=self.headers)
         if response.status_code != 200:
-            raise Exception(f"Failed to get depositions. Status: {response.status_code}. Body: {response.text}")
+            raise Exception(
+                f"Failed to get depositions. Status: {
+                    response.status_code}. Body: {
+                    response.text}"
+            )
         return response.json()
 
     def create_new_deposition(self, dataset: DataSet) -> dict:
@@ -151,7 +180,10 @@ class ZenodoService(BaseService):
         """
 
         logger.info("Dataset sending to Zenodo...")
-        logger.info(f"Publication type...{dataset.ds_meta_data.publication_type.value}")
+        logger.info(
+            f"Publication type...{
+                dataset.ds_meta_data.publication_type.value}"
+        )
 
         metadata = {
             "title": dataset.ds_meta_data.title,
@@ -179,18 +211,31 @@ class ZenodoService(BaseService):
 
         data = {"metadata": metadata}
 
-        logger.info(f"Zenodo deposition metadata...{dataset.ds_meta_data.publication_type.value}")
-        response = requests.post(self.ZENODO_API_URL, params=self.params, json=data, headers=self.headers)
+        logger.info(
+            f"Zenodo deposition metadata...{
+                dataset.ds_meta_data.publication_type.value}"
+        )
+        response = requests.post(
+            self.ZENODO_API_URL,
+            params=self.params,
+            json=data,
+            headers=self.headers)
         if response.status_code != 201:
             try:
                 err = response.json()
             except ValueError:
                 err = response.text
-            error_message = f"Failed to create deposition. Status: {response.status_code}. Error details: {err}"
+            error_message = f"Failed to create deposition. Status: {
+                response.status_code}. Error details: {err}"
             raise Exception(error_message)
         return response.json()
 
-    def upload_file(self, dataset: DataSet, deposition_id: int, file_model: FileModel, user=None) -> dict:
+    def upload_file(
+            self,
+            dataset: DataSet,
+            deposition_id: int,
+            file_model: FileModel,
+            user=None) -> dict:
         """
         Upload a file to a deposition in Zenodo.
 
@@ -205,14 +250,26 @@ class ZenodoService(BaseService):
         filename = file_model.fm_meta_data.filename
         data = {"name": filename}
         user_id = current_user.id if user is None else user.id
-        file_path = os.path.join(uploads_folder_name(), f"user_{str(user_id)}", f"dataset_{dataset.id}/", filename)
+        file_path = os.path.join(
+            uploads_folder_name(),
+            f"user_{
+                str(user_id)}",
+            f"dataset_{
+                dataset.id}/",
+            filename,
+        )
         files = {"file": open(file_path, "rb")}
 
         publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/files"
-        response = requests.post(publish_url, params=self.params, data=data, files=files)
+        response = requests.post(
+            publish_url,
+            params=self.params,
+            data=data,
+            files=files)
 
         if response.status_code != 201:
-            error_message = f"Failed to upload files. Error details: {response.json()}"
+            error_message = f"Failed to upload files. Error details: {
+                response.json()}"
             raise Exception(error_message)
         return response.json()
 
@@ -226,9 +283,11 @@ class ZenodoService(BaseService):
 
             from app.modules.dataset.models import DSMetaData
 
-            # Fetch all existing DOIs (could be optimized with a SQL MAX on numeric substring if available)
+            # Fetch all existing DOIs (could be optimized with a SQL MAX on
+            # numeric substring if available)
             existing = []
-            for md in DSMetaData.query.with_entities(DSMetaData.dataset_doi).all():
+            for md in DSMetaData.query.with_entities(
+                    DSMetaData.dataset_doi).all():
                 doi = md[0]
                 if not doi:
                     continue
@@ -238,7 +297,8 @@ class ZenodoService(BaseService):
             next_suffix = (max(existing) + 1) if existing else 1000001
             return f"10.5281/zenodo.{next_suffix}"
         except Exception as e:
-            # Safe fallback to a deterministic, readable format if the query fails
+            # Safe fallback to a deterministic, readable format if the query
+            # fails
             logger.warning("Falling back DOI computation due to error: %s", e)
 
             return "10.5281/zenodo.1000001"
@@ -255,13 +315,22 @@ class ZenodoService(BaseService):
         """
         publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/publish"
 
-        # Always compute and provide the DOI so fakenodo stays consistent across restarts
+        # Always compute and provide the DOI so fakenodo stays consistent
+        # across restarts
         next_doi = self._compute_next_doi()
         payload = {"doi": next_doi}
 
-        response = requests.post(publish_url, params=self.params, headers=self.headers, json=payload)
+        response = requests.post(
+            publish_url,
+            params=self.params,
+            headers=self.headers,
+            json=payload)
         if response.status_code not in (200, 202):
-            raise Exception(f"Failed to publish deposition. Status: {response.status_code}. Body: {response.text}")
+            raise Exception(
+                f"Failed to publish deposition. Status: {
+                    response.status_code}. Body: {
+                    response.text}"
+            )
         return response.json()
 
     def get_deposition(self, deposition_id: int) -> dict:
@@ -275,9 +344,16 @@ class ZenodoService(BaseService):
             dict: The response in JSON format with the details of the deposition.
         """
         deposition_url = f"{self.ZENODO_API_URL}/{deposition_id}"
-        response = requests.get(deposition_url, params=self.params, headers=self.headers)
+        response = requests.get(
+            deposition_url,
+            params=self.params,
+            headers=self.headers)
         if response.status_code != 200:
-            raise Exception(f"Failed to get deposition. Status: {response.status_code}. Body: {response.text}")
+            raise Exception(
+                f"Failed to get deposition. Status: {
+                    response.status_code}. Body: {
+                    response.text}"
+            )
         return response.json()
 
     def get_doi(self, deposition_id: int) -> str:
@@ -297,7 +373,8 @@ def test_zenodo_form_creation(test_client):
     """
     Prueba la creación de ZenodoForm para cubrir forms.py.
     """
-    # El test se ejecuta dentro del contexto de la app para cargar extensiones (como CSRF)
+    # El test se ejecuta dentro del contexto de la app para cargar extensiones
+    # (como CSRF)
     with test_client.application.app_context():
         form = ZenodoForm()
         # Verificamos que el formulario se haya creado y tenga el campo submit

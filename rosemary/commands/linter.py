@@ -4,7 +4,8 @@ import subprocess
 import click
 
 
-@click.command("linter", help="Runs flake8 linter on the 'app' and 'rosemary' directories.")
+@click.command("linter",
+               help="Runs flake8 linter on the 'app' and 'rosemary' directories.")
 def linter():
 
     # Define the directories to be checked with flake8
@@ -18,19 +19,25 @@ def linter():
     # Run flake8 in each directory
     for directory in directories:
         click.echo(f"Running flake8 on {directory}...")
-        result = subprocess.run(["flake8", "--config=pyproject.toml", directory])
+        result = subprocess.run(
+            ["flake8", "--config=pyproject.toml", directory])
 
         # Check if flake8 encountered problems
         if result.returncode != 0:
-            click.echo(click.style(f"flake8 found issues in {directory}.", fg="red"))
+            click.echo(
+                click.style(
+                    f"flake8 found issues in {directory}.",
+                    fg="red"))
         else:
-            click.echo(click.style(f"No issues found in {directory}. Congratulations!", fg="green"))
+            click.echo(
+                click.style(
+                    f"No issues found in {directory}. Congratulations!",
+                    fg="green"))
 
 
-@click.command(
-    "linter:fix",
-    help="Automatically formats and cleans code in 'app', 'rosemary', and 'core' directories.",
-)
+@click.command("linter:fix",
+               help="Automatically formats and cleans code in 'app', 'rosemary', and 'core' directories.",
+               )
 def linter_fix():
     import os
     import subprocess
@@ -68,4 +75,7 @@ def linter_fix():
         if result.returncode != 0:
             click.echo(click.style(f"Failed on {directory}", fg="red"))
         else:
-            click.echo(click.style(f"✔ {directory} cleaned & formatted", fg="green"))
+            click.echo(
+                click.style(
+                    f"✔ {directory} cleaned & formatted",
+                    fg="green"))
