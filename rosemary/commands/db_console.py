@@ -5,7 +5,8 @@ import click
 from dotenv import load_dotenv
 
 
-@click.command("db:console", help="Opens a MariaDB console with credentials from .env.")
+@click.command("db:console",
+               help="Opens a MariaDB console with credentials from .env.")
 def db_console():
     load_dotenv()
 
@@ -21,4 +22,7 @@ def db_console():
     try:
         subprocess.run(mariadb_connect_cmd, shell=True, check=True)
     except subprocess.CalledProcessError as e:
-        click.echo(click.style(f"Error opening MariaDB console: {e}", fg="red"))
+        click.echo(
+            click.style(
+                f"Error opening MariaDB console: {e}",
+                fg="red"))
