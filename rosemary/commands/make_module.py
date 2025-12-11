@@ -12,9 +12,8 @@ def pascalcase(s):
 
 def setup_jinja_env():
     """Configures and returns a Jinja environment."""
-    env = Environment(
-        loader=FileSystemLoader(searchpath="./rosemary/templates"), autoescape=select_autoescape(["html", "xml", "j2"])
-    )
+    env = Environment(loader=FileSystemLoader(
+        searchpath="./rosemary/templates"), autoescape=select_autoescape(["html", "xml", "j2"]))
     env.filters["pascalcase"] = pascalcase
     return env
 
@@ -30,11 +29,15 @@ def render_and_write_file(env, template_name, filename, context):
 @click.command("make:module", help="Creates a new module with a given name.")
 @click.argument("name")
 def make_module(name):
-    modules_root_path = os.path.join(os.getenv("WORKING_DIR", ""), "app/modules")
+    modules_root_path = os.path.join(
+        os.getenv("WORKING_DIR", ""), "app/modules")
     module_path = f"{modules_root_path}/{name}"
 
     if os.path.exists(module_path):
-        click.echo(click.style(f"The module '{name}' already exists.", fg="red"))
+        click.echo(
+            click.style(
+                f"The module '{name}' already exists.",
+                fg="red"))
         return
 
     env = setup_jinja_env()
@@ -50,21 +53,27 @@ def make_module(name):
         "services.py": "module_services.py.j2",
         "forms.py": "module_forms.py.j2",
         "seeders.py": "module_seeders.py.j2",
-        os.path.join("templates", name, "index.html"): "module_templates_index.html.j2",
+        os.path.join(
+            "templates",
+            name,
+            "index.html"): "module_templates_index.html.j2",
         "assets/scripts.js": "module_scripts.js.j2",
         "tests/test_unit.py": "module_tests_test_unit.py.j2",
         "tests/locustfile.py": "module_tests_locustfile.py.j2",
         "tests/test_selenium.py": "module_tests_test_selenium.py.j2",
     }
 
-    # Create the necessary directories, explicitly excluding 'tests' from the creation of subfolders.
+    # Create the necessary directories, explicitly excluding 'tests' from the
+    # creation of subfolders.
     for directory in directories:
         os.makedirs(os.path.join(module_path, directory, name), exist_ok=True)
 
-    # Create 'tests' directory directly under module_path, without additional subfolders.
+    # Create 'tests' directory directly under module_path, without additional
+    # subfolders.
     os.makedirs(os.path.join(module_path, "tests"), exist_ok=True)
 
-    # Create 'assets' directory directly under module_path, without additional subfolders.
+    # Create 'assets' directory directly under module_path, without additional
+    # subfolders.
     os.makedirs(os.path.join(module_path, "assets"), exist_ok=True)
 
     # Create empty __init__.py file directly in the 'tests' directory.
@@ -73,19 +82,28 @@ def make_module(name):
     # Render and write files, including 'test_unit.py' directly in 'tests'.
     for filename, template_name in files_and_templates.items():
         if template_name:  # Check if there is a defined template.
-            render_and_write_file(env, template_name, os.path.join(module_path, filename), {"module_name": name})
+            render_and_write_file(
+                env, template_name, os.path.join(
+                    module_path, filename), {
+                    "module_name": name})
         else:
-            open(os.path.join(module_path, filename), "a").close()  # Create empty file if there is no template.
+            # Create empty file if there is no template.
+            open(os.path.join(module_path, filename), "a").close()
 
-    click.echo(click.style(f"Module '{name}' created successfully.", fg="green"))
+    click.echo(
+        click.style(
+            f"Module '{name}' created successfully.",
+            fg="green"))
 
     # Change the owner of the main folder of the module
     os.chown(module_path, 1000, 1000)
 
     # Change permissions to drwxrwxr-x (chmod 775)
-    os.chmod(module_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
+    os.chmod(module_path, stat.S_IRWXU | stat.S_IRWXG |
+             stat.S_IROTH | stat.S_IXOTH)
 
-    # Change the owner of all created files and directories to UID 1000 and GID 1000
+    # Change the owner of all created files and directories to UID 1000 and
+    # GID 1000
     uid = 1000
     gid = 1000
 
@@ -93,11 +111,16 @@ def make_module(name):
         for dir_ in dirs:
             dir_path = os.path.join(root, dir_)
             os.chown(dir_path, uid, gid)
-            os.chmod(dir_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
+            os.chmod(dir_path, stat.S_IRWXU | stat.S_IRWXG |
+                     stat.S_IROTH | stat.S_IXOTH)
 
         for file_ in files:
             file_path = os.path.join(root, file_)
             os.chown(file_path, uid, gid)
-            os.chmod(file_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
+            os.chmod(file_path, stat.S_IRUSR | stat.S_IWUSR |
+                     stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
 
-    click.echo(click.style(f"Module '{name}' permissions changed successfully.", fg="green"))
+    click.echo(
+        click.style(
+            f"Module '{name}' permissions changed successfully.",
+            fg="green"))

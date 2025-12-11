@@ -35,7 +35,8 @@ class WebsiteUser(HttpUser):
         csrf_token = self.get_csrf_token(response.text)
 
         if not csrf_token:
-            logging.error("!!! Error: No se pudo obtener CSRF Token del login !!!")
+            logging.error(
+                "!!! Error: No se pudo obtener CSRF Token del login !!!")
             return
 
         response = self.client.post(
@@ -51,7 +52,8 @@ class WebsiteUser(HttpUser):
             logging.info(f"Login Exitoso: {USER_EMAIL}")
         else:
             if "/login" in response.url:
-                logging.error("!!! Login Fallido: Credenciales incorrectas o error de servidor !!!")
+                logging.error(
+                    "!!! Login Fallido: Credenciales incorrectas o error de servidor !!!")
             else:
                 logging.info("Login parece exitoso (Redirección correcta)")
 
@@ -75,11 +77,13 @@ class WebsiteUser(HttpUser):
                 self.extract_and_request_file_diff(response.text)
             elif response.status_code == 404:
                 response.failure(
-                    f"Dataset no encontrado (404). ¿Ejecutaste el seeder nuevo? IDs esperadas: {DATASET_V1_ID}"
-                    + "/{DATASET_V2_ID}"
-                )
+                    f"Dataset no encontrado (404). ¿Ejecutaste el seeder nuevo? IDs esperadas: {DATASET_V1_ID}" +
+                    "/{DATASET_V2_ID}")
             else:
-                response.failure(f"Error al cargar comparacion: {response.status_code}")
+                response.failure(
+                    f"Error al cargar comparacion: {
+                        response.status_code}"
+                )
 
     @task(1)
     def test_create_version_page(self):
@@ -129,7 +133,8 @@ class DatasetUser(HttpUser):
                     .limit(20)
                     .all()
                 )
-                DatasetUser._cached_dois = [doi[0] for doi in datasets_with_doi if doi[0]]
+                DatasetUser._cached_dois = [doi[0]
+                                            for doi in datasets_with_doi if doi[0]]
         except Exception:
             DatasetUser._cached_dois = []
 

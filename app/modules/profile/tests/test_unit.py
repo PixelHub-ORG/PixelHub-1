@@ -17,7 +17,10 @@ def test_client(test_client):
         db.session.add(user_test)
         db.session.commit()
 
-        profile = UserProfile(user_id=user_test.id, name="Name", surname="Surname")
+        profile = UserProfile(
+            user_id=user_test.id,
+            name="Name",
+            surname="Surname")
         db.session.add(profile)
         db.session.commit()
 
@@ -46,5 +49,8 @@ def test_view_user_profile(test_client):
     assert user is not None, "Test user was not created."
 
     response = test_client.get(f"/profile/{user.id}")
-    assert response.status_code == 200, f"Public profile page returned {response.status_code} instead of 200."
+    assert (
+        response.status_code == 200
+    ), f"Public profile page returned {
+        response.status_code} instead of 200."
     assert b"Name" in response.data or b"Surname" in response.data, "User name or surname not visible in profile page."

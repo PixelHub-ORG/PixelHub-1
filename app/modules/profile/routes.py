@@ -23,8 +23,12 @@ def edit_profile():
         service = UserProfileService()
         result, errors = service.update_profile(profile.id, form)
         return service.handle_service_response(
-            result, errors, "profile.edit_profile", "Profile updated successfully", "profile/edit.html", form
-        )
+            result,
+            errors,
+            "profile.edit_profile",
+            "Profile updated successfully",
+            "profile/edit.html",
+            form)
 
     return render_template("profile/edit.html", form=form)
 
@@ -42,7 +46,8 @@ def my_profile():
         .paginate(page=page, per_page=per_page, error_out=False)
     )
 
-    total_datasets_count = db.session.query(DataSet).filter(DataSet.user_id == current_user.id).count()
+    total_datasets_count = db.session.query(DataSet).filter(
+        DataSet.user_id == current_user.id).count()
 
     print(user_datasets_pagination.items)
 
@@ -56,13 +61,16 @@ def my_profile():
     )
 
 
-@profile_bp.route("/profile/<int:user_id>", methods=["GET"], endpoint="public_profile")
+@profile_bp.route("/profile/<int:user_id>",
+                  methods=["GET"], endpoint="public_profile")
 def public_profile(user_id: int):
     user = User.query.get_or_404(user_id)
 
     page = request.args.get("page", 1, type=int)
     per_page = 10
-    q = DataSet.query.filter_by(user_id=user.id).order_by(DataSet.created_at.desc())
+    q = DataSet.query.filter_by(
+        user_id=user.id).order_by(
+        DataSet.created_at.desc())
     pagination = q.paginate(page=page, per_page=per_page)
     total_datasets = q.count()
 

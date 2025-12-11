@@ -50,7 +50,12 @@ def badge_svg_download(dataset_id):
     c2 = w1 + w2 / 2
     c3 = w1 + w2 + w3 / 2
 
-    link_start = f'<a xlink:href="{ds["url"]}" target="_blank" rel="noopener">' if ds["url"] else ""
+    link_start = (
+        f'<a xlink:href="{
+            ds["url"]}" target="_blank" rel="noopener">'
+        if ds["url"]
+        else ""
+    )
     link_end = "</a>" if ds["url"] else ""
 
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg"
@@ -104,7 +109,12 @@ def badge_svg(dataset_id):
     c2 = w1 + w2 / 2
     c3 = w1 + w2 + w3 / 2
 
-    link_start = f'<a xlink:href="{ds["url"]}" target="_blank" rel="noopener">' if ds["url"] else ""
+    link_start = (
+        f'<a xlink:href="{
+            ds["url"]}" target="_blank" rel="noopener">'
+        if ds["url"]
+        else ""
+    )
     link_end = "</a>" if ds["url"] else ""
 
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg"
@@ -147,7 +157,10 @@ def badge_embed(dataset_id):
     target = ds["url"] or svg_url
     download_url = svg_url  # descarga del SVG
 
-    markdown = f"[![{ds['title']} - {ds['downloads']} DL - DOI {ds['doi']}]({svg_url})]({target})"
+    markdown = f"[![{
+        ds['title']} - {
+        ds['downloads']} DL - DOI {
+            ds['doi']}]({svg_url})]({target})"
     html = (
         f'<a href="{target}" target="_blank" rel="noopener">'
         f'<img alt="{ds["title"]} - {ds["downloads"]} DL - DOI {ds["doi"]}" src="{svg_url}"></a> '

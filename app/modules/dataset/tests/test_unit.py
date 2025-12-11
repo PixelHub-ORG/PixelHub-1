@@ -35,7 +35,8 @@ def app_context(app):
 def mock_dsdownloadrecord_repository():
     repository = MagicMock(spec=DSDownloadRecordRepository)
     mock_dataset = MagicMock(spec=DataSet)
-    repository.top_3_dowloaded_datasets_per_week.return_value = [mock_dataset] * 3
+    repository.top_3_dowloaded_datasets_per_week.return_value = [
+        mock_dataset] * 3
     return repository
 
 
@@ -80,7 +81,8 @@ def mock_dataset():
     return ds_mock
 
 
-def test_download_counter_registered_for_authenticated_user(download_service, mock_dsdownloadrecord_repository):
+def test_download_counter_registered_for_authenticated_user(
+        download_service, mock_dsdownloadrecord_repository):
     test_user_id = 99
     test_dataset_id = 1
     test_cookie = "auth-cookie-123"
@@ -100,7 +102,8 @@ def test_download_counter_registered_for_authenticated_user(download_service, mo
     )
 
 
-def test_download_counter_registered_for_unauthenticated_user(download_service, mock_dsdownloadrecord_repository):
+def test_download_counter_registered_for_unauthenticated_user(
+        download_service, mock_dsdownloadrecord_repository):
     test_dataset_id = 2
     test_cookie = "anon-cookie-456"
 
@@ -118,7 +121,8 @@ def test_download_counter_registered_for_unauthenticated_user(download_service, 
     assert kwargs.get("download_cookie") == test_cookie
 
 
-def test_multiple_downloads_from_same_user_are_registered(download_service, mock_dsdownloadrecord_repository):
+def test_multiple_downloads_from_same_user_are_registered(
+        download_service, mock_dsdownloadrecord_repository):
     test_user_id = 77
     test_dataset_id = 5
     test_cookie = "repetitive-cookie"
@@ -147,8 +151,10 @@ def test_multiple_downloads_from_same_user_are_registered(download_service, mock
     )
 
 
-def test_download_counter_raises_error_with_null_dataset_id(download_service, mock_dsdownloadrecord_repository):
-    mock_dsdownloadrecord_repository.create.side_effect = Exception("IntegrityError: dataset_id is required")
+def test_download_counter_raises_error_with_null_dataset_id(
+        download_service, mock_dsdownloadrecord_repository):
+    mock_dsdownloadrecord_repository.create.side_effect = Exception(
+        "IntegrityError: dataset_id is required")
 
     with pytest.raises(Exception, match="IntegrityError: dataset_id is required"):
         download_service.create(
@@ -161,8 +167,10 @@ def test_download_counter_raises_error_with_null_dataset_id(download_service, mo
     mock_dsdownloadrecord_repository.create.assert_called_once()
 
 
-def test_download_counter_raises_error_with_null_cookie(download_service, mock_dsdownloadrecord_repository):
-    mock_dsdownloadrecord_repository.create.side_effect = Exception("IntegrityError: download_cookie cannot be null")
+def test_download_counter_raises_error_with_null_cookie(
+        download_service, mock_dsdownloadrecord_repository):
+    mock_dsdownloadrecord_repository.create.side_effect = Exception(
+        "IntegrityError: download_cookie cannot be null")
 
     with pytest.raises(Exception, match="IntegrityError: download_cookie cannot be null"):
         download_service.create(
@@ -175,17 +183,22 @@ def test_download_counter_raises_error_with_null_cookie(download_service, mock_d
     mock_dsdownloadrecord_repository.create.assert_called_once()
 
 
-def test_get_dataset_leaderboard_success(dataset_service, mock_dsdownloadrecord_repository):
+def test_get_dataset_leaderboard_success(
+        dataset_service,
+        mock_dsdownloadrecord_repository):
     period = "week"
     leaderboard_data = dataset_service.get_dataset_leaderboard(period=period)
-    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.assert_called_once_with(period=period)
+    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.assert_called_once_with(
+        period=period)
     assert len(leaderboard_data) == 3
 
 
-def test_get_dataset_leaderboard_with_month_period(dataset_service, mock_dsdownloadrecord_repository):
+def test_get_dataset_leaderboard_with_month_period(
+        dataset_service, mock_dsdownloadrecord_repository):
     period = "month"
     leaderboard_data = dataset_service.get_dataset_leaderboard(period=period)
-    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.assert_called_once_with(period=period)
+    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.assert_called_once_with(
+        period=period)
     assert len(leaderboard_data) == 3
 
 
@@ -194,65 +207,74 @@ def test_get_dataset_leaderboard_invalid_period(dataset_service):
         dataset_service.get_dataset_leaderboard(period="invalid_period")
 
 
-def test_get_dataset_leaderboard_empty(dataset_service, mock_dsdownloadrecord_repository):
+def test_get_dataset_leaderboard_empty(
+        dataset_service,
+        mock_dsdownloadrecord_repository):
     mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = []
     period = "week"
     leaderboard_data = dataset_service.get_dataset_leaderboard(period=period)
     assert len(leaderboard_data) == 0
 
 
-def test_get_dataset_leaderboard_with_same_downloads(dataset_service, mock_dsdownloadrecord_repository):
+def test_get_dataset_leaderboard_with_same_downloads(
+        dataset_service, mock_dsdownloadrecord_repository):
     mock_dataset_1 = MagicMock(spec=DataSet, id=1, downloads=20)
     mock_dataset_2 = MagicMock(spec=DataSet, id=2, downloads=20)
     mock_dataset_3 = MagicMock(spec=DataSet, id=3, downloads=20)
     mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = [
-        mock_dataset_1,
-        mock_dataset_2,
-        mock_dataset_3,
-    ]
+        mock_dataset_1, mock_dataset_2, mock_dataset_3, ]
     period = "week"
     leaderboard_data = dataset_service.get_dataset_leaderboard(period=period)
     assert leaderboard_data[0].id <= leaderboard_data[1].id <= leaderboard_data[2].id
 
 
-def test_get_dataset_leaderboard_already_sorted(dataset_service, mock_dsdownloadrecord_repository):
+def test_get_dataset_leaderboard_already_sorted(
+        dataset_service, mock_dsdownloadrecord_repository):
     mock_dataset_1 = MagicMock(spec=DataSet, id=1, downloads=30)
     mock_dataset_2 = MagicMock(spec=DataSet, id=2, downloads=20)
     mock_dataset_3 = MagicMock(spec=DataSet, id=3, downloads=10)
     mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = [
-        mock_dataset_1,
-        mock_dataset_2,
-        mock_dataset_3,
-    ]
+        mock_dataset_1, mock_dataset_2, mock_dataset_3, ]
     period = "week"
     leaderboard_data = dataset_service.get_dataset_leaderboard(period=period)
     assert leaderboard_data[0].downloads > leaderboard_data[1].downloads > leaderboard_data[2].downloads
 
 
-def test_get_dataset_leaderboard_large_number_of_datasets(dataset_service, mock_dsdownloadrecord_repository):
-    mock_datasets = [MagicMock(spec=DataSet, id=i, downloads=100) for i in range(1000)]
-    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = mock_datasets[:3]
+def test_get_dataset_leaderboard_large_number_of_datasets(
+        dataset_service, mock_dsdownloadrecord_repository):
+    mock_datasets = [
+        MagicMock(
+            spec=DataSet,
+            id=i,
+            downloads=100) for i in range(1000)]
+    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = mock_datasets[
+        :3]
     period = "week"
     leaderboard_data = dataset_service.get_dataset_leaderboard(period=period)
     assert len(leaderboard_data) == 3
 
 
-def test_get_dataset_leaderboard_with_null_data(dataset_service, mock_dsdownloadrecord_repository):
+def test_get_dataset_leaderboard_with_null_data(
+        dataset_service, mock_dsdownloadrecord_repository):
     mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = None
     period = "week"
     leaderboard_data = dataset_service.get_dataset_leaderboard(period=period)
     assert leaderboard_data == []
 
 
-def test_get_dataset_leaderboard_limit_parameter(dataset_service, mock_dsdownloadrecord_repository):
+def test_get_dataset_leaderboard_limit_parameter(
+        dataset_service, mock_dsdownloadrecord_repository):
     mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = []
     period = "week"
 
-    dataset_service.dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week(period=period, limit=1)
-    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.assert_called_once_with(period=period, limit=1)
+    dataset_service.dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week(
+        period=period, limit=1)
+    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.assert_called_once_with(
+        period=period, limit=1)
 
 
-def test_get_dataset_leaderboard_with_duplicate_datasets(dataset_service, mock_dsdownloadrecord_repository):
+def test_get_dataset_leaderboard_with_duplicate_datasets(
+        dataset_service, mock_dsdownloadrecord_repository):
     mock_dataset = MagicMock(spec=DataSet, id=1, downloads=10)
     mock_datasets = [mock_dataset, mock_dataset, mock_dataset]
     mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = mock_datasets
@@ -262,50 +284,65 @@ def test_get_dataset_leaderboard_with_duplicate_datasets(dataset_service, mock_d
     assert all(d.id == 1 for d in leaderboard_data)
 
 
-def test_get_dataset_leaderboard_repository_error(dataset_service, mock_dsdownloadrecord_repository):
-    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.side_effect = Exception("DB error")
+def test_get_dataset_leaderboard_repository_error(
+        dataset_service, mock_dsdownloadrecord_repository):
+    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.side_effect = Exception(
+        "DB error")
 
     with pytest.raises(Exception, match="DB error"):
         dataset_service.get_dataset_leaderboard(period="week")
 
 
-def test_get_dataset_leaderboard_with_single_dataset(dataset_service, mock_dsdownloadrecord_repository):
+def test_get_dataset_leaderboard_with_single_dataset(
+        dataset_service, mock_dsdownloadrecord_repository):
     mock_dataset_1 = MagicMock(spec=DataSet, id=1, downloads=100)
-    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = [mock_dataset_1]
+    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = [
+        mock_dataset_1]
     period = "week"
     leaderboard_data = dataset_service.get_dataset_leaderboard(period=period)
     assert len(leaderboard_data) == 1
     assert leaderboard_data[0].downloads == 100
 
 
-def test_get_dataset_leaderboard_with_null_values_in_dataset(dataset_service, mock_dsdownloadrecord_repository):
+def test_get_dataset_leaderboard_with_null_values_in_dataset(
+        dataset_service, mock_dsdownloadrecord_repository):
     mock_dataset_1 = MagicMock(spec=DataSet, id=1, downloads=None)
-    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = [mock_dataset_1]
+    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = [
+        mock_dataset_1]
     period = "week"
     leaderboard_data = dataset_service.get_dataset_leaderboard(period=period)
     assert leaderboard_data[0].downloads is None
 
 
-def test_get_dataset_leaderboard_with_empty_fields(dataset_service, mock_dsdownloadrecord_repository):
-    mock_dataset_1 = MagicMock(spec=DataSet, id=1, downloads=100, description=None)
-    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = [mock_dataset_1]
+def test_get_dataset_leaderboard_with_empty_fields(
+        dataset_service, mock_dsdownloadrecord_repository):
+    mock_dataset_1 = MagicMock(
+        spec=DataSet,
+        id=1,
+        downloads=100,
+        description=None)
+    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = [
+        mock_dataset_1]
     period = "week"
     leaderboard_data = dataset_service.get_dataset_leaderboard(period=period)
     assert leaderboard_data[0].description is None
 
 
-def test_get_dataset_leaderboard_with_invalid_dataset_id(dataset_service, mock_dsdownloadrecord_repository):
+def test_get_dataset_leaderboard_with_invalid_dataset_id(
+        dataset_service, mock_dsdownloadrecord_repository):
     mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.return_value = []
     period = "week"
     leaderboard_data = dataset_service.get_dataset_leaderboard(period=period)
     assert leaderboard_data == []
 
 
-def test_get_dataset_leaderboard_with_special_characters_in_period(dataset_service, mock_dsdownloadrecord_repository):
+def test_get_dataset_leaderboard_with_special_characters_in_period(
+        dataset_service, mock_dsdownloadrecord_repository):
     period = "week$"
     leaderboard_data = dataset_service.get_dataset_leaderboard(period=period)
 
-    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.assert_called_once_with(period="week")
+    mock_dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week.assert_called_once_with(
+        period="week")
 
     assert len(leaderboard_data) == 3
 
@@ -356,7 +393,11 @@ def test_badge_svg_not_found(mock_get_dataset, client):
 
 @patch("app.modules.badge.routes.get_dataset")
 @patch("app.modules.badge.routes.url_for")
-def test_badge_embed_success(mock_url_for, mock_get_dataset, client, mock_dataset):
+def test_badge_embed_success(
+        mock_url_for,
+        mock_get_dataset,
+        client,
+        mock_dataset):
     mock_get_dataset.return_value = mock_dataset
     mock_url_for.return_value = "http://example.com/badge/1/svg"
 
@@ -393,7 +434,8 @@ def test_make_segment_width_estimation():
 def test_upload_valid(mock_current_user):
     tmp = tempfile.mkdtemp()
     try:
-        # ensure temp_folder() returns a plain string (not a coroutine/AsyncMock)
+        # ensure temp_folder() returns a plain string (not a
+        # coroutine/AsyncMock)
         mock_current_user.temp_folder = lambda: tmp
         mock_current_user.is_authenticated = True
 
@@ -424,7 +466,10 @@ def test_upload_valid(mock_current_user):
             sess["_user_id"] = "1"
 
         data = {"file": (io.BytesIO(b"dummy content"), "test.pix")}
-        resp = client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+        resp = client.post(
+            "/dataset/file/upload",
+            data=data,
+            content_type="multipart/form-data")
 
         assert resp.status_code == 200
         j = resp.get_json()
@@ -447,7 +492,8 @@ def test_upload_valid(mock_current_user):
 def test_upload_invalid_extension(mock_current_user):
     tmp = tempfile.mkdtemp()
     try:
-        # ensure temp_folder() returns a plain string (not a coroutine/AsyncMock)
+        # ensure temp_folder() returns a plain string (not a
+        # coroutine/AsyncMock)
         mock_current_user.temp_folder = lambda: tmp
         mock_current_user.is_authenticated = True
 
@@ -477,7 +523,10 @@ def test_upload_invalid_extension(mock_current_user):
             sess["_user_id"] = "1"
 
         data = {"file": (io.BytesIO(b"dummy content"), "test.txt")}
-        resp = client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+        resp = client.post(
+            "/dataset/file/upload",
+            data=data,
+            content_type="multipart/form-data")
 
         assert resp.status_code == 400
         j = resp.get_json()
@@ -524,7 +573,10 @@ def test_upload_valid_zip_with_pix_files(mock_current_user):
         zip_buffer.seek(0)
 
         data = {"file": (zip_buffer, "test.zip")}
-        resp = client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+        resp = client.post(
+            "/dataset/file/upload",
+            data=data,
+            content_type="multipart/form-data")
 
         assert resp.status_code == 200
         j = resp.get_json()
@@ -582,7 +634,10 @@ def test_upload_zip_without_pix_files(mock_current_user):
         zip_buffer.seek(0)
 
         data = {"file": (zip_buffer, "test.zip")}
-        resp = client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+        resp = client.post(
+            "/dataset/file/upload",
+            data=data,
+            content_type="multipart/form-data")
 
         assert resp.status_code == 400
         j = resp.get_json()
@@ -632,7 +687,10 @@ def test_upload_zip_with_filename_collision(mock_current_user):
         zip_buffer.seek(0)
 
         data = {"file": (zip_buffer, "test.zip")}
-        resp = client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+        resp = client.post(
+            "/dataset/file/upload",
+            data=data,
+            content_type="multipart/form-data")
 
         assert resp.status_code == 200
         j = resp.get_json()
@@ -682,7 +740,10 @@ def test_upload_zip_with_case_insensitive_extension(mock_current_user):
         zip_buffer.seek(0)
 
         data = {"file": (zip_buffer, "TEST.ZIP")}
-        resp = client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+        resp = client.post(
+            "/dataset/file/upload",
+            data=data,
+            content_type="multipart/form-data")
 
         assert resp.status_code == 200
         j = resp.get_json()
@@ -700,8 +761,12 @@ def test_upload_zip_with_case_insensitive_extension(mock_current_user):
 @patch("app.modules.dataset.routes.ZipFile")
 @patch("app.modules.dataset.routes.send_from_directory")
 def test_download_dataset(
-    mock_send, mock_zipfile, mock_mkdtemp, mock_dataset_service, mock_dsdownload_service, mock_current_user
-):
+        mock_send,
+        mock_zipfile,
+        mock_mkdtemp,
+        mock_dataset_service,
+        mock_dsdownload_service,
+        mock_current_user):
     # Mock dataset service
     ds = MagicMock()
     ds.id = 99
@@ -771,7 +836,8 @@ def mock_dataset_with_data():
     target_ds = MagicMock(spec=DataSet, id=10)
     target_ds.ds_meta_data = mock_meta
     target_ds.get_authors_set.return_value = target_ds.ds_meta_data.authors
-    target_ds.get_tags_set.return_value = set(target_ds.ds_meta_data.tags.split(","))
+    target_ds.get_tags_set.return_value = set(
+        target_ds.ds_meta_data.tags.split(","))
     target_ds.get_publication_type.return_value = target_ds.ds_meta_data.publication_type
     target_ds.get_download_count.return_value = 0
     return target_ds
@@ -798,7 +864,13 @@ def mock_all_datasets_query():
         tags="game,puzzle",
         publication_type=PublicationType.BOOK,
     )
-    ds2 = MagicMock(spec=DataSet, id=12, created_at=datetime.now(timezone.utc) - timedelta(days=1))
+    ds2 = MagicMock(
+        spec=DataSet,
+        id=12,
+        created_at=datetime.now(
+            timezone.utc) -
+        timedelta(
+            days=1))
     ds2.ds_meta_data = ds2_meta
     ds2.get_authors_set.return_value = ds2.ds_meta_data.authors
     ds2.get_tags_set.return_value = set(ds2.ds_meta_data.tags.split(","))
@@ -811,7 +883,13 @@ def mock_all_datasets_query():
         tags="spl,analysis",
         publication_type=PublicationType.CONFERENCE_PAPER,
     )
-    ds3 = MagicMock(spec=DataSet, id=13, created_at=datetime.now(timezone.utc) - timedelta(days=30))
+    ds3 = MagicMock(
+        spec=DataSet,
+        id=13,
+        created_at=datetime.now(
+            timezone.utc) -
+        timedelta(
+            days=30))
     ds3.ds_meta_data = ds3_meta
     ds3.get_authors_set.return_value = ds3.ds_meta_data.authors
     ds3.get_tags_set.return_value = set(ds3.ds_meta_data.tags.split(","))
@@ -847,7 +925,8 @@ def test_recommendations_prioritize_high_score_and_downloads(
         return 0
 
     mock_similarity_score.side_effect = side_effect
-    recommendations = dataset_service.get_dataset_recommendations(mock_dataset_with_data, limit=3)
+    recommendations = dataset_service.get_dataset_recommendations(
+        mock_dataset_with_data, limit=3)
 
     assert len(recommendations) == 3
     assert recommendations[0].id == 12
@@ -867,7 +946,8 @@ def test_recommendations_returns_random_3__if_no_match(
     mock_dataset_query.filter.return_value = mock_dataset_query
     mock_dataset_query.all.return_value = mock_all_datasets_query
     mock_similarity_score.return_value = 0
-    recommendations = dataset_service.get_dataset_recommendations(mock_dataset_with_data, limit=3)
+    recommendations = dataset_service.get_dataset_recommendations(
+        mock_dataset_with_data, limit=3)
     assert len(recommendations) == 3
 
 
@@ -883,19 +963,23 @@ def test_recommendations_respects_limit(
     mock_dataset_query.filter.return_value = mock_dataset_query
     mock_dataset_query.all.return_value = mock_all_datasets_query
     mock_similarity_score.return_value = 10
-    recommendations = dataset_service.get_dataset_recommendations(mock_dataset_with_data, limit=2)
+    recommendations = dataset_service.get_dataset_recommendations(
+        mock_dataset_with_data, limit=2)
     assert len(recommendations) == 2
 
 
 @patch("app.modules.dataset.models.DataSet.calculate_similarity_score", autospec=True)
 @patch("app.modules.dataset.models.DataSet.query", new_callable=MagicMock)
 def test_recommendations_excludes_target_dataset(
-    mock_dataset_query, mock_similarity_score, dataset_service, mock_dataset_with_data
-):
+        mock_dataset_query,
+        mock_similarity_score,
+        dataset_service,
+        mock_dataset_with_data):
     mock_dataset_query.filter.return_value = mock_dataset_query
     mock_dataset_query.all.return_value = [mock_dataset_with_data]
     mock_dataset_query.filter.return_value.all.return_value = []
-    recommendations = dataset_service.get_dataset_recommendations(mock_dataset_with_data, limit=5)
+    recommendations = dataset_service.get_dataset_recommendations(
+        mock_dataset_with_data, limit=5)
     assert len(recommendations) == 0
 
 
@@ -971,7 +1055,9 @@ def test_upload_github_no_repo_url(mock_current_user):
 
         @lm.user_loader
         def _load_user(user_id):
-            return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+            return MagicMock(
+                is_authenticated=True,
+                id=int(user_id) if user_id else None)
 
         app.config["TESTING"] = True
         client = app.test_client()
@@ -1004,7 +1090,9 @@ def test_upload_github_invalid_url(mock_current_user):
 
         @lm.user_loader
         def _load_user(user_id):
-            return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+            return MagicMock(
+                is_authenticated=True,
+                id=int(user_id) if user_id else None)
 
         app.config["TESTING"] = True
         client = app.test_client()
@@ -1048,7 +1136,9 @@ def test_upload_github_no_pix_files(mock_session_class, mock_current_user):
 
         @lm.user_loader
         def _load_user(user_id):
-            return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+            return MagicMock(
+                is_authenticated=True,
+                id=int(user_id) if user_id else None)
 
         app.config["TESTING"] = True
         client = app.test_client()
@@ -1087,7 +1177,9 @@ def test_delete_file_success(mock_current_user):
 
         @lm.user_loader
         def _load_user(user_id):
-            return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+            return MagicMock(
+                is_authenticated=True,
+                id=int(user_id) if user_id else None)
 
         app.config["TESTING"] = True
         client = app.test_client()
@@ -1121,7 +1213,9 @@ def test_delete_file_not_found(mock_current_user):
 
         @lm.user_loader
         def _load_user(user_id):
-            return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+            return MagicMock(
+                is_authenticated=True,
+                id=int(user_id) if user_id else None)
 
         app.config["TESTING"] = True
         client = app.test_client()
@@ -1144,7 +1238,10 @@ def test_delete_file_not_found(mock_current_user):
 @patch("app.modules.dataset.routes.current_user")
 @patch("app.modules.dataset.routes.dataset_service")
 @patch("app.modules.dataset.routes.render_template")
-def test_list_dataset(mock_render_template, mock_dataset_service, mock_current_user):
+def test_list_dataset(
+        mock_render_template,
+        mock_dataset_service,
+        mock_current_user):
     mock_current_user.id = 1
     mock_current_user.is_authenticated = True
 
@@ -1160,7 +1257,9 @@ def test_list_dataset(mock_render_template, mock_dataset_service, mock_current_u
 
     @lm.user_loader
     def _load_user(user_id):
-        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+        return MagicMock(
+            is_authenticated=True,
+            id=int(user_id) if user_id else None)
 
     app.config["TESTING"] = True
     client = app.test_client()
@@ -1178,8 +1277,11 @@ def test_list_dataset(mock_render_template, mock_dataset_service, mock_current_u
 # Test home_leaderboard endpoint
 @patch("app.modules.dataset.routes.dataset_service")
 @patch("app.modules.dataset.routes.render_template")
-def test_home_leaderboard_default_period(mock_render_template, mock_dataset_service):
-    mock_dataset_service.get_dataset_leaderboard.return_value = [MagicMock(id=1, downloads=100)]
+def test_home_leaderboard_default_period(
+        mock_render_template,
+        mock_dataset_service):
+    mock_dataset_service.get_dataset_leaderboard.return_value = [
+        MagicMock(id=1, downloads=100)]
     mock_render_template.return_value = "<html>leaderboard</html>"
 
     app = Flask(__name__)
@@ -1191,13 +1293,17 @@ def test_home_leaderboard_default_period(mock_render_template, mock_dataset_serv
     resp = client.get("/home/leaderboard")
 
     assert resp.status_code == 200
-    mock_dataset_service.get_dataset_leaderboard.assert_called_once_with(period="week")
+    mock_dataset_service.get_dataset_leaderboard.assert_called_once_with(
+        period="week")
 
 
 @patch("app.modules.dataset.routes.dataset_service")
 @patch("app.modules.dataset.routes.render_template")
-def test_home_leaderboard_custom_period(mock_render_template, mock_dataset_service):
-    mock_dataset_service.get_dataset_leaderboard.return_value = [MagicMock(id=1, downloads=100)]
+def test_home_leaderboard_custom_period(
+        mock_render_template,
+        mock_dataset_service):
+    mock_dataset_service.get_dataset_leaderboard.return_value = [
+        MagicMock(id=1, downloads=100)]
     mock_render_template.return_value = "<html>leaderboard</html>"
 
     app = Flask(__name__)
@@ -1209,7 +1315,8 @@ def test_home_leaderboard_custom_period(mock_render_template, mock_dataset_servi
     resp = client.get("/home/leaderboard?period=month")
 
     assert resp.status_code == 200
-    mock_dataset_service.get_dataset_leaderboard.assert_called_once_with(period="month")
+    mock_dataset_service.get_dataset_leaderboard.assert_called_once_with(
+        period="month")
 
 
 # Test subdomain_index (DOI view)
@@ -1219,8 +1326,11 @@ def test_home_leaderboard_custom_period(mock_render_template, mock_dataset_servi
 @patch("app.modules.dataset.routes.ds_view_record_service")
 @patch("app.modules.dataset.routes.render_template")
 def test_subdomain_index_success(
-    mock_render_template, mock_view_service, mock_dsmetadata_service, mock_dataset_service, mock_doi_mapping_service
-):
+        mock_render_template,
+        mock_view_service,
+        mock_dsmetadata_service,
+        mock_dataset_service,
+        mock_doi_mapping_service):
     mock_doi_mapping_service.get_new_doi.return_value = None
     mock_ds_meta = MagicMock()
     mock_dataset = MagicMock(id=1)
@@ -1240,12 +1350,15 @@ def test_subdomain_index_success(
     resp = client.get("/doi/10.1234/test/")
 
     assert resp.status_code == 200
-    mock_dsmetadata_service.filter_by_doi.assert_called_once_with("10.1234/test")
+    mock_dsmetadata_service.filter_by_doi.assert_called_once_with(
+        "10.1234/test")
 
 
 @patch("app.modules.dataset.routes.doi_mapping_service")
 @patch("app.modules.dataset.routes.dsmetadata_service")
-def test_subdomain_index_not_found(mock_dsmetadata_service, mock_doi_mapping_service):
+def test_subdomain_index_not_found(
+        mock_dsmetadata_service,
+        mock_doi_mapping_service):
     mock_doi_mapping_service.get_new_doi.return_value = None
     mock_dsmetadata_service.filter_by_doi.return_value = None
 
@@ -1264,7 +1377,10 @@ def test_subdomain_index_not_found(mock_dsmetadata_service, mock_doi_mapping_ser
 @patch("app.modules.dataset.routes.current_user")
 @patch("app.modules.dataset.routes.dataset_service")
 @patch("app.modules.dataset.routes.render_template")
-def test_get_unsynchronized_dataset_success(mock_render_template, mock_dataset_service, mock_current_user):
+def test_get_unsynchronized_dataset_success(
+        mock_render_template,
+        mock_dataset_service,
+        mock_current_user):
     mock_current_user.id = 1
     mock_current_user.is_authenticated = True
 
@@ -1281,7 +1397,9 @@ def test_get_unsynchronized_dataset_success(mock_render_template, mock_dataset_s
 
     @lm.user_loader
     def _load_user(user_id):
-        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+        return MagicMock(
+            is_authenticated=True,
+            id=int(user_id) if user_id else None)
 
     app.config["TESTING"] = True
     client = app.test_client()
@@ -1292,12 +1410,14 @@ def test_get_unsynchronized_dataset_success(mock_render_template, mock_dataset_s
     resp = client.get("/dataset/unsynchronized/5/")
 
     assert resp.status_code == 200
-    mock_dataset_service.get_unsynchronized_dataset.assert_called_once_with(1, 5)
+    mock_dataset_service.get_unsynchronized_dataset.assert_called_once_with(
+        1, 5)
 
 
 @patch("app.modules.dataset.routes.current_user")
 @patch("app.modules.dataset.routes.dataset_service")
-def test_get_unsynchronized_dataset_not_found(mock_dataset_service, mock_current_user):
+def test_get_unsynchronized_dataset_not_found(
+        mock_dataset_service, mock_current_user):
     mock_current_user.id = 1
     mock_current_user.is_authenticated = True
 
@@ -1311,7 +1431,9 @@ def test_get_unsynchronized_dataset_not_found(mock_dataset_service, mock_current
 
     @lm.user_loader
     def _load_user(user_id):
-        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+        return MagicMock(
+            is_authenticated=True,
+            id=int(user_id) if user_id else None)
 
     app.config["TESTING"] = True
     client = app.test_client()
@@ -1329,7 +1451,11 @@ def test_get_unsynchronized_dataset_not_found(mock_dataset_service, mock_current
 @patch("app.modules.dataset.routes.dataset_service")
 @patch("app.modules.dataset.routes.DataSetComparisonService")
 @patch("app.modules.dataset.routes.render_template")
-def test_compare_datasets(mock_render_template, mock_comparison_service_class, mock_dataset_service, mock_current_user):
+def test_compare_datasets(
+        mock_render_template,
+        mock_comparison_service_class,
+        mock_dataset_service,
+        mock_current_user):
     mock_current_user.is_authenticated = True
 
     mock_old_ds = MagicMock(id=1)
@@ -1337,7 +1463,8 @@ def test_compare_datasets(mock_render_template, mock_comparison_service_class, m
     mock_dataset_service.get_or_404.side_effect = [mock_old_ds, mock_new_ds]
 
     mock_comparison_service = MagicMock()
-    mock_comparison_service.compare.return_value = {"metadata": {}, "files": {}}
+    mock_comparison_service.compare.return_value = {
+        "metadata": {}, "files": {}}
     mock_comparison_service_class.return_value = mock_comparison_service
     mock_render_template.return_value = "<html>compare</html>"
 
@@ -1349,7 +1476,9 @@ def test_compare_datasets(mock_render_template, mock_comparison_service_class, m
 
     @lm.user_loader
     def _load_user(user_id):
-        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+        return MagicMock(
+            is_authenticated=True,
+            id=int(user_id) if user_id else None)
 
     app.config["TESTING"] = True
     client = app.test_client()
@@ -1360,7 +1489,8 @@ def test_compare_datasets(mock_render_template, mock_comparison_service_class, m
     resp = client.get("/dataset/compare/1/2")
 
     assert resp.status_code == 200
-    mock_comparison_service.compare.assert_called_once_with(mock_old_ds, mock_new_ds)
+    mock_comparison_service.compare.assert_called_once_with(
+        mock_old_ds, mock_new_ds)
 
 
 # Test file_diff
@@ -1389,7 +1519,10 @@ def test_file_diff(mock_comparison_service_class):
 @patch("app.modules.dataset.routes.DataSetForm")
 @patch("app.modules.dataset.routes.render_template")
 @patch("app.modules.dataset.routes.current_user")
-def test_create_dataset_get(mock_current_user, mock_render_template, mock_form_class):
+def test_create_dataset_get(
+        mock_current_user,
+        mock_render_template,
+        mock_form_class):
     mock_current_user.is_authenticated = True
     mock_form = MagicMock()
     mock_form_class.return_value = mock_form
@@ -1403,7 +1536,9 @@ def test_create_dataset_get(mock_current_user, mock_render_template, mock_form_c
 
     @lm.user_loader
     def _load_user(user_id):
-        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+        return MagicMock(
+            is_authenticated=True,
+            id=int(user_id) if user_id else None)
 
     app.config["TESTING"] = True
     client = app.test_client()
@@ -1434,7 +1569,9 @@ def test_create_dataset_post_invalid_form(mock_current_user, mock_form_class):
 
     @lm.user_loader
     def _load_user(user_id):
-        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+        return MagicMock(
+            is_authenticated=True,
+            id=int(user_id) if user_id else None)
 
     app.config["TESTING"] = True
     client = app.test_client()
@@ -1462,7 +1599,9 @@ def test_upload_no_file(mock_current_user):
 
     @lm.user_loader
     def _load_user(user_id):
-        return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+        return MagicMock(
+            is_authenticated=True,
+            id=int(user_id) if user_id else None)
 
     app.config["TESTING"] = True
     client = app.test_client()
@@ -1496,7 +1635,9 @@ def test_upload_github_exception(mock_session_cls, mock_current_user):
 
         @lm.user_loader
         def _load_user(user_id):
-            return MagicMock(is_authenticated=True, id=int(user_id) if user_id else None)
+            return MagicMock(
+                is_authenticated=True,
+                id=int(user_id) if user_id else None)
 
         app.config["TESTING"] = True
         client = app.test_client()
@@ -1525,7 +1666,11 @@ def test_size_service():
 
 def test_get_dataset_history(dataset_service):
     # Create a chain of datasets: 1 -> 2 -> 3
-    ds1 = MagicMock(id=1, version=1, previous_version_id=None, next_versions=[])
+    ds1 = MagicMock(
+        id=1,
+        version=1,
+        previous_version_id=None,
+        next_versions=[])
     ds2 = MagicMock(id=2, version=2, previous_version_id=1, next_versions=[])
     ds3 = MagicMock(id=3, version=3, previous_version_id=2, next_versions=[])
 
@@ -1666,7 +1811,8 @@ def test_dataset_comparison_service_compare():
 
     # Check Metadata Changes
     metadata_changes = comparison["metadata"]
-    assert any(c["field"] == "Title" and c["old"] == "Old Title" and c["new"] == "New Title" for c in metadata_changes)
+    assert any(c["field"] == "Title" and c["old"] ==
+               "Old Title" and c["new"] == "New Title" for c in metadata_changes)
     assert any(
         c["field"] == "Publication Type" and c["old"] == "Journal Article" and c["new"] == "Conference Paper"
         for c in metadata_changes
@@ -1675,8 +1821,10 @@ def test_dataset_comparison_service_compare():
         c["field"] == "Publication DOI" and c["old"] == "10.1000/old" and c["new"] == "10.1000/new"
         for c in metadata_changes
     )
-    assert any(c["field"] == "Tags" and c["old"] == "tag1,tag2" and c["new"] == "tag1,tag3" for c in metadata_changes)
-    assert any(c["field"] == "Authors" and "Author 1" in c["old"] and "Author 2" in c["new"] for c in metadata_changes)
+    assert any(c["field"] == "Tags" and c["old"] ==
+               "tag1,tag2" and c["new"] == "tag1,tag3" for c in metadata_changes)
+    assert any(c["field"] == "Authors" and "Author 1" in c["old"]
+               and "Author 2" in c["new"] for c in metadata_changes)
 
     # Check File Changes
     file_changes = comparison["files"]

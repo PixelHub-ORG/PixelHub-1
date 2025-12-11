@@ -11,9 +11,8 @@ from core.selenium.common import close_driver, initialize_driver
 
 
 def wait_for_page_to_load(driver, timeout=4):
-    WebDriverWait(driver, timeout).until(
-        lambda driver: driver.execute_script("return document.readyState") == "complete"
-    )
+    WebDriverWait(driver, timeout).until(lambda driver: driver.execute_script(
+        "return document.readyState") == "complete")
 
 
 def test_dataset_creation_with_fakenodo_enabled():
@@ -46,11 +45,14 @@ def test_dataset_creation_with_fakenodo_enabled():
 
         dropdown = driver.find_element(By.ID, "publication_type")
         dropdown.click()
-        dropdown.find_element(By.XPATH, "//option[. = 'Working Paper']").click()
+        dropdown.find_element(
+            By.XPATH, "//option[. = 'Working Paper']").click()
         wait_for_page_to_load(driver)
 
-        file_input_element = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
-        file_path = os.path.abspath("app/modules/dataset/uvl_examples/file1.uvl")
+        file_input_element = driver.find_element(
+            By.CLASS_NAME, "dz-hidden-input")
+        file_path = os.path.abspath(
+            "app/modules/dataset/uvl_examples/file1.uvl")
         file_input_element.send_keys(file_path)
 
         agree_checkbox = driver.find_element(By.ID, "agreeCheckbox")
@@ -61,7 +63,8 @@ def test_dataset_creation_with_fakenodo_enabled():
         time.sleep(5)
         wait_for_page_to_load(driver)
 
-        first_dataset_link = driver.find_element(By.CSS_SELECTOR, "tbody tr:first-child a")
+        first_dataset_link = driver.find_element(
+            By.CSS_SELECTOR, "tbody tr:first-child a")
         first_dataset_link.click()
         wait_for_page_to_load(driver)
         time.sleep(2)

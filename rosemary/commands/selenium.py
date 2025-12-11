@@ -6,7 +6,8 @@ import click
 import core.selenium.common as driver_selector
 
 
-@click.command("selenium", help="Executes Selenium tests based on the environment (local, Docker, or Vagrant).")
+@click.command("selenium",
+               help="Executes Selenium tests based on the environment (local, Docker, or Vagrant).")
 @click.argument("module", required=False)
 @click.option(
     "--driver",
@@ -34,18 +35,27 @@ def selenium(module, driver):
                 return
             module_path = os.path.join(modules_dir, module_name)
             if not os.path.exists(module_path):
-                raise click.UsageError(f"Module '{module_name}' does not exist.")
-            selenium_test_path = os.path.join(module_path, "tests", "test_selenium.py")
+                raise click.UsageError(
+                    f"Module '{module_name}' does not exist.")
+            selenium_test_path = os.path.join(
+                module_path, "tests", "test_selenium.py")
             if not os.path.exists(selenium_test_path):
-                raise click.UsageError(f"Selenium test for module '{module_name}' not found at '{selenium_test_path}'.")
+                raise click.UsageError(
+                    f"Selenium test for module '{module_name}' not found at '{selenium_test_path}'.")
 
         def collect_test_paths(module_name=None):
             """Collect Selenium test files for one or all modules."""
             if module_name:
-                return [os.path.join(modules_dir, module_name, "tests", "test_selenium.py")]
+                return [
+                    os.path.join(
+                        modules_dir,
+                        module_name,
+                        "tests",
+                        "test_selenium.py")]
             paths = []
             for m in os.listdir(modules_dir):
-                selenium_test = os.path.join(modules_dir, m, "tests", "test_selenium.py")
+                selenium_test = os.path.join(
+                    modules_dir, m, "tests", "test_selenium.py")
                 if os.path.exists(selenium_test):
                     paths.append(selenium_test)
             return paths
@@ -57,12 +67,18 @@ def selenium(module, driver):
             cmd = [base_cmd] + test_paths
 
             env_label = "Docker (Selenium Grid)" if env == "docker" else "local environment"
-            click.echo(click.style(f"🚀 Running Selenium tests in {env_label}...", fg="cyan"))
+            click.echo(
+                click.style(
+                    f"🚀 Running Selenium tests in {env_label}...",
+                    fg="cyan"))
             click.echo(f"→ Command: {' '.join(cmd)}")
 
             try:
                 subprocess.run(cmd, check=True)
-                click.echo(click.style("✅ Selenium tests completed successfully.", fg="green"))
+                click.echo(
+                    click.style(
+                        "✅ Selenium tests completed successfully.",
+                        fg="green"))
             except subprocess.CalledProcessError:
                 click.echo(click.style("❌ Selenium tests failed.", fg="red"))
                 raise
@@ -74,8 +90,7 @@ def selenium(module, driver):
                     "Currently it is not possible to run Selenium tests from a Vagrant environment. "
                     "Do you want to implement it yourself? https://github.com/diverso-lab/uvlhub/pulls",
                     fg="red",
-                )
-            )
+                ))
 
         # =====================
         # Main flow
@@ -90,7 +105,10 @@ def selenium(module, driver):
         elif working_dir == "/vagrant/":
             run_vagrant_tests(module)
         else:
-            click.echo(click.style(f"Unrecognized WORKING_DIR: {working_dir}", fg="red"))
+            click.echo(
+                click.style(
+                    f"Unrecognized WORKING_DIR: {working_dir}",
+                    fg="red"))
 
     except click.UsageError as e:
         raise e
