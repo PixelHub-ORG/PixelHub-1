@@ -12,7 +12,7 @@
 # 6. Hace commit automático si hay cambios
 # ============================================================================
 
-set -e  # Salir si cualquier comando falla
+set -e
 
 echo "🔥 PRE-PUSH HOOK EJECUTÁNDOSE 🔥"
 echo "Presiona ENTER para continuar..."
@@ -22,9 +22,7 @@ echo ""
 echo "🚀 ===== INICIANDO PRE-PUSH CHECKS ====="
 echo ""
 
-# ----------------------------------------------------------------------------
-# PASO 1: Rosemary Linter
-# ----------------------------------------------------------------------------
+# Rosemary Linter
 echo "📋 Ejecutando Rosemary Linter..."
 rosemary linter 
 if [ $? -ne 0 ]; then
@@ -34,17 +32,13 @@ fi
 echo "✅ Rosemary linter pasado"
 echo ""
 
-# ----------------------------------------------------------------------------
-# PASO 2: Instalar autopep8 si no está disponible
-# ----------------------------------------------------------------------------
+# Instalar autopep8 si no está disponible
 if ! command -v autopep8 &> /dev/null; then
     echo "📦 Instalando autopep8..."
     pip install -q autopep8
 fi
 
-# ----------------------------------------------------------------------------
-# PASO 3: Formatear con Black PRIMERO (corrige indentación automáticamente)
-# ----------------------------------------------------------------------------
+# Formatear con Black PRIMERO (corrige indentación automáticamente)
 echo "🎨 Formateando código con Black (esto puede tardar un momento)..."
 black app rosemary core
 BLACK_EXIT=$?
@@ -55,18 +49,14 @@ fi
 echo "✅ Black ejecutado correctamente - código formateado"
 echo ""
 
-# ----------------------------------------------------------------------------
-# PASO 4: Corregir otros errores de PEP8 con autopep8
-# ----------------------------------------------------------------------------
+# Corregir otros errores de PEP8 con autopep8
 echo "🔧 Corrigiendo errores adicionales de PEP8 con autopep8..."
 # autopep8 después de Black para corregir cosas que Black no toca
 autopep8 --in-place --aggressive --aggressive --recursive app rosemary core
 echo "✅ Correcciones de PEP8 aplicadas"
 echo ""
 
-# ----------------------------------------------------------------------------
-# PASO 5: Ordenar imports con isort
-# ----------------------------------------------------------------------------
+# Ordenar imports con isort
 echo "📚 Ordenando imports con isort..."
 isort app rosemary core
 if [ $? -ne 0 ]; then
@@ -76,12 +66,9 @@ fi
 echo "✅ isort ejecutado correctamente"
 echo ""
 
-# ----------------------------------------------------------------------------
-# PASO 6: Verificación final con flake8
-# ----------------------------------------------------------------------------
+# Verificación final con flake8
 echo "🔍 Verificando código con flake8..."
 
-# Intentar con flake8 normal primero
 flake8 app rosemary core 2>/dev/null
 FLAKE8_EXIT=$?
 
@@ -89,7 +76,6 @@ if [ $FLAKE8_EXIT -ne 0 ]; then
     echo "⚠️  Se detectaron algunos errores de flake8."
     echo ""
     
-    # Mostrar los errores
     flake8 app rosemary core
     
     # Si solo son E122, intentar una última corrección agresiva
@@ -100,16 +86,13 @@ if [ $FLAKE8_EXIT -ne 0 ]; then
         echo ""
         echo "🔧 Detectados solo errores E122, aplicando corrección agresiva..."
         
-        # Usar yapf como alternativa (más agresivo que Black para indentación)
         if command -v yapf &> /dev/null; then
             yapf -i -r app rosemary core --style='{based_on_style: pep8, indent_width: 4}'
         else
-            # Instalar yapf si no está disponible
             pip install -q yapf
             yapf -i -r app rosemary core --style='{based_on_style: pep8, indent_width: 4}'
         fi
         
-        # Verificar de nuevo
         flake8 app rosemary core
         if [ $? -ne 0 ]; then
             echo ""
@@ -128,19 +111,15 @@ fi
 echo "✅ flake8 pasado correctamente"
 echo ""
 
-# ----------------------------------------------------------------------------
-# PASO 7: Commit automático si hay cambios
-# ----------------------------------------------------------------------------
+# Commit automático si hay cambios
 CHANGED_FILES=$(git diff --name-only)
 if [ -n "$CHANGED_FILES" ]; then
     echo "⚡ Cambios detectados tras el formateo automático:"
     echo "$CHANGED_FILES" | sed 's/^/   - /'
     echo ""
     
-    # Añadir TODOS los archivos Python modificados
     git add app rosemary core *.py 2>/dev/null || true
     
-    # Verificar que hay archivos en staging
     if [ -n "$(git diff --cached --name-only)" ]; then
         git commit -m "chore: formateo automático de código (autopep8, black, isort)"
         echo "✅ Commit automático creado"
