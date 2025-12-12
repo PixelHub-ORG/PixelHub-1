@@ -108,3 +108,13 @@ def test_estimate_text_width_zero_length():
 def test_estimate_text_width_never_negative():
     assert estimate_text_width("", font_size=0) == 0
     assert estimate_text_width("", font_size=-10) == 0
+
+def test_make_segment_respects_min_width():
+    seg = make_segment("a", "#000", font_size=5, pad_x=2, min_w=100)
+    assert seg["w"] == 100
+
+
+def test_make_segment_calculates_expected_width():
+    seg = make_segment("Hello", "#111", font_size=10, pad_x=5, min_w=10)
+    expected = estimate_text_width("Hello", 10) + 10
+    assert seg["w"] == expected
