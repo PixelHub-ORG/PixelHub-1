@@ -62,6 +62,17 @@ class WebsiteUser(HttpUser):
             name="/dataset/[id]/create_version",
         )
 
+    @task(1)
+    def test_upload_github(self):
+        """
+        Prueba la subida de ficheros desde GitHub.
+        """
+        payload = {
+            "repo_url": "https://github.com/JoseLu2121/pix_files.git",
+            "path": "files/"
+        }
+        self.client.post("/dataset/file/upload_github", json=payload, name="/dataset/file/upload_github")
+
     def extract_and_request_file_diff(self, html_content):
         """
         This function parses the HTML content to find file diff buttons and simulates
