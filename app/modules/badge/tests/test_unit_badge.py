@@ -148,3 +148,29 @@ def test_badge_svg_download_long_title(mock_get_dataset, client):
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert long_title in html
+
+@patch("app.modules.badge.routes.get_dataset")
+def test_badge_svg_empty_doi(mock_get_dataset, client):
+    mock_get_dataset.return_value = {
+        "title": "Test",
+        "downloads": 5,
+        "doi": "",
+        "url": "http://example.com",
+    }
+    response = client.get("/badge/10/svg")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "5 DL" in html
+
+@patch("app.modules.badge.routes.get_dataset")
+def test_badge_svg_no_link(mock_get_dataset, client):
+    mock_get_dataset.return_value = {
+        "title": "Dataset",
+        "downloads": 100,
+        "doi": "10.x",
+        "url": None,
+    }
+    response = client.get("/badge/11/svg")
+    html = response.get_data(as_text=True)
+
+    assert "<a xlink" not in html
