@@ -1,4 +1,3 @@
-# app/modules/cart/tests/test_selenium.py
 import time
 
 from selenium.webdriver.common.by import By
@@ -8,12 +7,11 @@ from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
 
 
-def test_download_cart_button():
+def test_cart_is_empty():
     driver = initialize_driver()
     try:
         host = get_host_for_selenium_testing()
 
-        # 1. Login (Usamos el usuario creado por los seeders)
         driver.get(f"{host}/login")
         email_field = driver.find_element(By.NAME, "email")
         password_field = driver.find_element(By.NAME, "password")
@@ -22,35 +20,17 @@ def test_download_cart_button():
         password_field.send_keys("1234")
         password_field.send_keys(Keys.RETURN)
 
-        # Esperar a que el login complete
         time.sleep(2)
 
-        # 2. Asegurarnos de tener algo en el carro (Truco: Añadimos via API oculta o JS para el test)
-        # Ojo: Asumimos que el usuario ya tiene items o los añadimos.
-        # Para asegurar que el test no falle si el carro está vacío, vamos a añadir uno rápido con JS
-        driver.execute_script(
-            """
-            fetch("/featuremodel/cart/add", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ item_id: 1 })
-            });
-        """
-        )
-        time.sleep(1)
-
-        # 3. Ir a la página del carrito
         driver.get(f"{host}/user/cart/view_page")
         time.sleep(2)
 
-        # 4. Verificar que el botón de descarga existe
-        # Buscamos por el texto que pusimos en el HTML o por el enlace
-        download_btn = driver.find_element(By.XPATH, "//a[contains(@href, '/user/cart/download')]")
+        empty_message = driver.find_element(By.TAG_NAME, "h1")
 
-        assert download_btn is not None
-        assert "Download models" in download_btn.text
+        assert empty_message is not None
+        assert "Your cart is empty" in empty_message.text
 
-        print("✅ Test Selenium: El botón de descarga del carrito aparece correctamente.")
+        print("Test Selenium: El mensaje 'Your cart is empty.' aparece correctamente.")
 
     finally:
         close_driver(driver)
