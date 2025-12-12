@@ -25,11 +25,16 @@ def download_env(test_client):
         user_id = user.id
         cart = Cart(user_id=user_id)
         db.session.add(cart)
-        profile = UserProfile(user_id=user_id, name="Downloader", surname="Test", orcid="0000-1111-2222-3333")
+        profile = UserProfile(
+            user_id=user_id,
+            name="Downloader",
+            surname="Test",
+            orcid="0000-1111-2222-3333")
         db.session.add(profile)
         ds_meta = DSMetaData(
-            title="Download Dataset", description="Dataset for download test", publication_type=PublicationType.OTHER
-        )
+            title="Download Dataset",
+            description="Dataset for download test",
+            publication_type=PublicationType.OTHER)
         db.session.add(ds_meta)
         db.session.commit()
 
@@ -69,7 +74,9 @@ def download_env(test_client):
             ds_ids = [d.id for d in ds_list]
 
             if ds_ids:
-                FileModel.query.filter(FileModel.data_set_id.in_(ds_ids)).delete(synchronize_session=False)
+                FileModel.query.filter(
+                    FileModel.data_set_id.in_(ds_ids)).delete(
+                    synchronize_session=False)
                 db.session.commit()
 
                 for ds in ds_list:

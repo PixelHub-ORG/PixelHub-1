@@ -9,7 +9,8 @@ class RosemaryCLI(click.Group):
         rv = super().get_command(ctx, cmd_name)
         if rv is None:
             click.echo(f"No such command '{cmd_name}'.")
-            click.echo("Try 'rosemary --help' for a list of available commands.")
+            click.echo(
+                "Try 'rosemary --help' for a list of available commands.")
         return rv
 
 

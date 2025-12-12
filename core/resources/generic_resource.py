@@ -26,7 +26,9 @@ class GenericResource(Resource):
             return self.serializer.serialize(item), 200
         else:
             items = self.model.query.all()
-            return {"items": [self.serializer.serialize(i) for i in items]}, 200
+            return {
+                "items": [
+                    self.serializer.serialize(i) for i in items]}, 200
 
     def post(self):
         data = request.get_json()
@@ -34,14 +36,23 @@ class GenericResource(Resource):
             return {"message": "No input data provided"}, 400
 
         if self.serializer.serialization_fields:
-            filtered_data = {key: value for key, value in data.items() if key in self.serializer.serialization_fields}
+            filtered_data = {
+                key: value for key,
+                value in data.items() if key in self.serializer.serialization_fields}
             item = self.model(**filtered_data)
         else:
             item = self.model(**data)
 
         db.session.add(item)
         db.session.commit()
-        return {"message": f"{self.model.__name__} created successfully", "id": item.id}, 201
+        return (
+            {
+                "message": f"{
+                    self.model.__name__} created successfully",
+                "id": item.id,
+            },
+            201,
+        )
 
     def put(self, id):
         item = self.model.query.get(id)

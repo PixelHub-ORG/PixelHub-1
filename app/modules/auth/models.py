@@ -14,11 +14,20 @@ class User(db.Model, UserMixin):
 
     orcid_id = db.Column(db.String(32), unique=True, nullable=True, index=True)
 
-    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(
+            timezone.utc))
 
     two_factor_secret = db.Column(db.String(64), nullable=True)
-    is_two_factor_enabled = db.Column(db.Boolean, nullable=False, default=False)
-    cart = db.relationship("Cart", backref="user", uselist=False, cascade="all, delete-orphan")
+    is_two_factor_enabled = db.Column(
+        db.Boolean, nullable=False, default=False)
+    cart = db.relationship(
+        "Cart",
+        backref="user",
+        uselist=False,
+        cascade="all, delete-orphan")
     data_sets = db.relationship(
         "app.modules.dataset.models.PixDataset",
         backref="user",

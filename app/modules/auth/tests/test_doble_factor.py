@@ -45,7 +45,10 @@ def auth_service():
 
 
 def test_enable_and_disable_two_factor(auth_service, clean_database):
-    user = User(email="toggle_2fa@example.com", password="dummy", two_factor_secret="ABCDEF")
+    user = User(
+        email="toggle_2fa@example.com",
+        password="dummy",
+        two_factor_secret="ABCDEF")
     db.session.add(user)
     db.session.commit()
 
@@ -61,7 +64,8 @@ def test_enable_and_disable_two_factor(auth_service, clean_database):
     assert reloaded2.two_factor_secret is None
 
 
-def test_login_without_2fa_does_not_require_code(clean_database, auth_service, monkeypatch):
+def test_login_without_2fa_does_not_require_code(
+        clean_database, auth_service, monkeypatch):
     data = {
         "name": "LoginNo2FA",
         "surname": "User",
@@ -79,7 +83,9 @@ def test_login_without_2fa_does_not_require_code(clean_database, auth_service, m
         called["login_called"] = True
         assert u.id == user.id
 
-    monkeypatch.setattr("app.modules.auth.services.login_user", fake_login_user)
+    monkeypatch.setattr(
+        "app.modules.auth.services.login_user",
+        fake_login_user)
 
     result = auth_service.login("login_no_2fa@example.com", "test1234")
 
@@ -89,7 +95,8 @@ def test_login_without_2fa_does_not_require_code(clean_database, auth_service, m
     assert called["login_called"] is True
 
 
-def test_login_with_2fa_requires_code(clean_database, auth_service, monkeypatch):
+def test_login_with_2fa_requires_code(
+        clean_database, auth_service, monkeypatch):
     data = {
         "name": "LoginWith2FA",
         "surname": "User",
@@ -106,7 +113,9 @@ def test_login_with_2fa_requires_code(clean_database, auth_service, monkeypatch)
     def fake_login_user(u, remember=True):
         called["login_called"] = True
 
-    monkeypatch.setattr("app.modules.auth.services.login_user", fake_login_user)
+    monkeypatch.setattr(
+        "app.modules.auth.services.login_user",
+        fake_login_user)
 
     result = auth_service.login("login_with_2fa@example.com", "test1234")
 
@@ -117,7 +126,10 @@ def test_login_with_2fa_requires_code(clean_database, auth_service, monkeypatch)
 
     totp = pyotp.TOTP(secret)
     code = totp.now()
-    result2 = auth_service.login("login_with_2fa@example.com", "test1234", two_factor_code=code)
+    result2 = auth_service.login(
+        "login_with_2fa@example.com",
+        "test1234",
+        two_factor_code=code)
 
     assert result2["success"] is True
     assert result2["2fa_required"] is False
@@ -347,7 +359,11 @@ def test_client(test_client):  # noqa: F811
 def test_signup_redirects_to_enable_2fa(test_client):
     response = test_client.post(
         "/signup",
-        data=dict(name="New", surname="User", email="new_2fa@example.com", password="newpassword123"),
+        data=dict(
+            name="New",
+            surname="User",
+            email="new_2fa@example.com",
+            password="newpassword123"),
         follow_redirects=True,
     )
 
@@ -380,7 +396,11 @@ def test_login_get_renders_form(test_client):
     assert response.status_code == 200
 
 def test_login_without_2fa_redirects_to_enable_2fa(test_client, test_app):
-    response = test_client.post("/login", json={"email": "no2fa@example.com", "password": "password"})
+    response = test_client.post(
+        "/login",
+        json={
+            "email": "no2fa@example.com",
+            "password": "password"})
 
     assert response.status_code == 302
 
@@ -466,7 +486,9 @@ def test_enable_2fa_success_flow(test_client, monkeypatch):
 
     monkeypatch.setattr(
         "app.modules.auth.services.AuthenticationService.verify_two_factor_code",
-        lambda self, u, code: True,
+        lambda self,
+        u,
+        code: True,
     )
 
     resp = test_client.post(
@@ -499,7 +521,9 @@ def test_enable_2fa_wrong_code_shows_error(test_client, monkeypatch):
 
     monkeypatch.setattr(
         "app.modules.auth.services.AuthenticationService.verify_two_factor_code",
-        lambda self, u, code: False,
+        lambda self,
+        u,
+        code: False,
     )
 
     resp = test_client.post(
@@ -525,7 +549,11 @@ def test_verify_2fa_success(test_client):
     totp = pyotp.TOTP(secret)
     code = totp.now()
 
-    resp = test_client.post("/2fa/verify", data={"code": code}, follow_redirects=False)
+    resp = test_client.post(
+        "/2fa/verify",
+        data={
+            "code": code},
+        follow_redirects=False)
     assert resp.status_code in (301, 302)
     assert resp.headers["Location"].endswith("/")
 

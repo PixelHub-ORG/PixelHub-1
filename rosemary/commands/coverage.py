@@ -4,12 +4,12 @@ import subprocess
 import click
 
 
-@click.command(
-    "coverage",
-    help="Runs pytest coverage on the blueprints directory or a specific module.",
-)
+@click.command("coverage",
+               help="Runs pytest coverage on the blueprints directory or a specific module.",
+               )
 @click.argument("module_name", required=False)
-@click.option("--html", is_flag=True, help="Generates an HTML coverage report.")
+@click.option("--html", is_flag=True,
+              help="Generates an HTML coverage report.")
 def coverage(module_name, html):
     base_path = os.path.join(os.getenv("WORKING_DIR", ""), "app/modules")
     test_path = base_path
@@ -17,7 +17,10 @@ def coverage(module_name, html):
     if module_name:
         test_path = os.path.join(base_path, module_name)
         if not os.path.exists(test_path):
-            click.echo(click.style(f"Module '{module_name}' does not exist.", fg="red"))
+            click.echo(
+                click.style(
+                    f"Module '{module_name}' does not exist.",
+                    fg="red"))
             return
         click.echo(f"Running coverage for the '{module_name}' module...")
     else:
