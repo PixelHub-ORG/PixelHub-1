@@ -41,15 +41,16 @@ Follow these steps to set up the environment:
 3.  **Start the Environment**
     - Use the `docker-up.sh` script to install and configure the environment:
       ```bash
-      sh docker-up.sh
+      sh docker_up.sh
       ```
 4.  **Start the Environment**
+
     - Once the installation finish the application should be running at http://127.0.0.1:5000/ or http://172.21.0.5:5000/
 
 5.  **Stop the Container**
     - To stop the running Docker container, use the `docker-down.sh` script:
       ```bash
-      sh docker-down.sh
+      sh docker_down.sh
       ```
 
 ---
@@ -81,12 +82,14 @@ Follow these steps to deploy the virtual machine (VM):
       cd vagrant/
       ```
 3.  **Start the Installation**
+
     - Use the `vagrant up` command to initialize the VM and start the installation:
       ```bash
       vagrant up
       ```
 
 4.  **Check Correct Installation**
+
     - Once the installation finish you should be able to load the aplication if you access http://localhost:5000/
 
 5.  **Stop and Destroy the VM**
