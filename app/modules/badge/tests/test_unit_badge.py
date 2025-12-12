@@ -174,3 +174,37 @@ def test_badge_svg_no_link(mock_get_dataset, client):
     html = response.get_data(as_text=True)
 
     assert "<a xlink" not in html
+
+@patch("app.modules.badge.routes.get_dataset")
+@patch("app.modules.badge.routes.url_for")
+def test_badge_embed_empty_doi(mock_url_for, mock_get_dataset, client):
+    mock_get_dataset.return_value = {
+        "title": "TestDS",
+        "downloads": 12,
+        "doi": "",
+        "url": "http://example.com",
+    }
+    mock_url_for.return_value = "http://example.com/badge/1/svg"
+
+    response = client.get("/badge/1/embed")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "markdown" in data
+    assert "html" in data
+    assert "TestDS" in data["markdown"]
+
+@patch("app.modules.badge.routes.get_dataset")
+@patch("app.modules.badge.routes.url_for")
+def test_badge_embed_no_dataset_url_uses_svg(mock_url_for, mock_get_dataset, client):
+    mock_get_dataset.return_value = {
+        "title": "Edge",
+        "downloads": 0,
+        "doi": "no",
+        "url": None,
+    }
+    mock_url_for.return_value = "http://example.com/badge/2/svg"
+
+    response = client.get("/badge/2/embed")
+    data = response.get_json()
+
+    assert data["markdown"].endswith("(http://example.com/badge/2/svg)")
