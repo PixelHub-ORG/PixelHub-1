@@ -2,7 +2,6 @@ import base64
 import io
 import os
 
-# importes del doble factor
 import pyotp
 import qrcode
 from flask_login import current_user, login_user
