@@ -9,7 +9,7 @@
 # 3. Formatea el código con Black
 # 4. Ordena los imports con isort
 # 5. Verifica que todo pase flake8
-# 6. Hace commit automático si hay cambios
+# 6. Modifica el commit automáticamente si hay cambios (sin cambiar el mensaje original)
 # ============================================================================
 
 set -e 
@@ -112,6 +112,7 @@ fi
 echo "✅ flake8 pasado correctamente"
 echo ""
 
+# Si hay cambios, añádelos al área de staging
 CHANGED_FILES=$(git diff --name-only)
 if [ -n "$CHANGED_FILES" ]; then
     echo "⚡ Cambios detectados tras el formateo automático:"
@@ -120,15 +121,24 @@ if [ -n "$CHANGED_FILES" ]; then
     
     git add app rosemary core *.py 2>/dev/null || true
     
+    # Verificar si hay cambios en el área de staging
     if [ -n "$(git diff --cached --name-only)" ]; then
-        git commit -m "chore: formateo automático de código (autopep8, black, isort)"
-        echo "✅ Commit automático creado"
-        echo ""
-        echo "ℹ️  Se ha creado un nuevo commit con las correcciones de formato."
-        echo "   El commit continuará con este commit adicional."
+        # Verificar si el HEAD está en un estado limpio para evitar errores de ref
+        if [ -n "$(git log --oneline HEAD)" ]; then
+            echo "🔧 Modificando el commit con los cambios de formato (sin modificar el mensaje original)..."
+            # Añadido control para verificar si no hay conflictos
+            git commit --amend --no-edit || {
+                echo "⚠️ No se pudo modificar el commit. Abortando."
+                exit 1
+            }
+            echo "✅ Commit modificado con las correcciones de formato"
+            echo ""
+            echo "ℹ️  El commit ha sido modificado con las correcciones de formato, manteniendo el mensaje original."
+        else
+            echo "⚠️ No se encontró un commit para modificar."
+        fi
     else
-        echo "⚠️  No se pudo añadir archivos al staging area."
-        exit 1
+        echo "⚠️  No se detectaron cambios para añadir al commit."
     fi
 else
     echo "✅ No hay cambios adicionales tras el formateo."
