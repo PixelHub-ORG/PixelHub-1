@@ -7,6 +7,9 @@ import psutil
 
 import docker
 
+# tiene que fallar
+x = 2 + 3
+
 
 @click.command("locust",
                help="Launches Locust for load testing based on the environment.")
