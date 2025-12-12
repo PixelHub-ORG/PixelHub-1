@@ -22,24 +22,26 @@ repos:
         stages: [commit-msg]
         additional_dependencies: ['@commitlint/config-conventional']
 
+  
   - repo: local
     hooks:
-      - id: rosemary
-        name: Rosemary linter
-        entry: rosemary
+      - id: rosemary-linter
+        name: Rosemary Linter
+        entry: rosemary linter
         language: system
-        types: [python]
-        args: ["linter"]
-        pass_filenames: false  # revisa la carpeta completa, no archivos individuales
+        pass_filenames: false
 
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
-    hooks:
-      - id: black
-        pass_filenames: true  # solo archivos staged
+      - id: black-format
+        name: Black formatter
+        entry: black
+        language: system
+        args: ["app"]
+        pass_filenames: false
 
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        pass_filenames: true  # solo archivos staged
+      - id: isort-format
+        name: isort formatter
+        entry: isort
+        language: system
+        args: ["app"]
+        pass_filenames: false
+

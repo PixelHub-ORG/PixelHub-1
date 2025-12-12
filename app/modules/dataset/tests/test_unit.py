@@ -10,7 +10,6 @@ import pytest
 from flask import Flask
 from flask_login import LoginManager
 
-from app.modules.badge.routes import badge_bp, make_segment
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.models import Author, DataSet, DSMetaData, PublicationType
 from app.modules.dataset.repositories import DSDownloadRecordRepository
@@ -26,8 +25,8 @@ FIXED_TIME = datetime(2025, 12, 1, 15, 0, 0, tzinfo=timezone.utc)
 
 
 @pytest.fixture(autouse=True)
-def app_context(app):
-    with app.app_context():
+def app_context(test_app):
+    with test_app.app_context():
         yield
 
 
@@ -1487,20 +1486,20 @@ def test_move_file_models(mock_auth_service, dataset_service):
         mock_move.assert_called()
 
 
-def test_ds_view_record_service_create_cookie(app):
+def test_ds_view_record_service_create_cookie(test_app):
     service = DSViewRecordService()
     service.repository = MagicMock()
     service.repository.the_record_exists.return_value = False
 
     dataset = MagicMock()
 
-    with app.test_request_context():
+    with test_app.test_request_context():
         # Case 1: No cookie in request
         cookie = service.create_cookie(dataset)
         assert cookie is not None
         service.repository.create_new_record.assert_called()
 
-    with app.test_request_context(headers={"Cookie": "view_cookie=existing-cookie"}):
+    with test_app.test_request_context(headers={"Cookie": "view_cookie=existing-cookie"}):
         # Case 2: Cookie exists
         service.repository.the_record_exists.return_value = True
         cookie = service.create_cookie(dataset)
