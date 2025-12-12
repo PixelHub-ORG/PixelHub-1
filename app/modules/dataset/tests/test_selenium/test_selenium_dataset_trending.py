@@ -10,18 +10,20 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from core.selenium.common import initialize_driver, close_driver
+
 project_root = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(project_root))
 
 
 class TestTrendingDataSets:
     def setup_method(self, method):
-        self.driver = webdriver.Firefox()
+        self.driver = initialize_driver()
         self.vars = {}
-        self.driver.implicitly_wait(10)
 
     def teardown_method(self, method):
         self.driver.quit()
+
 
     def test_trendingDataSets(self):
         self.driver.get("http://127.0.0.1:5000/")
@@ -150,3 +152,4 @@ class TestTrendingDataSets:
             print(f"❌ Error al seleccionar periodo: {e}")
 
         print("\n✅ Test completado")
+        close_driver(self.driver)
