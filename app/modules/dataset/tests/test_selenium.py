@@ -14,7 +14,9 @@ from core.selenium.common import close_driver, initialize_driver
 
 
 def wait_for_page_to_load(driver, timeout=6):
-    WebDriverWait(driver, timeout).until(lambda d: d.execute_script("return document.readyState") == "complete")
+    WebDriverWait(
+        driver, timeout).until(
+        lambda d: d.execute_script("return document.readyState") == "complete")
 
 
 def count_datasets(driver, host):
@@ -98,7 +100,8 @@ def test_upload_dataset():
         unique_title = f"Test dataset {int(time.time())}"
 
         driver.find_element(By.NAME, "title").send_keys(unique_title)
-        driver.find_element(By.NAME, "desc").send_keys("Description for selenium upload test")
+        driver.find_element(By.NAME, "desc").send_keys(
+            "Description for selenium upload test")
         driver.find_element(By.NAME, "tags").send_keys("tag1,tag2")
 
         add_author_button = driver.find_element(By.ID, "add_author")
@@ -108,11 +111,14 @@ def test_upload_dataset():
         wait_for_page_to_load(driver)
 
         driver.find_element(By.NAME, "authors-0-name").send_keys("Author0")
-        driver.find_element(By.NAME, "authors-0-affiliation").send_keys("Club0")
-        driver.find_element(By.NAME, "authors-0-orcid").send_keys("0000-0000-0000-0000")
+        driver.find_element(
+            By.NAME, "authors-0-affiliation").send_keys("Club0")
+        driver.find_element(
+            By.NAME, "authors-0-orcid").send_keys("0000-0000-0000-0000")
 
         driver.find_element(By.NAME, "authors-1-name").send_keys("Author1")
-        driver.find_element(By.NAME, "authors-1-affiliation").send_keys("Club1")
+        driver.find_element(
+            By.NAME, "authors-1-affiliation").send_keys("Club1")
 
         file1_path, file2_path = get_pix_file_paths()
 
@@ -162,7 +168,8 @@ def test_dataset_versioning_and_comparison_flow():
 
         open_latest_dataset_view(driver, host)
 
-        create_version_button = driver.find_element(By.LINK_TEXT, "Create new version")
+        create_version_button = driver.find_element(
+            By.LINK_TEXT, "Create new version")
         create_version_button.click()
         wait_for_page_to_load(driver)
         time.sleep(2)
@@ -199,7 +206,8 @@ def test_dataset_versioning_and_comparison_flow():
 
         open_latest_dataset_view(driver, host)
 
-        version_history_header = driver.find_element(By.XPATH, "//h5[contains(., 'Version History')]")
+        version_history_header = driver.find_element(
+            By.XPATH, "//h5[contains(., 'Version History')]")
         assert version_history_header.is_displayed()
 
         badges = driver.find_elements(
@@ -221,7 +229,8 @@ def test_dataset_versioning_and_comparison_flow():
 
         assert "/dataset/compare/" in driver.current_url
 
-        heading = driver.find_element(By.XPATH, "//h1[contains(., 'Comparison Report')]")
+        heading = driver.find_element(
+            By.XPATH, "//h1[contains(., 'Comparison Report')]")
         assert heading.is_displayed()
 
         assert driver.find_element(By.ID, "mod-tab").is_displayed()
