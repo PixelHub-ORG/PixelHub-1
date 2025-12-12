@@ -1,8 +1,11 @@
 from datetime import datetime, timezone
 from unittest.mock import patch
+
 import pytest
 from flask import Flask
-from app.modules.badge.routes import badge_bp,estimate_text_width, make_segment, badge_svg, badge_svg_download
+
+from app.modules.badge.routes import badge_bp, badge_svg, badge_svg_download, estimate_text_width, make_segment
+
 
 @pytest.fixture
 def app():
@@ -11,9 +14,11 @@ def app():
     app.config["TESTING"] = True
     return app
 
+
 @pytest.fixture
 def client(app):
     return app.test_client()
+
 
 @pytest.fixture
 def mock_dataset():
@@ -24,6 +29,7 @@ def mock_dataset():
         "url": "http://example.com/dataset",
     }
     return ds_mock
+
 
 @patch("app.modules.badge.routes.get_dataset")
 def test_badge_svg_download_success(mock_get_dataset, client, mock_dataset):
@@ -37,6 +43,7 @@ def test_badge_svg_download_success(mock_get_dataset, client, mock_dataset):
     assert response.headers["Access-Control-Allow-Origin"] == "*"
     assert response.headers["Cache-Control"] == "no-cache"
 
+
 @patch("app.modules.badge.routes.get_dataset")
 def test_badge_svg_download_not_found(mock_get_dataset, client):
     mock_get_dataset.return_value = None
@@ -44,6 +51,7 @@ def test_badge_svg_download_not_found(mock_get_dataset, client):
 
     assert response.status_code == 404
     assert b"Dataset not found" in response.data
+
 
 @patch("app.modules.badge.routes.get_dataset")
 def test_badge_svg_success(mock_get_dataset, client, mock_dataset):
@@ -56,6 +64,7 @@ def test_badge_svg_success(mock_get_dataset, client, mock_dataset):
     assert "Content-Disposition" not in response.headers
     assert response.headers["Access-Control-Allow-Origin"] == "*"
 
+
 @patch("app.modules.badge.routes.get_dataset")
 def test_badge_svg_not_found(mock_get_dataset, client):
     mock_get_dataset.return_value = None
@@ -63,6 +72,7 @@ def test_badge_svg_not_found(mock_get_dataset, client):
 
     assert response.status_code == 404
     assert b"Dataset not found" in response.data
+
 
 @patch("app.modules.badge.routes.get_dataset")
 @patch("app.modules.badge.routes.url_for")
@@ -81,6 +91,7 @@ def test_badge_embed_success(mock_url_for, mock_get_dataset, client, mock_datase
     assert mock_dataset["doi"] in data["markdown"]
     assert "http://example.com/badge/1/svg" in data["html"]
 
+
 @patch("app.modules.badge.routes.get_dataset")
 def test_badge_embed_not_found(mock_get_dataset, client):
     mock_get_dataset.return_value = None
@@ -90,11 +101,13 @@ def test_badge_embed_not_found(mock_get_dataset, client):
     data = response.get_json()
     assert data["error"] == "Dataset not found"
 
+
 def test_make_segment_width_estimation():
     seg = make_segment("Test", "#123456", font_size=10, pad_x=5, min_w=40)
     assert seg["text"] == "Test"
     assert seg["bg"] == "#123456"
     assert seg["w"] >= 40
+
 
 def test_estimate_text_width_basic():
     w = estimate_text_width("abc", font_size=10)
@@ -109,6 +122,7 @@ def test_estimate_text_width_never_negative():
     assert estimate_text_width("", font_size=0) == 0
     assert estimate_text_width("", font_size=-10) == 0
 
+
 def test_make_segment_respects_min_width():
     seg = make_segment("a", "#000", font_size=5, pad_x=2, min_w=100)
     assert seg["w"] == 100
@@ -118,6 +132,7 @@ def test_make_segment_calculates_expected_width():
     seg = make_segment("Hello", "#111", font_size=10, pad_x=5, min_w=10)
     expected = estimate_text_width("Hello", 10) + 10
     assert seg["w"] == expected
+
 
 @patch("app.modules.badge.routes.get_dataset")
 def test_badge_svg_download_no_url(mock_get_dataset, client):
@@ -134,6 +149,7 @@ def test_badge_svg_download_no_url(mock_get_dataset, client):
     assert "<a xlink:href" not in html
     assert "0 DL" in html
 
+
 @patch("app.modules.badge.routes.get_dataset")
 def test_badge_svg_download_long_title(mock_get_dataset, client):
     long_title = "A" * 200
@@ -149,6 +165,7 @@ def test_badge_svg_download_long_title(mock_get_dataset, client):
     html = response.get_data(as_text=True)
     assert long_title in html
 
+
 @patch("app.modules.badge.routes.get_dataset")
 def test_badge_svg_empty_doi(mock_get_dataset, client):
     mock_get_dataset.return_value = {
@@ -162,6 +179,7 @@ def test_badge_svg_empty_doi(mock_get_dataset, client):
     html = response.get_data(as_text=True)
     assert "5 DL" in html
 
+
 @patch("app.modules.badge.routes.get_dataset")
 def test_badge_svg_no_link(mock_get_dataset, client):
     mock_get_dataset.return_value = {
@@ -174,6 +192,7 @@ def test_badge_svg_no_link(mock_get_dataset, client):
     html = response.get_data(as_text=True)
 
     assert "<a xlink" not in html
+
 
 @patch("app.modules.badge.routes.get_dataset")
 @patch("app.modules.badge.routes.url_for")
@@ -192,6 +211,7 @@ def test_badge_embed_empty_doi(mock_url_for, mock_get_dataset, client):
     assert "markdown" in data
     assert "html" in data
     assert "TestDS" in data["markdown"]
+
 
 @patch("app.modules.badge.routes.get_dataset")
 @patch("app.modules.badge.routes.url_for")
