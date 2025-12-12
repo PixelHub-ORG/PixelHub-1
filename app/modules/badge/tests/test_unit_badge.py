@@ -118,3 +118,33 @@ def test_make_segment_calculates_expected_width():
     seg = make_segment("Hello", "#111", font_size=10, pad_x=5, min_w=10)
     expected = estimate_text_width("Hello", 10) + 10
     assert seg["w"] == expected
+
+@patch("app.modules.badge.routes.get_dataset")
+def test_badge_svg_download_no_url(mock_get_dataset, client):
+    mock_get_dataset.return_value = {
+        "title": "NoURL",
+        "downloads": 0,
+        "doi": "",
+        "url": None,
+    }
+
+    response = client.get("/badge/2.svg")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "<a xlink:href" not in html
+    assert "0 DL" in html
+
+@patch("app.modules.badge.routes.get_dataset")
+def test_badge_svg_download_long_title(mock_get_dataset, client):
+    long_title = "A" * 200
+    mock_get_dataset.return_value = {
+        "title": long_title,
+        "downloads": 10,
+        "doi": "10.xxx/yyy",
+        "url": "http://example.com",
+    }
+
+    response = client.get("/badge/3.svg")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert long_title in html
