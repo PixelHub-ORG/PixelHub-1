@@ -67,10 +67,7 @@ class WebsiteUser(HttpUser):
         """
         Prueba la subida de ficheros desde GitHub.
         """
-        payload = {
-            "repo_url": "https://github.com/JoseLu2121/pix_files.git",
-            "path": "files/"
-        }
+        payload = {"repo_url": "https://github.com/JoseLu2121/pix_files.git", "path": "files/"}
         self.client.post("/dataset/file/upload_github", json=payload, name="/dataset/file/upload_github")
 
     def extract_and_request_file_diff(self, html_content):
