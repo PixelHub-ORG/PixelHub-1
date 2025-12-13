@@ -1,3 +1,5 @@
+# app/modules/cart/tests/test_selenium.py
+
 import time
 
 from selenium.common.exceptions import TimeoutException
@@ -8,6 +10,33 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
+
+
+class TestCreateDataset:
+    def setup_method(self, method):
+        self.driver = initialize_driver()
+        self.vars = {}
+
+    def teardown_method(self, method):
+        self.driver.quit()
+
+    def test_createDataset(self):
+        self.driver.get("http://127.0.0.1:5000/")
+        self.driver.set_window_size(1083, 787)
+        self.driver.find_element(By.LINK_TEXT, "Login").click()
+        self.driver.find_element(By.ID, "email").send_keys("user1@example.com")
+        self.driver.find_element(By.ID, "password").send_keys("1234")
+        self.driver.find_element(By.ID, "submit").click()
+        self.driver.find_element(By.LINK_TEXT, "Sample dataset 4").click()
+        self.driver.find_element(By.CSS_SELECTOR, "[test='add-to-car-mclaren']").click()
+        self.driver.find_element(By.CSS_SELECTOR, ".feather-shopping-cart").click()
+        self.driver.find_element(By.ID, "create-dataset-btn").click()
+        self.driver.find_element(By.ID, "title").click()
+        self.driver.find_element(By.ID, "title").send_keys("Example3")
+        self.driver.find_element(By.ID, "desc").click()
+        self.driver.find_element(By.ID, "desc").send_keys("Example3")
+        self.driver.find_element(By.CSS_SELECTOR, ".btn-outline-danger").click()
+        close_driver(self.driver)
 
 
 def login_user(driver, host):

@@ -399,6 +399,7 @@
                                 </button>
                                 <button 
                                     id="add-to-cart-{{ file_model.id }}"
+                                    test="add-to-car-mclaren"
                                     onclick="addCart('{{ file_model.id }}')"  
                                     class="btn btn-outline-success btn-sm"
                                     style="border-radius: 5px;">
@@ -503,7 +504,14 @@
         })
         .then(async response => {
             const data = await response.json(); 
-            alert(data.message); 
+
+            const toastBody = document.getElementById("cart-toast-body");
+            toastBody.innerText = data.message;
+
+            const toastEl = document.getElementById("cart-toast");
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+
             if (response.ok) {
                 updateCartCount();
             }
