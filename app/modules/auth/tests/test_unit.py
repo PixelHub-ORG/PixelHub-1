@@ -122,3 +122,40 @@ def test_service_create_with_profile_fail_no_password(clean_database):
 
     assert UserRepository().count() == 0
     assert UserProfileRepository().count() == 0
+
+
+def test_find_or_create_by_orcid_new_user(clean_database):
+    orcid_id = "0000-0002-1825-0097"
+    full_name = "John Doe"
+    service = AuthenticationService()
+
+    user = service.find_or_create_by_orcid(orcid_id, full_name)
+
+    assert user is not None
+    assert user.orcid_id == orcid_id
+    assert UserRepository().count() == 1
+
+    # Verify profile creation
+    profile = user.profile
+    assert profile is not None
+    assert profile.name == "John"
+    assert profile.surname == "Doe"
+    assert UserProfileRepository().count() == 1
+
+
+def test_find_or_create_by_orcid_existing_user(clean_database):
+    orcid_id = "0000-0002-1825-0097"
+    full_name = "Jane Smith"
+    service = AuthenticationService()
+
+    # Create the user first
+    existing_user = service.find_or_create_by_orcid(orcid_id, "John Doe")
+    assert UserRepository().count() == 1
+
+    # Try to find again
+    found_user = service.find_or_create_by_orcid(orcid_id, full_name)
+
+    assert found_user.id == existing_user.id
+    assert UserRepository().count() == 1
+    # Check that profile was NOT updated (logic implies it just returns the user found by ID)
+    assert found_user.profile.name == "John"

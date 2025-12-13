@@ -1,4 +1,3 @@
-'''
 from locust import HttpUser, TaskSet, between, task
 
 # Importamos el 'host' desde tu módulo de core
@@ -38,4 +37,3 @@ class ZenodoUser(HttpUser):
     wait_time = between(5, 9)  # Equivalente a min_wait/max_wait de 5000/9000 ms
 
     host = get_host_for_locust_testing()
-'''

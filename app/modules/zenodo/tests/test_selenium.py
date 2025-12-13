@@ -50,17 +50,29 @@ def test_dataset_creation_with_fakenodo_enabled():
         wait_for_page_to_load(driver)
 
         file_input_element = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
-        file_path = os.path.abspath("app/modules/dataset/uvl_examples/file1.pix")
+        file_path = os.path.abspath("app/modules/dataset/pix_examples/file1.pix")
         file_input_element.send_keys(file_path)
 
-        agree_checkbox = driver.find_element(By.ID, "agreeCheckbox")
-        agree_checkbox.click()
+        # Espera a que Dropzone termine de procesar
+        WebDriverWait(driver, 10).until(lambda d: len(d.find_elements(By.CLASS_NAME, "dz-preview")) > 0)
 
-        upload_button = driver.find_element(By.ID, "upload_button")
-        upload_button.click()
+        # Clic en el checkbox
+        agree_checkbox = driver.find_element(By.ID, "agreeCheckbox")
+        driver.execute_script("arguments[0].click();", agree_checkbox)
+
+        # Esperar a que el botón de subida exista
+        upload_button = WebDriverWait(driver, 10).until(lambda d: d.find_element(By.ID, "upload_button"))
+
+        # Asegurar visibilidad
+        driver.execute_script("arguments[0].scrollIntoView(true);", upload_button)
+        time.sleep(1)
+
+        # Hacer click con JS
+        driver.execute_script("arguments[0].click();", upload_button)
         time.sleep(5)
         wait_for_page_to_load(driver)
 
+        # Abrir dataset subido
         first_dataset_link = driver.find_element(By.CSS_SELECTOR, "tbody tr:first-child a")
         first_dataset_link.click()
         wait_for_page_to_load(driver)
@@ -70,17 +82,15 @@ def test_dataset_creation_with_fakenodo_enabled():
         selector = "a[href^='http://localhost:5001/api/depositions/']"
         fakenodo_link = driver.find_element(By.CSS_SELECTOR, selector)
         driver.execute_script("arguments[0].click();", fakenodo_link)
+
         time.sleep(2)
         all_tabs = driver.window_handles
-
         new_tab = [tab for tab in all_tabs if tab != original_tab][0]
         driver.switch_to.window(new_tab)
 
         try:
-
             json_text = driver.find_element(By.TAG_NAME, "pre").text
         except NoSuchElementException:
-
             json_text = driver.find_element(By.TAG_NAME, "body").text
 
         # checks if fakenodo object exists

@@ -21,18 +21,10 @@ load_dotenv()
 class ZenodoService(BaseService):
 
     def get_zenodo_url(self):
-
-        FLASK_ENV = os.getenv("FLASK_ENV", "development")
-        ZENODO_API_URL = ""
-
-        if FLASK_ENV == "development":
-            ZENODO_API_URL = os.getenv("FAKENODO_BACKEND_URL", "http://localhost:5001/api")
-        elif FLASK_ENV == "production":
-            ZENODO_API_URL = os.getenv("FAKENODO_URL", "https://pixelhub-2-51iz.onrender.com/api/")
-        else:
-            ZENODO_API_URL = os.getenv("FAKENODO_BACKEND_URL", "http://localhost:5001/api")
-
-        return ZENODO_API_URL
+        flask_env = os.getenv("FLASK_ENV", "development")
+        if flask_env == "production":
+            return os.getenv("FAKENODO_URL", "https://pixelhub-2-51iz.onrender.com/api/")
+        return os.getenv("FAKENODO_BACKEND_URL", "http://localhost:5001/api")
 
     def __init__(self):
         super().__init__(ZenodoRepository())
@@ -42,11 +34,7 @@ class ZenodoService(BaseService):
             self.ZENODO_API_URL = f"{self.ZENODO_API_URL.rstrip('/')}/depositions"
         self.headers = {"Content-Type": "application/json"}
         # Ensure params is always defined (e.g., access_token or empty)
-        token = (
-            getattr(self, "ZENODO_ACCESS_TOKEN", None)
-            or os.getenv("FAKENODO_TOKEN")
-            or os.getenv("ZENODO_ACCESS_TOKEN")
-        )
+        token = os.getenv("ZENODO_ACCESS_TOKEN")
         self.params = {"access_token": token} if token else {}
 
     def test_connection(self) -> bool:
@@ -65,7 +53,7 @@ class ZenodoService(BaseService):
         deposition.
 
         Returns:
-            bool: True if the connection, upload, and deletion are successful, False otherwise.
+            Response: JSON response indicating success or failure.
         """
 
         success = True
