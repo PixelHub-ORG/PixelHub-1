@@ -6,12 +6,12 @@ Este documento explica cómo se han organizado las **issues** dentro de los equi
 
 ## 1. Organización de Issues - Equipo 1
 
-El proyecto se ha organizado de manera que cada equipo tiene **2 issues obligatorias**.  
+El proyecto se ha organizado de manera que cada equipo tiene **1 issues obligatorias**.  
 Dentro del **Equipo 1**, las issues se asignaron de la siguiente manera:
 
 ### 1.1 Issues - Equipo 1
 
-| Issue | Título | Prioridad | Asignación | Descripción |
+| Issue | Título | Dificultad | Asignación | Descripción |
 |-------|--------|-----------|------------|-------------|
 | #104 | WI-newdataset - Evolving uvlhub into a "[datatype]hub" | MANDATORY 🟦 | Aaron | Reestructura uvlhub para soportar múltiples tipos de datasets, cada uno con su modelo propio y lógica modular. Detalle de modelos, validaciones, flujos de carga/edición y sistema de versionado extendido. |
 | #105 | Add download counter for datasets | LOW 🟩 | Jesus | Permite rastrear cuántas veces se ha descargado un dataset. Se añade el campo `download_count`, se incrementa en cada descarga y se muestra en la API y detalle del dataset. Opcional: endpoint `/datasets/{id}/stats`. |
@@ -20,14 +20,8 @@ Dentro del **Equipo 1**, las issues se asignaron de la siguiente manera:
 | #89  | Two-factor authentication (2FA) | HIGH 🟥 | Claudia & Lucía | Permite a los usuarios habilitar un segundo factor de autenticación para mayor seguridad. |
 | #98  | Automatic dataset recommendations | HIGH 🟥 | Jesus & Nora | Muestra datasets relacionados según autor, tags o comunidad, priorizando los más recientes o descargados. |
 
-### 1.2 Prioridades de Issues
 
-- **LOW 🟩**: Funcionalidad opcional o mejoras menores.  
-- **MEDIUM 🟨**: Funcionalidad relevante, pero no crítica.  
-- **HIGH 🟥**: Funcionalidad importante y necesaria.  
-- **MANDATORY 🟦**: Funcionalidad obligatoria para el proyecto.
-
-### 1.3 Organización y Asignación
+### 1.2 Organización y Asignación
 
 - La **issue obligatoria** (#104) la realizó **Aaron**.  
 - La **issue LOW** (#105) la realizó **Jesus**.  
