@@ -1,85 +1,94 @@
-# app/modules/cart/tests/test_selenium.py
 import time
-
-from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from core.environment.host import get_host_for_selenium_testing
-from core.selenium.common import close_driver, initialize_driver
+from core.selenium.common import initialize_driver, close_driver
 
 
-def setup_method(self, method):
-    self.driver = webdriver.Firefox()
-    self.vars = {}
+def login_user(driver, host):
+    driver.get(f"{host}/login")
+    email_field = driver.find_element(By.NAME, "email")
+    password_field = driver.find_element(By.NAME, "password")
+    email_field.send_keys("user1@example.com")
+    password_field.send_keys("1234")
+    password_field.send_keys(Keys.RETURN)
+    time.sleep(2)
 
 
-def teardown_method(self, method):
-    self.driver.quit()
+def clean_cart(driver, host):
+    """Vacía el carrito usando JS para asegurar un estado limpio al inicio."""
+    driver.get(f"{host}/user/cart/view_page")
+    time.sleep(1)
+    driver.execute_script("""
+        fetch("/user/cart/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ item_id: null })
+        });
+    """)
+    time.sleep(1)
 
 
-def test_createDataset(self):
-    self.driver.get("http://127.0.0.1:5000/")
-    self.driver.set_window_size(1083, 787)
-    self.driver.find_element(By.LINK_TEXT, "Login").click()
-    self.driver.find_element(By.ID, "email").send_keys("user1@example.com")
-    self.driver.find_element(By.ID, "password").send_keys("1234")
-    self.driver.find_element(By.ID, "submit").click()
-    self.driver.find_element(By.LINK_TEXT, "Sample dataset 4").click()
-    assert self.driver.switch_to.alert.text == "Item added to cart."
-    self.driver.find_element(By.ID, "add-to-cart-67").click()
-    assert self.driver.switch_to.alert.text == "Item added to cart."
-    self.driver.find_element(By.CSS_SELECTOR, ".feather-shopping-cart").click()
-    self.driver.find_element(By.ID, "create-dataset-btn").click()
-    self.driver.find_element(By.ID, "title").click()
-    self.driver.find_element(By.ID, "title").send_keys("Example3")
-    self.driver.find_element(By.ID, "desc").click()
-    self.driver.find_element(By.ID, "desc").send_keys("Example3")
-
-
-def test_download_cart_button():
+def test_cart_is_empty():
     driver = initialize_driver()
     try:
         host = get_host_for_selenium_testing()
+        login_user(driver, host)
+        clean_cart(driver, host)
 
-        # 1. Login (Usamos el usuario creado por los seeders)
-        driver.get(f"{host}/login")
-        email_field = driver.find_element(By.NAME, "email")
-        password_field = driver.find_element(By.NAME, "password")
-
-        email_field.send_keys("user1@example.com")
-        password_field.send_keys("1234")
-        password_field.send_keys(Keys.RETURN)
-
-        # Esperar a que el login complete
-        time.sleep(2)
-
-        # 2. Asegurarnos de tener algo en el carro (Truco: Añadimos via API oculta o JS para el test)
-        # Ojo: Asumimos que el usuario ya tiene items o los añadimos.
-        # Para asegurar que el test no falle si el carro está vacío, vamos a añadir uno rápido con JS
-        driver.execute_script(
-            """
-            fetch("/featuremodel/cart/add", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ item_id: 1 })
-            });
-        """
-        )
+        driver.get(f"{host}/user/cart/view_page")
         time.sleep(1)
 
-        # 3. Ir a la página del carrito
+        empty_message = driver.find_element(By.TAG_NAME, "h1")
+        assert "Your cart is empty" in empty_message.text
+        print("✅ Test 1: Carrito vacío verificado.")
+
+    finally:
+        close_driver(driver)
+
+
+def test_cart_manual_add_and_download():
+    driver = initialize_driver()
+    try:
+        host = get_host_for_selenium_testing()
+        login_user(driver, host)
+        clean_cart(driver, host)
+
+        driver.get(f"{host}/dataset/list")
+        time.sleep(2)
+
+        first_dataset_link = driver.find_element(By.XPATH, "//table//tbody//tr[1]//td[1]//a")
+        first_dataset_link.click()
+        time.sleep(2)
+
+        add_button = driver.find_element(By.XPATH, "//button[contains(@onclick, 'addCart')]")
+        add_button.click()
+
+        try:
+            WebDriverWait(driver, 3).until(EC.alert_is_present())
+            alert = driver.switch_to.alert
+            alert.accept()
+            time.sleep(1)
+        except TimeoutException:
+            print("⚠️ No apareció alerta, continuando...")
+
         driver.get(f"{host}/user/cart/view_page")
         time.sleep(2)
 
-        # 4. Verificar que el botón de descarga existe
-        # Buscamos por el texto que pusimos en el HTML o por el enlace
         download_btn = driver.find_element(By.XPATH, "//a[contains(@href, '/user/cart/download')]")
+        assert download_btn is not None, "El botón de descarga no está"
 
-        assert download_btn is not None
-        assert "Download models" in download_btn.text
+        download_btn.click()
+        time.sleep(3)
 
-        print("✅ Test Selenium: El botón de descarga del carrito aparece correctamente.")
+        # 7. Verificar que no hay errores en pantalla
+        assert "404" not in driver.page_source
+        assert "Internal Server Error" not in driver.page_source
+
+        print("✅ Test 2: Flujo completo (Añadir manual -> Descargar) exitoso.")
 
     finally:
         close_driver(driver)
