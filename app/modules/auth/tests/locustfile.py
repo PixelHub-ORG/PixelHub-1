@@ -48,7 +48,6 @@ class LoginBehavior(TaskSet):
             print(f"Login failed: {response.status_code}")
 
 
-
 class OrcidBehavior(TaskSet):
     @task
     def start_orcid_login(self):
@@ -64,7 +63,7 @@ class OrcidBehavior(TaskSet):
         # We expect it to redirect us back to login page or just load the login page with an error
         # Assuming it handles exceptions and renders the login form (status 200)
         if response.status_code != 200:
-             print(f"Orcid callback failed to handle error: {response.status_code}")
+            print(f"Orcid callback failed to handle error: {response.status_code}")
 
 
 class AuthUser(HttpUser):
