@@ -31,8 +31,7 @@ class DSDownloadRecordRepository(BaseRepository):
     def total_dataset_downloads(self) -> int:
         return self.model.query.count()
 
-    def top_3_dowloaded_datasets_per_week(
-            self, period="week", limit=3) -> DataSet:
+    def top_3_dowloaded_datasets_per_week(self, period="week", limit=3) -> DataSet:
         """
         Devuelve los datasets más descargados en el periodo dado.
         period: "week" o "month"
@@ -45,13 +44,13 @@ class DSDownloadRecordRepository(BaseRepository):
         else:
             raise ValueError("Periodo no soportado: usa 'week' o 'month'")
         results = (
-            db.session.query(
-                DSDownloadRecord.dataset_id,
-                func.count(
-                    DSDownloadRecord.id).label("downloads")) .filter(
-                DSDownloadRecord.download_date >= since) .group_by(
-                    DSDownloadRecord.dataset_id) .order_by(
-                        desc("downloads")) .limit(limit) .all())
+            db.session.query(DSDownloadRecord.dataset_id, func.count(DSDownloadRecord.id).label("downloads"))
+            .filter(DSDownloadRecord.download_date >= since)
+            .group_by(DSDownloadRecord.dataset_id)
+            .order_by(desc("downloads"))
+            .limit(limit)
+            .all()
+        )
 
         top_datasets = []
         for r in results:
@@ -74,8 +73,7 @@ class DSViewRecordRepository(BaseRepository):
         super().__init__(DSViewRecord)
 
     def total_dataset_views(self) -> int:
-        max_id = self.model.query.with_entities(
-            func.max(self.model.id)).scalar()
+        max_id = self.model.query.with_entities(func.max(self.model.id)).scalar()
         return max_id if max_id is not None else 0
 
     def the_record_exists(self, dataset: DataSet, user_cookie: str):
@@ -85,10 +83,7 @@ class DSViewRecordRepository(BaseRepository):
             view_cookie=user_cookie,
         ).first()
 
-    def create_new_record(
-            self,
-            dataset: DataSet,
-            user_cookie: str) -> DSViewRecord:
+    def create_new_record(self, dataset: DataSet, user_cookie: str) -> DSViewRecord:
         return self.create(
             user_id=current_user.id if current_user.is_authenticated else None,
             dataset_id=dataset.id,
@@ -103,35 +98,32 @@ class DataSetRepository(BaseRepository):
 
     def get_synchronized(self, current_user_id: int) -> DataSet:
         return (
-            self.model.query.join(DSMetaData) .filter(
-                DataSet.user_id == current_user_id,
-                DSMetaData.dataset_doi.isnot(None)) .order_by(
-                self.model.created_at.desc()) .all())
+            self.model.query.join(DSMetaData)
+            .filter(DataSet.user_id == current_user_id, DSMetaData.dataset_doi.isnot(None))
+            .order_by(self.model.created_at.desc())
+            .all()
+        )
 
     def get_unsynchronized(self, current_user_id: int) -> DataSet:
         return (
-            self.model.query.join(DSMetaData) .filter(
-                DataSet.user_id == current_user_id,
-                DSMetaData.dataset_doi.is_(None)) .order_by(
-                self.model.created_at.desc()) .all())
+            self.model.query.join(DSMetaData)
+            .filter(DataSet.user_id == current_user_id, DSMetaData.dataset_doi.is_(None))
+            .order_by(self.model.created_at.desc())
+            .all()
+        )
 
-    def get_unsynchronized_dataset(
-            self,
-            current_user_id: int,
-            dataset_id: int) -> DataSet:
+    def get_unsynchronized_dataset(self, current_user_id: int, dataset_id: int) -> DataSet:
         return (
-            self.model.query.join(DSMetaData) .filter(
-                DataSet.user_id == current_user_id,
-                DataSet.id == dataset_id,
-                DSMetaData.dataset_doi.is_(None)) .first())
+            self.model.query.join(DSMetaData)
+            .filter(DataSet.user_id == current_user_id, DataSet.id == dataset_id, DSMetaData.dataset_doi.is_(None))
+            .first()
+        )
 
     def count_synchronized_datasets(self):
-        return self.model.query.join(DSMetaData).filter(
-            DSMetaData.dataset_doi.isnot(None)).count()
+        return self.model.query.join(DSMetaData).filter(DSMetaData.dataset_doi.isnot(None)).count()
 
     def count_unsynchronized_datasets(self):
-        return self.model.query.join(DSMetaData).filter(
-            DSMetaData.dataset_doi.is_(None)).count()
+        return self.model.query.join(DSMetaData).filter(DSMetaData.dataset_doi.is_(None)).count()
 
     def latest_synchronized(self):
         return (

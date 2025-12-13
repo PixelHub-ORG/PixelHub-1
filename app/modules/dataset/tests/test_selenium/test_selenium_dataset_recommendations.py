@@ -28,13 +28,9 @@ class TestRelatedDB:
         self.ds1 = FakeDataset("Sample dataset 1")
         self.ds2 = FakeDataset("Sample dataset 2")
         self.ds3 = FakeDataset("Sample dataset 3")
-        self.ds4 = FakeDataset(
-            "Sample dataset 4", recommendations=[
-                self.ds1, self.ds2, self.ds3])
+        self.ds4 = FakeDataset("Sample dataset 4", recommendations=[self.ds1, self.ds2, self.ds3])
 
-        self.patcher = patch(
-            "app.modules.dataset.models.DataSet.query.get",
-            side_effect=self.fake_get)
+        self.patcher = patch("app.modules.dataset.models.DataSet.query.get", side_effect=self.fake_get)
         self.patcher.start()
 
         self.driver = initialize_driver()
@@ -60,10 +56,7 @@ class TestRelatedDB:
         self.driver.find_element(By.LINK_TEXT, "Sample dataset 4").click()
         time.sleep(1)
 
-        for rec_title in [
-            "Sample dataset 1",
-            "Sample dataset 2",
-                "Sample dataset 3"]:
+        for rec_title in ["Sample dataset 1", "Sample dataset 2", "Sample dataset 3"]:
             self.driver.find_element(By.LINK_TEXT, rec_title).click()
             time.sleep(1)
             self.driver.back()

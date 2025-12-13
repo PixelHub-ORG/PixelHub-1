@@ -25,8 +25,7 @@ class CartService(BaseService):
         cart = self.cart_repository.get_cart_by_user_id(user_id)
         if not cart:
             return {"message": "Cart not found."}, 404
-        existing_item = self.cart_item_repository.find_by_cart_and_model(
-            cart.id, item_id)
+        existing_item = self.cart_item_repository.find_by_cart_and_model(cart.id, item_id)
         if existing_item:
             return {"message": "Item already in cart."}, 400
         self.cart_item_repository.add_item(cart.id, item_id)
@@ -34,8 +33,7 @@ class CartService(BaseService):
 
     def view_cart(self, user_id: int):
         cart_items = self.cart_repository.get_cart_items(user_id)
-        return [{"cart_item_id": item.id, "file_model_id": item.file_model_id}
-                for item in cart_items]
+        return [{"cart_item_id": item.id, "file_model_id": item.file_model_id} for item in cart_items]
 
     def delete_from_cart(self, user_id: int, item_id: int = None):
         cart = self.cart_repository.get_cart_by_user_id(user_id)
@@ -115,16 +113,13 @@ class CartService(BaseService):
                     file_path = os.path.join(dataset_folder, hubfile.name)
                     if not os.path.exists(file_path):
                         raise Exception(f"File not found: {hubfile.name}")
-                self.zenodo_service.upload_file(
-                    dataset, deposition_id, new_fm, user)
+                self.zenodo_service.upload_file(dataset, deposition_id, new_fm, user)
 
-            publish_resp = self.zenodo_service.publish_deposition(
-                deposition_id)
+            publish_resp = self.zenodo_service.publish_deposition(deposition_id)
             doi = publish_resp.get("doi")
             if not doi:
                 dep_data = self.zenodo_service.get_deposition(deposition_id)
-                doi = dep_data.get("doi") or dep_data.get(
-                    "metadata", {}).get("doi")
+                doi = dep_data.get("doi") or dep_data.get("metadata", {}).get("doi")
 
             dataset = db.session.merge(dataset)
             if doi:

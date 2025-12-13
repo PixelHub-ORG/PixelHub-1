@@ -17,8 +17,7 @@ def test_view_user_profile_from_dataset():
         time.sleep(4)
 
         try:
-            user_link = driver.find_element(
-                By.XPATH, "//a[contains(@href, '/profile/')]")
+            user_link = driver.find_element(By.XPATH, "//a[contains(@href, '/profile/')]")
         except NoSuchElementException:
             raise AssertionError("User profile link not found on dataset page")
 
@@ -27,15 +26,12 @@ def test_view_user_profile_from_dataset():
 
         current_url = driver.current_url
         if not current_url.startswith(f"{host}/profile/"):
-            raise AssertionError(
-                f"Unexpected URL after clicking user profile link: {current_url}")
+            raise AssertionError(f"Unexpected URL after clicking user profile link: {current_url}")
 
         try:
-            driver.find_element(
-                By.XPATH, "//h1[contains(@class, 'h3') and contains(., 'User profile')]")
+            driver.find_element(By.XPATH, "//h1[contains(@class, 'h3') and contains(., 'User profile')]")
         except NoSuchElementException:
-            raise AssertionError(
-                "User profile header not found on profile page")
+            raise AssertionError("User profile header not found on profile page")
 
     finally:
         close_driver(driver)
