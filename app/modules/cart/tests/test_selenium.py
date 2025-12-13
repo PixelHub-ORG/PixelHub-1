@@ -1,11 +1,13 @@
 import time
+
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
 from core.environment.host import get_host_for_selenium_testing
-from core.selenium.common import initialize_driver, close_driver
+from core.selenium.common import close_driver, initialize_driver
 
 
 def login_user(driver, host):
@@ -22,13 +24,15 @@ def clean_cart(driver, host):
     """Vacía el carrito usando JS para asegurar un estado limpio al inicio."""
     driver.get(f"{host}/user/cart/view_page")
     time.sleep(1)
-    driver.execute_script("""
+    driver.execute_script(
+        """
         fetch("/user/cart/delete", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ item_id: null })
         });
-    """)
+    """
+    )
     time.sleep(1)
 
 
