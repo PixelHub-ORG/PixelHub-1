@@ -48,7 +48,9 @@ class DSMetrics(db.Model):
     number_of_files = db.Column(db.String(120))
 
     def __repr__(self):
-        return f"DSMetrics<models={self.number_of_models}, files={self.number_of_files}>"
+        return f"DSMetrics<models={
+            self.number_of_models}, files={
+            self.number_of_files}>"
 
 
 class DSMetaData(db.Model):
@@ -107,7 +109,8 @@ class BaseDataSet(db.Model):
     def get_pixelhub_doi(self):
         from app.modules.dataset.services import DataSetService
 
-        return DataSetService().get_pixelhub_doi(self)  # TODO: Corregir nombre método en services
+        # TODO: Corregir nombre método en services
+        return DataSetService().get_pixelhub_doi(self)
 
     def validate_domain(self):
         """Validates whether the metadata is valid for the current file type.
@@ -126,7 +129,8 @@ class PixDataset(BaseDataSet):
     }
     __tablename__ = "pix_data_set"
 
-    # required for joined-table inheritance: link child table PK to parent table PK
+    # required for joined-table inheritance: link child table PK to parent
+    # table PK
     id = db.Column(db.Integer, db.ForeignKey("data_set.id"), primary_key=True)
 
     pix_meta_data = db.relationship("PixMetaData", backref="dataset", uselist=False, cascade="all, delete-orphan")
@@ -272,7 +276,11 @@ class DSViewRecord(db.Model):
     view_cookie = db.Column(db.String(36), nullable=False)  # Assuming UUID4 strings
 
     def __repr__(self):
-        return f"<View id={self.id} dataset_id={self.dataset_id} date={self.view_date} cookie={self.view_cookie}>"
+        return f"<View id={
+            self.id} dataset_id={
+            self.dataset_id} date={
+            self.view_date} cookie={
+                self.view_cookie}>"
 
 
 class DOIMapping(db.Model):

@@ -62,7 +62,13 @@ class CartService(BaseService):
         if not dataset:
             return {"message": "Error creating dataset."}, 500
 
-        dataset_folder = os.path.join(uploads_folder_name(), f"user_{user.id}", f"dataset_{dataset.id}")
+        dataset_folder = os.path.join(
+            uploads_folder_name(),
+            f"user_{
+                user.id}",
+            f"dataset_{
+                dataset.id}",
+        )
         os.makedirs(dataset_folder, exist_ok=True)
 
         new_file_models = []

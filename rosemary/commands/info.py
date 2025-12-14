@@ -67,5 +67,6 @@ def colorize_lyrics(lyrics):
 
 
 def decode_lyrics(encoded_lyrics):
-    decoded_lyrics = base64.b64decode(encoded_lyrics.encode("utf-8")).decode("utf-8")
+    decoded_lyrics = base64.b64decode(
+        encoded_lyrics.encode("utf-8")).decode("utf-8")
     return decoded_lyrics

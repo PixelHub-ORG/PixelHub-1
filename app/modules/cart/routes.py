@@ -102,7 +102,8 @@ def download_cart():
         return jsonify({"message": "Cart is empty"}), 400
 
     temp_dir = tempfile.mkdtemp()
-    zip_filename = f"cart_download_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+    zip_filename = f"cart_download_{
+        datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
     zip_path = os.path.join(temp_dir, zip_filename)
 
     working_dir = os.getenv("WORKING_DIR", "")

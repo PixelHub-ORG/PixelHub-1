@@ -51,9 +51,7 @@ class WebsiteUser(HttpUser):
             logging.info(f"Login Exitoso: {USER_EMAIL}")
         else:
             if "/login" in response.url:
-                logging.error(
-                    "!!! Login Fallido: Credenciales incorrectas o error de servidor !!!"
-                )
+                logging.error("!!! Login Fallido: Credenciales incorrectas o error de servidor !!!")
             else:
                 logging.info("Login parece exitoso (Redirección correcta)")
 
@@ -72,9 +70,7 @@ class WebsiteUser(HttpUser):
         """
         url = f"/dataset/compare/{DATASET_V1_ID}/{DATASET_V2_ID}"
 
-        with self.client.get(
-            url, catch_response=True, name="/dataset/compare/[id]/[id]"
-        ) as response:
+        with self.client.get(url, catch_response=True, name="/dataset/compare/[id]/[id]") as response:
             if response.status_code == 200:
                 self.extract_and_request_file_diff(response.text)
             elif response.status_code == 404:
@@ -83,7 +79,10 @@ class WebsiteUser(HttpUser):
                     + "/{DATASET_V2_ID}"
                 )
             else:
-                response.failure(f"Error al cargar comparacion: {response.status_code}")
+                response.failure(
+                    f"Error al cargar comparacion: {
+                        response.status_code}"
+                )
 
     @task(1)
     def test_create_version_page(self):
@@ -133,9 +132,7 @@ class DatasetUser(HttpUser):
                     .limit(20)
                     .all()
                 )
-                DatasetUser._cached_dois = [
-                    doi[0] for doi in datasets_with_doi if doi[0]
-                ]
+                DatasetUser._cached_dois = [doi[0] for doi in datasets_with_doi if doi[0]]
         except Exception:
             DatasetUser._cached_dois = []
 
@@ -145,23 +142,30 @@ class DatasetUser(HttpUser):
 
     @task(3)
     def view_dataset(self):
-        dataset_id = random.randint(1, 4)
+        dataset_id = random.randint(1, 2)
+        if dataset_id == 1:
+            dataset_id = DATASET_V1_ID
+        else:
+            dataset_id = DATASET_V2_ID
         self.client.get(f"/dataset/unsynchronized/{dataset_id}/")
 
     @task(2)
     def download_dataset(self):
-        dataset_id = random.randint(1, 4)
+        dataset_id = random.randint(1, 2)
+        if dataset_id == 1:
+            dataset_id = DATASET_V1_ID
+        else:
+            dataset_id = DATASET_V2_ID
         self.client.get(f"/dataset/download/{dataset_id}")
 
     @task(1)
     def compare_datasets(self):
-        old_id = random.randint(1, 4)
-        new_id = random.randint(1, 4)
-        if old_id != new_id:
-            self.client.get(f"/dataset/compare/{old_id}/{new_id}")
+        old_id = DATASET_V1_ID
+        new_id = DATASET_V2_ID
+        self.client.get(f"/dataset/compare/{old_id}/{new_id}")
 
-    @task(1)
-    def view_by_doi(self):
+    @task(3)  # Aumento de peso para simular más tráfico en esta ruta
+    def view_dataset_and_recommendations(self):
         if DatasetUser._cached_dois:
             doi = random.choice(DatasetUser._cached_dois)
             self.client.get(f"/doi/{doi}/")
@@ -185,12 +189,20 @@ class DatasetUser(HttpUser):
 
     @task(1)
     def create_version_page(self):
-        dataset_id = random.randint(1, 4)
+        dataset_id = random.randint(1, 2)
+        if dataset_id == 1:
+            dataset_id = DATASET_V1_ID
+        else:
+            dataset_id = DATASET_V2_ID
         self.client.get(f"/dataset/{dataset_id}/create_version")
 
     @task(1)
     def create_version_post(self):
-        dataset_id = random.randint(1, 4)
+        dataset_id = random.randint(1, 2)
+        if dataset_id == 1:
+            dataset_id = DATASET_V1_ID
+        else:
+            dataset_id = DATASET_V2_ID
         payload = {
             "title": f"Version dataset {dataset_id}",
             "desc": "Descripción versión",
@@ -208,7 +220,7 @@ class DatasetUser(HttpUser):
 
     @task(1)
     def view_file_diff(self):
-        old_file_id = random.randint(1, 4)
-        new_file_id = random.randint(1, 4)
+        old_file_id = DATASET_V1_ID
+        new_file_id = DATASET_V2_ID
         if old_file_id != new_file_id:
             self.client.get(f"/file/diff/{old_file_id}/{new_file_id}")

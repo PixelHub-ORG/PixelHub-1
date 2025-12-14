@@ -36,11 +36,11 @@ class DataSetSeeder(BaseSeeder):
         ds_meta_data_list = [
             DSMetaData(
                 deposition_id=1 + i,
-                title=f"Sample dataset {i+1}",
-                description=f"Description for dataset {i+1}",
+                title=f"Sample dataset {i + 1}",
+                description=f"Description for dataset {i + 1}",
                 publication_type=PublicationType.DATA_MANAGEMENT_PLAN,
-                publication_doi=f"10.1234/dataset{i+1}",
-                dataset_doi=f"10.1234/dataset{i+1}",
+                publication_doi=f"10.1234/dataset{i + 1}",
+                dataset_doi=f"10.1234/dataset{i + 1}",
                 tags="tag1, tag2",
                 ds_metrics_id=seeded_ds_metrics.id,
             )
@@ -51,8 +51,8 @@ class DataSetSeeder(BaseSeeder):
         # Create Author instances and associate with DSMetaData
         authors = [
             Author(
-                name=f"Author {i+1}",
-                affiliation=f"Affiliation {i+1}",
+                name=f"Author {i + 1}",
+                affiliation=f"Affiliation {i + 1}",
                 orcid=f"0000-0000-0000-000{i}",
                 ds_meta_data_id=seeded_ds_meta_data[i % 4].id,
             )
@@ -71,14 +71,15 @@ class DataSetSeeder(BaseSeeder):
         ]
         seeded_datasets = self.seed(datasets)
 
-        # Assume there are 11 files, create corresponding FMMetaData and FileModel
+        # Assume there are 11 files, create corresponding FMMetaData and
+        # FileModel
         fm_meta_data_list = [
             FMMetaData(
-                filename=f"file{i+1}.pix",
-                title=f"File Model {i+1}",
-                description=f"Description for file model {i+1}",
+                filename=f"file{i + 1}.pix",
+                title=f"File Model {i + 1}",
+                description=f"Description for file model {i + 1}",
                 publication_type=PublicationType.SOFTWARE_DOCUMENTATION,
-                publication_doi=f"10.1234/fm{i+1}",
+                publication_doi=f"10.1234/fm{i + 1}",
                 tags="tag1, tag2",
             )
             for i in range(11)
@@ -88,9 +89,9 @@ class DataSetSeeder(BaseSeeder):
         # Create Author instances and associate with FMMetaData
         fm_authors = [
             Author(
-                name=f"Author {i+5}",
-                affiliation=f"Affiliation {i+5}",
-                orcid=f"0000-0000-0000-000{i+5}",
+                name=f"Author {i + 5}",
+                affiliation=f"Affiliation {i + 5}",
+                orcid=f"0000-0000-0000-000{i + 5}",
                 fm_meta_data_id=seeded_fm_meta_data[i].id,
             )
             for i in range(11)
@@ -112,18 +113,24 @@ class DataSetSeeder(BaseSeeder):
             os.makedirs(src_folder)
 
         for i in range(11):
-            dummy_path = os.path.join(src_folder, f"file{i+1}.pix")
+            dummy_path = os.path.join(src_folder, f"file{i + 1}.pix")
             if not os.path.exists(dummy_path):
                 with open(dummy_path, "w") as f:
-                    f.write(f"Contenido dummy para file{i+1}")
+                    f.write(f"Contenido dummy para file{i + 1}")
 
         for i in range(11):
-            file_name = f"file{i+1}.pix"
+            file_name = f"file{i + 1}.pix"
             file_model = seeded_file_models[i]
             dataset = next(ds for ds in seeded_datasets if ds.id == file_model.data_set_id)
             user_id = dataset.user_id
 
-            dest_folder = os.path.join(working_dir, "uploads", f"user_{user_id}", f"dataset_{dataset.id}")
+            dest_folder = os.path.join(
+                working_dir,
+                "uploads",
+                f"user_{user_id}",
+                f"dataset_{
+                    dataset.id}",
+            )
             os.makedirs(dest_folder, exist_ok=True)
             shutil.copy(os.path.join(src_folder, file_name), dest_folder)
 
@@ -131,7 +138,7 @@ class DataSetSeeder(BaseSeeder):
 
             pix_file = Hubfile(
                 name=file_name,
-                checksum=f"checksum{i+1}",
+                checksum=f"checksum{i + 1}",
                 size=os.path.getsize(file_path),
                 file_model_id=file_model.id,
             )
@@ -182,7 +189,13 @@ class DataSetSeeder(BaseSeeder):
         fm_v1 = FileModel(data_set_id=ID_V1, fm_meta_data_id=fm_meta_v1.id)
         seeded_fm_v1 = self.seed([fm_v1])[0]
 
-        dest_v1 = os.path.join(working_dir, "uploads", f"user_{user1.id}", f"dataset_{ID_V1}")
+        dest_v1 = os.path.join(
+            working_dir,
+            "uploads",
+            f"user_{
+                user1.id}",
+            f"dataset_{ID_V1}",
+        )
         os.makedirs(dest_v1, exist_ok=True)
         shutil.copy(os.path.join(src_folder, "file1.pix"), dest_v1)
 
@@ -237,7 +250,13 @@ class DataSetSeeder(BaseSeeder):
         fm_v2 = FileModel(data_set_id=ID_V2, fm_meta_data_id=fm_meta_v2.id)
         seeded_fm_v2 = self.seed([fm_v2])[0]
 
-        dest_v2 = os.path.join(working_dir, "uploads", f"user_{user1.id}", f"dataset_{ID_V2}")
+        dest_v2 = os.path.join(
+            working_dir,
+            "uploads",
+            f"user_{
+                user1.id}",
+            f"dataset_{ID_V2}",
+        )
         os.makedirs(dest_v2, exist_ok=True)
         shutil.copy(os.path.join(src_folder, "file2.pix"), dest_v2)
 

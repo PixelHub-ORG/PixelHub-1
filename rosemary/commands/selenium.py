@@ -42,18 +42,27 @@ def selenium(module, driver):
         def collect_test_paths(module_name=None):
             """Collect Selenium test files for one or all modules."""
             if module_name:
-                return [os.path.join(modules_dir, module_name, "tests", "test_selenium.py")]
+                module_test_dir = os.path.join(modules_dir, module_name, "tests", "test_selenium")
+                return [
+                    os.path.join(module_test_dir, f)
+                    for f in sorted(os.listdir(module_test_dir))
+                    if f.endswith(".py") and os.path.isfile(os.path.join(module_test_dir, f))
+                ]
             paths = []
             for m in os.listdir(modules_dir):
-                selenium_test = os.path.join(modules_dir, m, "tests", "test_selenium.py")
-                if os.path.exists(selenium_test):
-                    paths.append(selenium_test)
+                module_test_dir = os.path.join(modules_dir, m, "tests", "test_selenium")
+                if not os.path.isdir(module_test_dir):
+                    continue
+                for f in sorted(os.listdir(module_test_dir)):
+                    file_path = os.path.join(module_test_dir, f)
+                    if f.endswith(".py") and os.path.isfile(file_path):
+                        paths.append(file_path)
             return paths
 
         def run_selenium_tests(module_name, env="local"):
             """Run Selenium tests in the specified environment."""
             test_paths = collect_test_paths(module_name)
-            base_cmd = "pytest" if env == "docker" else "python"
+            base_cmd = "pytest"
             cmd = [base_cmd] + test_paths
 
             env_label = "Docker (Selenium Grid)" if env == "docker" else "local environment"

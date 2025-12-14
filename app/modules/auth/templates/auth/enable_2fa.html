@@ -1,28 +1,46 @@
-{% extends "base_template.html" %} {% block title %}Enable Two-Factor
-Authentication{% endblock %} {% block content %}
-<div class="container">
-  <h2>Enable Two-Factor Authentication</h2>
-  <p>
-    Scan the QR code below with your authenticator app (e.g., Google
-    Authenticator) to enable two-factor authentication.
-  </p>
+{% extends "base_template.html" %}
 
-  <div class="qr-code">
-    <img src="{{ qr_code }}" alt="QR Code" />
-  </div>
+{% block title %}Enable Two-Factor Authentication{% endblock %}
 
-  <p><strong>Or enter the secret manually:</strong> {{ secret }}</p>
+{% block content %}
 
-  <form method="POST" action="{{ url_for('auth.enable_2fa') }}">
-    <label for="code"
-      >Enter the 6-digit code from your authenticator app:</label
-    >
-    <input type="text" id="code" name="code" required autofocus />
-    <button type="submit">Verify Code</button>
-  </form>
+<h1 class="h2 mb-3"><b>Enable</b> Two-Factor Authentication</h1>
 
-  {% if error %}
-  <div style="color: red">{{ error }}</div>
-  {% endif %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-body">
+
+                <p>Scan this QR code with your authenticator app:</p>
+
+                <div class="text-center my-4">
+                    <img src="{{ qr_code }}" alt="QR Code" class="img-fluid" style="max-width: 240px;">
+                </div>
+
+                <p class="mb-3"><strong>Manual secret:</strong> {{ secret }}</p>
+
+                <form method="POST" action="{{ url_for('auth.enable_2fa') }}">
+                    {{ csrf_token() if csrf_token is defined }}
+
+                    <div class="mb-3">
+                        <label for="code" class="form-label">Enter the 6-digit code:</label>
+                        <input type="text" class="form-control" id="code" name="code" required autofocus>
+                    </div>
+
+                    {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-primary">Verify</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
 {% endblock %}

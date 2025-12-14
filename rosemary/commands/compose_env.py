@@ -5,10 +5,9 @@ from dotenv import dotenv_values
 from flask.cli import with_appcontext
 
 
-@click.command(
-    "compose:env",
-    help="Combines .env files from blueprints with the root .env, checking for conflicts.",
-)
+@click.command("compose:env",
+               help="Combines .env files from blueprints with the root .env, checking for conflicts.",
+               )
 @with_appcontext
 def compose_env():
 
@@ -19,7 +18,12 @@ def compose_env():
     root_env_vars = dotenv_values(root_env_path)
 
     # Finds and processes all blueprints .env files
-    module_env_paths = [os.path.join(root, ".env") for root, dirs, files in os.walk(base_path) if ".env" in files]
+    module_env_paths = [
+        os.path.join(
+            root,
+            ".env") for root,
+        dirs,
+        files in os.walk(base_path) if ".env" in files]
     for env_path in module_env_paths:
         blueprint_env_vars = dotenv_values(env_path)
         # Add or update the blueprint variables in the root .env dictionary
@@ -35,4 +39,7 @@ def compose_env():
         for key, value in root_env_vars.items():
             root_env_file.write(f"{key}={value}\n")
 
-    click.echo(click.style("Successfully merged .env files without conflicts.", fg="green"))
+    click.echo(
+        click.style(
+            "Successfully merged .env files without conflicts.",
+            fg="green"))

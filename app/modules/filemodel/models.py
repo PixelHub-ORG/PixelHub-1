@@ -3,6 +3,9 @@ from sqlalchemy import Enum as SQLAlchemyEnum
 from app import db
 from app.modules.dataset.models import Author, PublicationType
 
+# fixthis
+a = 5 + 2
+
 
 class FileModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)

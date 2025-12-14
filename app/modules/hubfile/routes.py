@@ -16,11 +16,14 @@ def download_file(file_id):
     file = HubfileService().get_or_404(file_id)
     filename = file.name
 
-    directory_path = f"uploads/user_{file.file_model.data_set.user_id}/dataset_{file.file_model.data_set_id}/"
+    directory_path = f"uploads/user_{
+        file.file_model.data_set.user_id}/dataset_{
+        file.file_model.data_set_id}/"
     parent_directory_path = os.path.dirname(current_app.root_path)
     file_path = os.path.join(parent_directory_path, directory_path)
 
-    # Get the cookie from the request or generate a new one if it does not exist
+    # Get the cookie from the request or generate a new one if it does not
+    # exist
     user_cookie = request.cookies.get("file_download_cookie")
     if not user_cookie:
         user_cookie = str(uuid.uuid4())
@@ -51,7 +54,9 @@ def view_file(file_id):
     file = HubfileService().get_or_404(file_id)
     filename = file.name
 
-    directory_path = f"uploads/user_{file.file_model.data_set.user_id}/dataset_{file.file_model.data_set_id}/"
+    directory_path = f"uploads/user_{
+        file.file_model.data_set.user_id}/dataset_{
+        file.file_model.data_set_id}/"
     parent_directory_path = os.path.dirname(current_app.root_path)
     file_path = os.path.join(parent_directory_path, directory_path, filename)
 
