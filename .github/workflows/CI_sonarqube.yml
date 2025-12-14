@@ -64,14 +64,14 @@ jobs:
           path: coverage.xml
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarcloud-github-action@v3.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
             -Dsonar.organization=pixelhub-org
-            -Dsonar.projectKey=pixelhub-org
+            -Dsonar.projectKey=PixelHub-ORG_PixelHub-1
             -Dsonar.projectName=PixelHub
             -Dsonar.python.coverage.reportPaths=coverage.xml
             -Dsonar.sources=app,core
