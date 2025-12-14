@@ -1,12 +1,12 @@
-import time
 import re
+import time
 import urllib.parse
 
 import pyotp
-from selenium.webdriver.common.by import By
 from selenium.webdriver.common.alert import Alert
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
@@ -143,8 +143,12 @@ class TestCreateDataset:
         self.driver.find_elements(By.CSS_SELECTOR, 'a[href*="/doi/"]')[0].click()
         wait_ready_safe(self.driver)
 
-        WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, "[test='add-to-car-mclaren']"))).click()
-        WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".feather-shopping-cart"))).click()
+        WebDriverWait(self.driver, 20).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "[test='add-to-car-mclaren']"))
+        ).click()
+        WebDriverWait(self.driver, 20).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".feather-shopping-cart"))
+        ).click()
         wait_ready_safe(self.driver)
 
         WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "create-dataset-btn"))).click()
@@ -153,6 +157,8 @@ class TestCreateDataset:
         WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "title"))).send_keys("Example3")
         self.driver.find_element(By.ID, "desc").send_keys("Example3")
 
-        WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".btn-outline-danger"))).click()
+        WebDriverWait(self.driver, 20).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".btn-outline-danger"))
+        ).click()
         accept_alert_if_any(self.driver, 5)
         wait_ready_safe(self.driver)
