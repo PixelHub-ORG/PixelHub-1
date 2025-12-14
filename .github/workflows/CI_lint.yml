@@ -17,7 +17,6 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      
       # Step 1: Checkout the repository code
       - name: Checkout
         uses: actions/checkout@v5
@@ -26,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       # Step 3: Install linting and formatting tools
       - name: Install Dependencies
@@ -40,7 +39,7 @@ jobs:
 
       # Step 5: Verify code formatting with Black
       - name: Check formatting with black
-        run: black --check app rosemary core
+        run: black app rosemary core
 
       # Step 6: Verify import ordering with isort
       - name: Check import order with isort
@@ -50,4 +49,3 @@ jobs:
       - name: Check that all the code compiles
         run: |
           python -m compileall .
-

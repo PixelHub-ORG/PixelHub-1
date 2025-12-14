@@ -1,6 +1,7 @@
 import re
 
 from flask import jsonify
+from werkzeug.exceptions import HTTPException
 
 from app.modules.hubfile.services import HubfileService
 from app.modules.pixchecker import pixchecker_bp
@@ -35,7 +36,8 @@ def check_pix(file_id):
         # We capture the raw token and then "unquote" it so mixed or repeated quote combinations
         # (e.g. '"name"' or '"name\'' ) are normalized by stripping surrounding quote pairs.
         element_header_re = re.compile(r"^\s*(?P<name>(?:\"[^\"]*\"|'[^']*'|[^\{\s][^\{]*?))\s*\{\s*$")
-        # For attributes: key can be quoted or unquoted, separator can be ':' or '=', value may be empty.
+        # For attributes: key can be quoted or unquoted, separator can be ':'
+        # or '=', value may be empty.
         attr_re = re.compile(
             r"^\s*(?P<key>(?:\"[^\"]*\"|'[^']*'|[^:=\s][^:=\{]*?))" r"\s*(?P<sep>[:=])\s*(?P<value>.*?)\s*$"
         )
@@ -48,7 +50,8 @@ def check_pix(file_id):
             if tok is None:
                 return tok
             s = tok.strip()
-            # strip matching or mixed surrounding quotes as long as both ends are quotes
+            # strip matching or mixed surrounding quotes as long as both ends
+            # are quotes
             while len(s) >= 2 and (s[0] in "'\"" and s[-1] in "'\""):
                 s = s[1:-1]
             return s
@@ -67,7 +70,10 @@ def check_pix(file_id):
                     current_element = unquote_token(raw_name)
                     state = "inside"
                 else:
-                    errors.append(f"Line {idx}: Expected element header like 'name{{' but got: {line!r}")
+                    errors.append(
+                        f"Line {idx}: Expected element header like 'name{{' but got: {
+                            line!r}"
+                    )
             else:  # inside an element
                 stripped = line.strip()
                 if stripped == "":
@@ -87,20 +93,30 @@ def check_pix(file_id):
                     parsed_pairs.append((key, value))
                 else:
                     if "{" in line:
-                        errors.append(f"Line {idx}: Unexpected '{{' inside element {current_element!r}")
+                        errors.append(
+                            f"Line {idx}: Unexpected '{{' inside element {
+                                current_element!r}"
+                        )
                     else:
                         errors.append(
-                            f"Line {idx}: Invalid attribute format, expected 'key:val' or 'key=val', got: {line!r}"
+                            f"Line {idx}: Invalid attribute format, expected 'key:val' or 'key=val', got: {
+                                line!r}"
                         )
 
         if state == "inside":
-            errors.append(f"Unexpected end of file: missing closing '}}' for element {current_element!r}")
+            errors.append(
+                f"Unexpected end of file: missing closing '}}' for element {
+                    current_element!r}"
+            )
 
         if errors:
             return jsonify({"errors": errors}), 400
 
         return jsonify({"message": "Valid Model"}), 200
 
+    except HTTPException as http_exc:
+        # Let Flask handle HTTP-specific errors such as 404.
+        raise http_exc
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

@@ -300,3 +300,7 @@ def test_upload_dataset_from_zip():
 
     finally:
         close_driver(driver)
+
+
+test_upload_dataset()
+test_dataset_versioning_and_comparison_flow()

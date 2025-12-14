@@ -82,7 +82,8 @@ def create_dataset():
             dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
 
             try:
-                # iterate for each file model (one file model = one request to Zenodo)
+                # iterate for each file model (one file model = one request to
+                # Zenodo)
                 for file_model in dataset.file_models:
                     zenodo_service.upload_file(dataset, deposition_id, file_model)
 
@@ -363,7 +364,8 @@ def download_dataset(dataset_id):
 
     user_cookie = request.cookies.get("download_cookie")
     if not user_cookie:
-        user_cookie = str(uuid.uuid4())  # Generate a new unique identifier if it does not exist
+        # Generate a new unique identifier if it does not exist
+        user_cookie = str(uuid.uuid4())
         # Save the cookie to the user's browser
         resp = make_response(
             send_from_directory(

@@ -39,7 +39,11 @@ class ProfileBehavior(TaskSet):
         response = self.client.get(f"/profile/{self.user_id}")
 
         if response.status_code != 200:
-            print(f"Profile view failed for User ID {self.user_id}: {response.status_code}")
+            print(
+                f"Profile view failed for User ID {
+                    self.user_id}: {
+                    response.status_code}"
+            )
 
 
 class ProfileUser(HttpUser):

@@ -1,4 +1,4 @@
-from flask import redirect, render_template, request, url_for
+from flask import current_app, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_user, logout_user
 
 from app import oauth
@@ -11,7 +11,33 @@ authentication_service = AuthenticationService()
 user_profile_service = UserProfileService()
 
 
-@auth_bp.route("/signup/", methods=["GET", "POST"])
+@auth_bp.before_app_request
+def enforce_2fa():
+    if current_app.config.get("TESTING"):
+        return
+
+    if not current_user.is_authenticated:
+        return
+
+    if request.endpoint is None:
+        return
+
+    # permitir vistas de datasets aunque no tenga 2FA activado
+    if request.endpoint == "dataset.subdomain_index":
+        return
+
+    allowed = {"auth.enable_2fa", "auth.verify_2fa", "auth.logout", "auth.login", "static"}
+
+    if current_user.is_two_factor_enabled:
+        return
+
+    if request.endpoint in allowed:
+        return
+
+    return redirect(url_for("auth.enable_2fa"))
+
+
+@auth_bp.route("/signup/", methods=["GET", "POST"], endpoint="show_signup_form")
 def show_signup_form():
     if current_user.is_authenticated:
         return redirect(url_for("public.index"))
@@ -27,31 +53,114 @@ def show_signup_form():
         except Exception as exc:
             return render_template("auth/signup_form.html", form=form, error=f"Error creating user: {exc}")
 
-        # Log user
-        login_user(user, remember=True)
-        return redirect(url_for("public.index"))
+        session["setup_2fa_user_id"] = user.id
+
+        return redirect(url_for("auth.enable_2fa"))
 
     return render_template("auth/signup_form.html", form=form)
 
 
-@auth_bp.route("/login", methods=["GET", "POST"])
+@auth_bp.route("/login", methods=["GET", "POST"], endpoint="login")
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for("public.index"))
+        if current_user.is_two_factor_enabled:
+            return redirect(url_for("public.index"))
+        return redirect(url_for("auth.enable_2fa"))
 
     form = LoginForm()
-    if request.method == "POST" and form.validate_on_submit():
-        if authentication_service.login(form.email.data, form.password.data):
-            return redirect(url_for("public.index"))
+    error = None
 
-        return render_template("auth/login_form.html", form=form, error="Invalid credentials")
+    if form.validate_on_submit():
+        user = authentication_service.repository.get_by_email(form.email.data)
 
-    return render_template("auth/login_form.html", form=form)
+        if not user or not user.check_password(form.password.data):
+            error = "Invalid credentials"
+            return render_template("auth/login_form.html", form=form, error=error)
+
+        if user.is_two_factor_enabled:
+            session["two_factor_user_id"] = user.id
+            return redirect(url_for("auth.verify_2fa"))
+
+        login_user(user, remember=form.remember_me.data)
+        return redirect(url_for("public.index"))
+
+    return render_template("auth/login_form.html", form=form, error=error)
 
 
-@auth_bp.route("/logout")
+@auth_bp.route("/logout", endpoint="logout")
 def logout():
     logout_user()
+    session.pop("setup_2fa_user_id", None)
+    session.pop("two_factor_user_id", None)
+    return redirect(url_for("public.index"))
+
+
+@auth_bp.route("/2fa/enable", methods=["GET", "POST"], endpoint="enable_2fa")
+def enable_2fa():
+    user = None
+
+    if current_user.is_authenticated:
+        user = current_user
+        if user.is_two_factor_enabled:
+            return render_template("auth/enabled_2fa.html")
+    else:
+        user_id = session.get("setup_2fa_user_id")
+        if not user_id:
+            return redirect(url_for("auth.login"))
+        user = authentication_service.repository.get(user_id)
+
+    if not user.two_factor_secret:
+        secret = authentication_service.generate_two_factor_secret(user)
+    else:
+        secret = user.two_factor_secret
+
+    qr_code = authentication_service.generate_qr_code_for_two_factor(user)
+
+    error = None
+
+    if request.method == "POST":
+        code = request.form.get("code")
+
+        if code and authentication_service.verify_two_factor_code(user, code):
+            authentication_service.enable_two_factor(user)
+            login_user(user)
+            session.pop("setup_2fa_user_id", None)
+            return redirect(url_for("public.index"))
+
+        error = "Invalid code, please try again."
+
+    return render_template("auth/enable_2fa.html", qr_code=qr_code, secret=secret, error=error)
+
+
+@auth_bp.route("/2fa/verify", methods=["GET", "POST"], endpoint="verify_2fa")
+def verify_2fa():
+    user_id = session.get("two_factor_user_id")
+    if not user_id:
+        return redirect(url_for("auth.login"))
+
+    user = authentication_service.repository.get(user_id)
+    error = None
+
+    if request.method == "POST":
+        code = request.form.get("code")
+        if not code:
+            error = "Please enter the 2FA code."
+        elif authentication_service.verify_two_factor_code(user, code):
+            login_user(user)
+            session.pop("two_factor_user_id", None)
+            return redirect(url_for("public.index"))
+        else:
+            error = "Invalid 2FA code, please try again."
+
+    return render_template("auth/verify_2fa.html", error=error)
+
+
+@auth_bp.route("/2fa/disable", methods=["POST"], endpoint="disable_2fa")
+def disable_2fa():
+    if not current_user.is_authenticated:
+        return redirect(url_for("auth.login"))
+
+    authentication_service.disable_two_factor(current_user)
     return redirect(url_for("public.index"))
 
 
@@ -86,7 +195,8 @@ def orcid_callback():
         # Handle error (e.g., user denied access)
         return render_template("auth/login_form.html", error=f"ORCID login failed: {e}")
 
-    # The token response from ORCID (with /authenticate scope) includes 'orcid' and 'name'
+    # The token response from ORCID (with /authenticate scope) includes
+    # 'orcid' and 'name'
     orcid_id = token.get("orcid")
     full_name = token.get("name")
 

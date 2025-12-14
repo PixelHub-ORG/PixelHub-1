@@ -13,7 +13,8 @@ def test_client(test_client):
     """
     with test_client.application.app_context():
         # Add HERE new elements to the database that you want to exist in the test context.
-        # DO NOT FORGET to use db.session.add(<element>) and db.session.commit() to save the data.
+        # DO NOT FORGET to use db.session.add(<element>) and
+        # db.session.commit() to save the data.
         pass
 
     yield test_client
@@ -78,11 +79,11 @@ def test_signup_user_unsuccessful(test_client):
 
 def test_signup_user_successful(test_client):
     response = test_client.post(
-        "/signup",
+        "/signup/",
         data=dict(name="Foo", surname="Example", email="foo@example.com", password="foo1234"),
         follow_redirects=True,
     )
-    assert response.request.path == url_for("public.index"), "Signup was unsuccessful"
+    assert response.request.path == url_for("auth.enable_2fa"), "Signup should redirect to 2FA setup"
 
 
 def test_service_create_with_profie_success(clean_database):

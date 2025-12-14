@@ -256,7 +256,8 @@ def test_service_init_no_token(mocker):
         if key == "FLASK_ENV":
             return "development"  # Necesario para que get_zenodo_url devuelva un string
         if key == "FAKENODO_URL":
-            return "http://fake-url.com/api"  # Necesario para que get_zenodo_url devuelva un string
+            # Necesario para que get_zenodo_url devuelva un string
+            return "http://fake-url.com/api"
         # Devuelve None para las claves de token
         if key in ("ZENODO_ACCESS_TOKEN", "FAKENODO_TOKEN"):
             return None

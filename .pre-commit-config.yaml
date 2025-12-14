@@ -4,6 +4,8 @@ repos:
     hooks:
       - id: ruff
         args: [--fix]
+        pass_filenames: true
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -12,19 +14,34 @@ repos:
         args: ["--maxkb=5120"]
       - id: check-yaml
       - id: check-json
+
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
     rev: v9.23.0
     hooks:
       - id: commitlint
         stages: [commit-msg]
         additional_dependencies: ['@commitlint/config-conventional']
-#  - repo: local
-#    hooks:
-#      - id: pytest
-#        name: run pytest before push
-#        entry: pytest
-#        language: system
-#        types: [python]
-#        stages: [pre-push]
-#        exclude: '.*selenium.*|test_selenium\.py'
-    
+
+  
+  - repo: local
+    hooks:
+      - id: rosemary-linter
+        name: Rosemary Linter
+        entry: rosemary linter
+        language: system
+        pass_filenames: false
+
+      - id: black-format
+        name: Black formatter
+        entry: black
+        language: system
+        args: ["app"]
+        pass_filenames: false
+
+      - id: isort-format
+        name: isort formatter
+        entry: isort
+        language: system
+        args: ["app"]
+        pass_filenames: false
+
