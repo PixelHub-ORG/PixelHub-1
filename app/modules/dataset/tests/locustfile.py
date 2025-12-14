@@ -84,7 +84,7 @@ class WebsiteUser(HttpUser):
         """
         self.client.get(f"/dataset/{DATASET_V2_ID}/create_version", name="/dataset/[id]/create_version")
         
-               self.client.get(
+        self.client.get(
             f"/dataset/{DATASET_V2_ID}/create_version",
             name="/dataset/[id]/create_version",
         )
@@ -220,7 +220,7 @@ class DatasetUser(HttpUser):
         if old_file_id != new_file_id:
             self.client.get(f"/file/diff/{old_file_id}/{new_file_id}")
             
-       @task(1)
+    @task(1)
     def test_upload_github(self):
         """
         Prueba la subida de ficheros desde GitHub.
