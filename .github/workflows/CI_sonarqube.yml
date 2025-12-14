@@ -2,8 +2,11 @@ name: SonarQube Analysis
 on:
   push:
     branches:
+      - trunk # Rama principal
+      - "**" # TEMPORAL: Para probar en cualquier rama (eliminar después)
+  pull_request:
+    branches:
       - trunk
-      - sonarcloud
 
 jobs:
   testing:
@@ -26,7 +29,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Importante para SonarQube: trae todo el historial
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -68,13 +71,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.organization=pixelhub-org
-            -Dsonar.projectKey=PixelHub-ORG_PixelHub-1
-            -Dsonar.projectName=PixelHub
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-            -Dsonar.sources=app,core
-            -Dsonar.tests=app/modules
-            -Dsonar.test.inclusions=**/*test*.py,**/test_*.py
-            -Dsonar.exclusions=**/migrations/**,**/tests/**,**/test_*.py,**/__pycache__/**,**/venv/**,**/env/**
