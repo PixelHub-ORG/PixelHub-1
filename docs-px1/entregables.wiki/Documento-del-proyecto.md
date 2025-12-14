@@ -208,7 +208,122 @@ La combinación de estas herramientas ha permitido validar tanto la lógica inte
 
 ### Instalación, ejecución y despliegue
 
-TODO
+## Instalación paso a paso
+
+Esta sección detalla los pasos para la instalación de forma manual. Asegúrate de sustituir todas los usuarios y contraseñas de ejemplo por opciones seguras.
+
+### 1. Actualización de Dependencias
+
+Actualizamos las dependencias del sistema:
+
+```bash
+sudo apt update -y
+sudo apt upgrade -y
+```
+
+### 2. Clonación del repositorio
+
+Clonamos el repositorio usando git y nos movemos al directorio del proyecto:
+
+```bash
+git clone git@github.com:PixelHub-ORG/PixelHub-1
+cd PixelHub1
+```
+
+### 3. Configuración MariaDB y MySQL
+
+Es imprescindible que contemos con versiones de Python, MariaDB y MySQL instaladas en nuestro sistema para que la instalación funcione.
+
+Configuramos MySQL:
+
+```bash
+sudo mysql_secure_installation
+```
+
+Una vez en la consola interactiva pulsamos Enter tres veces hasta que nos solicite una nueva contraseña. Escribimos la contraseña que queramos para el usuario root y damos enter hasta que se cierre la consola.a
+
+### 4. Configuración de la Base de Datos
+
+Una vez configuradas las tecnologías podemos crear la base de datos. Abrimos la consola de MySQL como usuario ROOT:
+
+```bash
+sudo mysql -u root -p
+```
+
+Esta plantilla sirve como ejemplo para configurar la base de datos desde la consola pero se aconseja cambiar los nombres de usuario y las contraseñas.
+
+```sql
+CREATE DATABASE pixelhubdb;
+CREATE DATABASE pixelhubdb_test;
+CREATE USER 'pixelhubdb_user'@'localhost' IDENTIFIED BY 'elegir_contraseña_segura';
+GRANT ALL PRIVILEGES ON pixelhubdb.* TO 'pixelhubdb_user'@'localhost';
+GRANT ALL PRIVILEGES ON pixelhubdb_test.* TO 'pixelhubdb_user'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+### 5. Configuración del archivo .env
+
+Creamos un archivo de configuración .env
+
+```bash
+echo "" > .env
+echo "webhook" > .moduleignore
+code .
+```
+
+Esta plantilla incluye todos los campos que debería tener el arvhivo de configuración:
+
+```bash
+FLASK_APP_NAME="PIXELHUB.IO(dev)"
+FLASK_ENV=development
+DOMAIN=localhost:5000
+MARIADB_HOSTNAME=localhost
+MARIADB_PORT=3306
+MARIADB_DATABASE=pixelhubdb
+MARIADB_TEST_DATABASE=pixelhubdb_test
+MARIADB_USER=pixelhubdb_user
+MARIADB_PASSWORD=contraseña_establecida_mariadb
+MARIADB_ROOT_PASSWORD=contraseña_establecida_root
+WORKING_DIR=""
+```
+
+Una vez escrita la configuración guardamos el archivo y cerramos el editor.
+
+### 6. Creación de Entorno Virtual
+
+En esta sección crearemos un entorno virtual que contenga todas las dependencias del proyecto. Ejecutamos estos comandos para completar el proceso de creación y configuración del entorno virtual:
+
+```bash
+python3.12 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install -e ./
+```
+
+Para probar si todo ha salido bien podemos utilizar el comando 'rosemary' y deberían aparecernos todas las instrucciones de rosemary.
+
+### 6. Migraciones y Seeders
+
+Para migrar y poblar la base de datos utilizamos los siguientes comandos
+
+```bash
+flask db upgrade
+rosemary db:seed
+```
+
+### 7. Ejecutar el Proyecto en Local
+
+Para ejecutar el proyecto en local utilizamos este comando:
+
+```bash
+flask run --host=0.0.0.0 --reload --debug
+```
+
+Una vez ejecutado la aplicación debería estar corriendo en el puerto 5000 de nuestro host local.
+
+En el comando flask run utilizamos reload para que los cambios en el código se reflejen en tiempo real en la aplicación. Utilizamos debug para ejecutar el proyecto en modo desarrollo (eliminar si no se pretende utilizar el sistema con este fin).
 
 ## Despliegue
 
@@ -260,6 +375,54 @@ Para apagar los servicios y liberar recursos:
 ```bash
 docker compose -f docker/docker-compose.prod.yml down
 ```
+
+##### Uso del sistema con Vagrant
+
+Para desplegar el sistema en una máquina virtual haciendo Vagrant deberemos seguir los siguientes pasos:
+
+### Requisitos Previos
+
+Para utilizar los comandos de vagrant deberemos tener instaladas las dependencias que aparecen en el archivo requirements.txt. Para instalar las dependencias usamos
+
+```bash
+pip install -r requirements.txt
+```
+
+Además deberemos asegurarnos de que cumplimos los siguientes prerequisitos:
+
+1. La opción Secure Boot de nuestro sistema se encuentra desactivada.
+2. El kernel de nuestra máquina está preparado para crear máquinas virtuales. En la mayoría de casos podemos solucionar el problema utilizando el comando sudo rmmod kvm\_{intel/amd} donde utilizaremos la opción que se corresponda con nuestro tipo de procesador.
+
+### Despliegue Paso a Paso
+
+Para desplegar con vagrant seguiremos los siguientes pasos:
+
+1. Copiamos el .env de ejemplo de Vagrant en nuestro .env
+
+```bash
+cp .env.vagrant.example .env
+```
+
+2. Nos movemos al directorio de Vagrant desde la raíz del proyecto:
+
+```bash
+cd vagrant/
+```
+
+3. Ejecutamos el comando de ejecución de vagrant:
+
+```bash
+vagrant up
+```
+
+Una vez hecho todo esto nuestro sistema debería estar corriendo en [esta dirección](http://127.0.0.1:5000/).
+
+### Otros comandos
+
+Si queremos eliminar la máquina virtual en la que se encuentra desplegado el sistema utilizamos:
+
+```bash
+vagrant destroy
 
 ### Ejercicio de propuesta de cambio
 
