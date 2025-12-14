@@ -2,8 +2,7 @@ name: SonarQube Analysis
 on:
   push:
     branches:
-      - trunk
-      - sonarcloud
+      - main
 
 jobs:
   testing:
