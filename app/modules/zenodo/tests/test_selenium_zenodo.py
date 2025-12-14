@@ -1,107 +1,110 @@
 import os
 import time
 
-from selenium.common.exceptions import NoSuchElementException
+import pyotp
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
 
 
-def wait_for_page_to_load(driver, timeout=4):
-    WebDriverWait(driver, timeout).until(
-        lambda driver: driver.execute_script("return document.readyState") == "complete"
-    )
+def wait_for_page_to_load(driver, timeout=15):
+    WebDriverWait(driver, timeout).until(lambda d: d.execute_script("return document.readyState") == "complete")
+
+
+def signup_and_handle_2fa_enable(driver, host, email, password):
+    wait = WebDriverWait(driver, 15)
+
+    driver.get(f"{host}/signup/")
+    wait.until(EC.presence_of_element_located((By.NAME, "name")))
+
+    driver.find_element(By.NAME, "name").send_keys("Zenodo")
+    driver.find_element(By.NAME, "surname").send_keys("Tester")
+    driver.find_element(By.NAME, "email").send_keys(email)
+    driver.find_element(By.NAME, "password").send_keys(password)
+    driver.find_element(By.CSS_SELECTOR, "input[type='submit']").click()
+
+    wait.until(lambda d: "/2fa/enable" in d.current_url or d.current_url.startswith(host))
+
+    if "/2fa/enable" in driver.current_url:
+        p = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "p.mb-3")))
+        secret = p.text.split("Manual secret:")[-1].strip()
+        code = pyotp.TOTP(secret).now()
+        code_input = wait.until(EC.presence_of_element_located((By.NAME, "code")))
+        code_input.clear()
+        code_input.send_keys(code)
+        driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+        wait.until(lambda d: "/2fa/enable" not in d.current_url)
 
 
 def test_dataset_creation_with_fakenodo_enabled():
     driver = initialize_driver()
-
     try:
         host = get_host_for_selenium_testing()
+        ts = str(int(time.time()))
+        email = f"user_zenodo_{ts}@example.com"
+        password = "1234"
 
-        driver.get(f"{host}/login")
-        wait_for_page_to_load(driver)
-
-        email_field = driver.find_element(By.NAME, "email")
-        password_field = driver.find_element(By.NAME, "password")
-
-        email_field.send_keys("user1@example.com")
-        password_field.send_keys("1234")
-        password_field.send_keys(Keys.RETURN)
-
-        time.sleep(3)
-        wait_for_page_to_load(driver)
+        signup_and_handle_2fa_enable(driver, host, email, password)
 
         driver.get(f"{host}/dataset/upload")
         wait_for_page_to_load(driver)
 
-        title = driver.find_element(By.ID, "title")
-        title.send_keys("Ejemplo Fakenodo")
+        wait = WebDriverWait(driver, 15)
+        wait.until(EC.presence_of_element_located((By.ID, "title")))
 
-        desc = driver.find_element(By.NAME, "desc")
-        desc.send_keys("Hola")
+        driver.find_element(By.ID, "title").send_keys("Ejemplo Fakenodo")
+        driver.find_element(By.NAME, "desc").send_keys("Hola")
 
         dropdown = driver.find_element(By.ID, "publication_type")
         dropdown.click()
-        dropdown.find_element(By.XPATH, "//option[. = 'Working Paper']").click()
-        wait_for_page_to_load(driver)
+        dropdown.find_element(By.XPATH, "//option[normalize-space(.) = 'Working Paper']").click()
 
-        file_input_element = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
-        file_path = os.path.abspath("app/modules/dataset/pix_examples/file1.pix")
-        file_input_element.send_keys(file_path)
+        file_input = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
+        file_path = os.path.join(
+            os.getcwd(),
+            "app",
+            "modules",
+            "dataset",
+            "pix_examples",
+            "file1.pix",
+        )
+        file_input.send_keys(file_path)
 
-        # Espera a que Dropzone termine de procesar
-        WebDriverWait(driver, 10).until(lambda d: len(d.find_elements(By.CLASS_NAME, "dz-preview")) > 0)
+        WebDriverWait(driver, 15).until(lambda d: len(d.find_elements(By.CLASS_NAME, "dz-preview")) > 0)
 
-        # Clic en el checkbox
         agree_checkbox = driver.find_element(By.ID, "agreeCheckbox")
         driver.execute_script("arguments[0].click();", agree_checkbox)
 
-        # Esperar a que el botón de subida exista
-        upload_button = WebDriverWait(driver, 10).until(lambda d: d.find_element(By.ID, "upload_button"))
-
-        # Asegurar visibilidad
+        upload_button = wait.until(EC.presence_of_element_located((By.ID, "upload_button")))
         driver.execute_script("arguments[0].scrollIntoView(true);", upload_button)
-        time.sleep(1)
-
-        # Hacer click con JS
         driver.execute_script("arguments[0].click();", upload_button)
-        time.sleep(5)
+
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "tbody tr:first-child a")))
+        driver.find_element(By.CSS_SELECTOR, "tbody tr:first-child a").click()
         wait_for_page_to_load(driver)
 
-        # Abrir dataset subido
-        first_dataset_link = driver.find_element(By.CSS_SELECTOR, "tbody tr:first-child a")
-        first_dataset_link.click()
-        wait_for_page_to_load(driver)
-        time.sleep(2)
+        link = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "a[href*='/depositions/']")))
+        href = link.get_attribute("href")
+        deposition_id = href.rstrip("/").split("/depositions/")[-1].split("/")[0]
+        assert deposition_id
 
-        original_tab = driver.current_window_handle
-        selector = "a[href^='http://localhost:5001/api/depositions/']"
-        fakenodo_link = driver.find_element(By.CSS_SELECTOR, selector)
-        driver.execute_script("arguments[0].click();", fakenodo_link)
+        api_url = f"http://localhost:5001/api/depositions/{deposition_id}"
+        driver.execute_script("window.open(arguments[0], '_blank');", api_url)
 
-        time.sleep(2)
-        all_tabs = driver.window_handles
-        new_tab = [tab for tab in all_tabs if tab != original_tab][0]
-        driver.switch_to.window(new_tab)
+        WebDriverWait(driver, 15).until(lambda d: len(d.window_handles) > 1)
+        driver.switch_to.window(driver.window_handles[-1])
 
         try:
-            json_text = driver.find_element(By.TAG_NAME, "pre").text
-        except NoSuchElementException:
+            json_text = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "pre"))).text
+        except Exception:
             json_text = driver.find_element(By.TAG_NAME, "body").text
 
-        # checks if fakenodo object exists
         assert "Not Found" not in json_text
         assert "404" not in json_text
 
-        print("Fakenodo JSON exists!")
-        print("Fakenodo test passed!")
-
     finally:
         close_driver(driver)
-
-
-test_dataset_creation_with_fakenodo_enabled()

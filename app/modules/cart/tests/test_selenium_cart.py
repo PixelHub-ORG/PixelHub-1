@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from app import db
 from app.modules.auth.models import User
@@ -83,7 +84,6 @@ def download_env(test_client):
 
         User.query.filter_by(id=user_id).delete()
         db.session.commit()
-
 
 
 def test_download_cart_empty_returns_400(download_env):

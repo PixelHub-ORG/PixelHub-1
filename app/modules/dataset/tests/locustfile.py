@@ -83,7 +83,7 @@ class WebsiteUser(HttpUser):
         Visits the create version page for a dataset.
         """
         self.client.get(f"/dataset/{DATASET_V2_ID}/create_version", name="/dataset/[id]/create_version")
-        
+
         self.client.get(
             f"/dataset/{DATASET_V2_ID}/create_version",
             name="/dataset/[id]/create_version",
@@ -219,7 +219,7 @@ class DatasetUser(HttpUser):
         new_file_id = DATASET_V2_ID
         if old_file_id != new_file_id:
             self.client.get(f"/file/diff/{old_file_id}/{new_file_id}")
-            
+
     @task(1)
     def test_upload_github(self):
         """

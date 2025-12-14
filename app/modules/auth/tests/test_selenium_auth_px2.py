@@ -2,8 +2,8 @@ import time
 
 import pyotp
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
@@ -41,6 +41,10 @@ def test_login_and_check_element():
         if "/2fa/verify" in driver.current_url:
             raise AssertionError("Unexpected /2fa/verify without having the secret available in the test flow.")
 
-        wait.until(EC.presence_of_element_located((By.XPATH, "//h1[contains(@class, 'h2 mb-3') and contains(., 'Latest datasets')]")))
+        wait.until(
+            EC.presence_of_element_located(
+                (By.XPATH, "//h1[contains(@class, 'h2 mb-3') and contains(., 'Latest datasets')]")
+            )
+        )
     finally:
         close_driver(driver)
