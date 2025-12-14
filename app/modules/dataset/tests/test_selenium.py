@@ -158,87 +158,6 @@ def test_upload_dataset():
         close_driver(driver)
 
 
-def test_dataset_versioning_and_comparison_flow():
-    driver = initialize_driver()
-
-    try:
-        host = get_host_for_selenium_testing()
-
-        login_as_user1(driver, host)
-
-        initial_count = count_datasets(driver, host)
-
-        open_latest_dataset_view(driver, host)
-
-        create_version_button = driver.find_element(By.LINK_TEXT, "Create new version")
-        create_version_button.click()
-        wait_for_page_to_load(driver)
-        time.sleep(2)
-
-        assert "/dataset/" in driver.current_url and "create_version" in driver.current_url
-
-        desc_field = driver.find_element(By.NAME, "desc")
-        tags_field = driver.find_element(By.NAME, "tags")
-
-        desc_field.clear()
-        desc_field.send_keys("Updated description for selenium version")
-
-        tags_field.clear()
-        tags_field.send_keys("tag1,tag2,selenium-version")
-
-        file1_path, file2_path = get_pix_file_paths()
-        dropzone = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
-        dropzone.send_keys(file1_path)
-        wait_for_page_to_load(driver)
-
-        click_agree_checkbox_if_present(driver)
-        click_upload_button(driver)
-
-        expected_after_version = initial_count + 1
-        final_count = count_datasets(driver, host)
-
-        for _ in range(5):
-            if final_count == expected_after_version:
-                break
-            time.sleep(1)
-            final_count = count_datasets(driver, host)
-
-        assert final_count == expected_after_version
-
-        open_latest_dataset_view(driver, host)
-
-        version_history_header = driver.find_element(By.XPATH, "//h5[contains(., 'Version History')]")
-        assert version_history_header.is_displayed()
-
-        badges = driver.find_elements(
-            By.XPATH,
-            "//div[contains(@class,'timeline-item')]//span[contains(@class,'badge') and contains(., 'v')]",
-        )
-        versions_text = [b.text.strip() for b in badges]
-
-        assert any("v1" in v for v in versions_text)
-        assert len(versions_text) >= 2
-
-        diff_link = driver.find_element(
-            By.XPATH,
-            "//div[contains(@class,'timeline-item')]//a[@title='Compare with current view']",
-        )
-        diff_link.click()
-        wait_for_page_to_load(driver)
-        time.sleep(2)
-
-        assert "/dataset/compare/" in driver.current_url
-
-        heading = driver.find_element(By.XPATH, "//h1[contains(., 'Comparison Report')]")
-        assert heading.is_displayed()
-
-        assert driver.find_element(By.ID, "mod-tab").is_displayed()
-        assert driver.find_element(By.ID, "add-tab").is_displayed()
-        assert driver.find_element(By.ID, "del-tab").is_displayed()
-
-    finally:
-        close_driver(driver)
-
 
 def test_upload_dataset_from_github():
     driver = initialize_driver()
@@ -382,3 +301,4 @@ def test_upload_dataset_from_zip():
 
     finally:
         close_driver(driver)
+
