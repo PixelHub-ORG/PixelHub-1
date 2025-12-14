@@ -2,11 +2,8 @@ name: SonarQube Analysis
 on:
   push:
     branches:
-      - trunk # Rama principal
-      - "**" # TEMPORAL: Para probar en cualquier rama (eliminar después)
-  pull_request:
-    branches:
       - trunk
+      - sonarcloud
 
 jobs:
   testing:
@@ -29,7 +26,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Importante para SonarQube: trae todo el historial
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
