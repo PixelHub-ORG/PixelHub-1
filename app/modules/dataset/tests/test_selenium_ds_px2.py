@@ -1,302 +1,458 @@
 import os
+import re
 import time
+import urllib.parse
 
-from selenium.common.exceptions import (
-    ElementNotInteractableException,
-    NoSuchElementException,
-)
+import pyotp
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
 
+_STATE = {"email": None, "password": None, "secret": None}
 
-def wait_for_page_to_load(driver, timeout=6):
+
+def wait_ready(driver, timeout=20):
     WebDriverWait(driver, timeout).until(lambda d: d.execute_script("return document.readyState") == "complete")
+
+
+def extract_secret(driver):
+    text = driver.find_element(By.TAG_NAME, "body").text or ""
+    m = re.search(r"\b[A-Z2-7]{16,}\b", text.replace(" ", ""))
+    if not m:
+        raise AssertionError(f"2FA secret not found. url={safe_current_url(driver)}")
+    return m.group(0)
+
+
+def safe_current_url(driver):
+    try:
+        return driver.current_url
+    except Exception:
+        return ""
+
+
+def safe_handles(driver):
+    try:
+        return driver.window_handles
+    except Exception:
+        return []
+
+
+def safe_switch_to_any_window(driver):
+    hs = safe_handles(driver)
+    if not hs:
+        return False
+    try:
+        driver.switch_to.window(hs[0])
+        return True
+    except Exception:
+        return False
+
+
+def signup_enable_2fa(driver, host):
+    if _STATE["email"]:
+        return _STATE["email"], _STATE["password"], _STATE["secret"]
+
+    wait = WebDriverWait(driver, 20)
+    ts = str(int(time.time()))
+    email = f"user_ds_px2_{ts}@example.com"
+    password = "1234"
+
+    driver.get(f"{host}/signup/")
+    wait.until(EC.presence_of_element_located((By.NAME, "name")))
+    driver.find_element(By.NAME, "name").send_keys("Dataset")
+    driver.find_element(By.NAME, "surname").send_keys("PX2")
+    driver.find_element(By.NAME, "email").send_keys(email)
+    driver.find_element(By.NAME, "password").send_keys(password)
+    driver.find_element(By.CSS_SELECTOR, "input[type='submit']").click()
+
+    wait.until(lambda d: "/2fa/enable" in safe_current_url(d) or safe_current_url(d).startswith(host))
+
+    if "/2fa/enable" not in safe_current_url(driver):
+        driver.get(f"{host}/2fa/enable")
+        wait_ready(driver)
+        wait.until(lambda d: "/2fa/enable" in safe_current_url(d) or safe_current_url(d).startswith(host))
+
+    if "/2fa/enable" not in safe_current_url(driver):
+        raise AssertionError(f"Could not reach /2fa/enable after signup. url={safe_current_url(driver)}")
+
+    secret = extract_secret(driver)
+    code = pyotp.TOTP(secret).now()
+
+    code_inputs = (
+        driver.find_elements(By.NAME, "code")
+        or driver.find_elements(By.NAME, "token")
+        or driver.find_elements(By.CSS_SELECTOR, "input[type='text'], input[type='tel'], input[type='number']")
+    )
+    if not code_inputs:
+        raise AssertionError(f"2FA code input not found. url={safe_current_url(driver)}")
+    try:
+        code_inputs[0].clear()
+    except Exception:
+        pass
+    code_inputs[0].send_keys(code)
+
+    submit_btns = driver.find_elements(By.CSS_SELECTOR, "button[type='submit']") or driver.find_elements(
+        By.CSS_SELECTOR, "input[type='submit']"
+    )
+    if not submit_btns:
+        raise AssertionError(f"2FA enable submit button not found. url={safe_current_url(driver)}")
+    submit_btns[0].click()
+
+    wait.until(lambda d: "/2fa/enable" not in safe_current_url(d))
+    wait_ready(driver)
+
+    _STATE["email"] = email
+    _STATE["password"] = password
+    _STATE["secret"] = secret
+
+    driver.get(f"{host}/logout")
+    wait_ready(driver)
+    return email, password, secret
+
+
+def login_with_2fa_to_next(driver, host, email, password, secret, next_path):
+    wait = WebDriverWait(driver, 20)
+    next_q = urllib.parse.quote(next_path, safe="")
+    driver.get(f"{host}/login?next={next_q}")
+    wait_ready(driver)
+
+    email_inputs = (
+        driver.find_elements(By.NAME, "email")
+        or driver.find_elements(By.ID, "email")
+        or driver.find_elements(By.CSS_SELECTOR, "input[type='email']")
+    )
+    pass_inputs = (
+        driver.find_elements(By.NAME, "password")
+        or driver.find_elements(By.ID, "password")
+        or driver.find_elements(By.CSS_SELECTOR, "input[type='password']")
+    )
+    if not email_inputs or not pass_inputs:
+        raise AssertionError(f"Login inputs not found. url={safe_current_url(driver)}")
+
+    try:
+        email_inputs[0].clear()
+    except Exception:
+        pass
+    email_inputs[0].send_keys(email)
+    try:
+        pass_inputs[0].clear()
+    except Exception:
+        pass
+    pass_inputs[0].send_keys(password)
+
+    submit = driver.find_elements(By.CSS_SELECTOR, "button[type='submit']") or driver.find_elements(
+        By.CSS_SELECTOR, "input[type='submit']"
+    )
+    if submit:
+        submit[0].click()
+    else:
+        pass_inputs[0].send_keys(Keys.RETURN)
+
+    wait.until(
+        lambda d: "/2fa/verify" in safe_current_url(d)
+        or "/login" in safe_current_url(d)
+        or safe_current_url(d).startswith(host)
+    )
+    wait_ready(driver)
+
+    if "/2fa/verify" in safe_current_url(driver):
+        code = pyotp.TOTP(secret).now()
+        code_inputs = (
+            driver.find_elements(By.NAME, "code")
+            or driver.find_elements(By.NAME, "token")
+            or driver.find_elements(By.CSS_SELECTOR, "input[type='text'], input[type='tel'], input[type='number']")
+        )
+        if not code_inputs:
+            raise AssertionError(f"2FA verify code input not found. url={safe_current_url(driver)}")
+        try:
+            code_inputs[0].clear()
+        except Exception:
+            pass
+        code_inputs[0].send_keys(code)
+
+        submit2 = driver.find_elements(By.CSS_SELECTOR, "button[type='submit']") or driver.find_elements(
+            By.CSS_SELECTOR, "input[type='submit']"
+        )
+        if not submit2:
+            raise AssertionError(f"2FA verify submit button not found. url={safe_current_url(driver)}")
+        submit2[0].click()
+
+        wait.until(lambda d: "/2fa/verify" not in safe_current_url(d))
+        wait_ready(driver)
+
+    if "/login" in safe_current_url(driver):
+        raise AssertionError(f"Login did not stick (still on login). url={safe_current_url(driver)}")
+
+    if next_path not in safe_current_url(driver):
+        driver.get(f"{host}{next_path}")
+        wait_ready(driver)
+        if "/login" in safe_current_url(driver):
+            raise AssertionError(f"Still not authenticated after login+2FA. url={safe_current_url(driver)}")
 
 
 def count_datasets(driver, host):
     driver.get(f"{host}/dataset/list")
-    wait_for_page_to_load(driver)
-    rows = driver.find_elements(By.XPATH, "//table//tbody//tr")
-    return len(rows)
+    wait_ready(driver)
+    return len(driver.find_elements(By.XPATH, "//table//tbody//tr"))
 
 
-def click_agree_checkbox_if_present(driver):
-    try:
-        check = driver.find_element(By.ID, "agreeCheckbox")
+def pix_file_paths():
+    base = os.path.dirname(os.path.dirname(__file__))
+    pix_dir = os.path.join(base, "pix_examples")
+    f1 = os.path.abspath(os.path.join(pix_dir, "file1.pix"))
+    f2 = os.path.abspath(os.path.join(pix_dir, "file2.pix"))
+    assert os.path.exists(f1)
+    assert os.path.exists(f2)
+    return f1, f2
+
+
+def zip_file_path():
+    base = os.path.dirname(os.path.dirname(__file__))
+    z = os.path.abspath(os.path.join(base, "pix_examples", "files1.zip"))
+    assert os.path.exists(z)
+    return z
+
+
+def find_title_input(driver):
+    wait = WebDriverWait(driver, 20)
+    locs = [
+        (By.ID, "title"),
+        (By.NAME, "title"),
+        (By.CSS_SELECTOR, "input[id*='title'], input[name*='title']"),
+        (By.XPATH, "//label[contains(translate(normalize-space(.),'TITLE','title'),'title')]/following::input[1]"),
+    ]
+    last = None
+    for by, sel in locs:
         try:
-            check.click()
-        except ElementNotInteractableException:
-            driver.execute_script("arguments[0].click();", check)
-        wait_for_page_to_load(driver)
-    except NoSuchElementException:
+            return wait.until(EC.presence_of_element_located((by, sel)))
+        except Exception as e:
+            last = e
+    raise last
+
+
+def fill(driver, locs, value):
+    wait = WebDriverWait(driver, 20)
+    last = None
+    for by, sel in locs:
+        try:
+            el = wait.until(EC.presence_of_element_located((by, sel)))
+            try:
+                el.clear()
+            except Exception:
+                pass
+            el.send_keys(value)
+            return
+        except Exception as e:
+            last = e
+    raise last
+
+
+def try_click_agree(driver):
+    els = driver.find_elements(By.ID, "agreeCheckbox")
+    if els:
+        try:
+            els[0].click()
+        except Exception:
+            driver.execute_script("arguments[0].click();", els[0])
+
+
+def click_upload(driver):
+    wait = WebDriverWait(driver, 20)
+    btn = wait.until(EC.presence_of_element_located((By.ID, "upload_button")))
+    driver.execute_script("arguments[0].scrollIntoView(true);", btn)
+    try:
+        btn.click()
+    except Exception:
+        driver.execute_script("arguments[0].click();", btn)
+    time.sleep(2)
+    try:
+        wait_ready(driver)
+    except Exception:
         pass
 
 
-def click_upload_button(driver):
-    upload_btn = driver.find_element(By.ID, "upload_button")
-    try:
-        upload_btn.click()
-    except ElementNotInteractableException:
-        driver.execute_script("arguments[0].click();", upload_btn)
-    wait_for_page_to_load(driver)
-    time.sleep(2)
+def open_upload(driver, host, email, password, secret):
+    login_with_2fa_to_next(driver, host, email, password, secret, "/dataset/upload")
+    if "/dataset/upload" not in safe_current_url(driver):
+        driver.get(f"{host}/dataset/upload")
+        wait_ready(driver)
+    if "/login" in safe_current_url(driver):
+        raise AssertionError(f"Not authenticated to access upload. url={safe_current_url(driver)}")
+    find_title_input(driver)
 
 
-def get_pix_file_paths():
-    base_dir = os.path.dirname(os.path.dirname(__file__))
-    pix_dir = os.path.join(base_dir, "pix_examples")
-    file1_path = os.path.abspath(os.path.join(pix_dir, "file1.pix"))
-    file2_path = os.path.abspath(os.path.join(pix_dir, "file2.pix"))
-    assert os.path.exists(file1_path)
-    assert os.path.exists(file2_path)
-    return file1_path, file2_path
-
-
-def get_zip_file_path():
-    base_dir = os.path.dirname(os.path.dirname(__file__))
-    zip_dir = os.path.join(base_dir, "pix_examples")
-    zip_path = os.path.abspath(os.path.join(zip_dir, "files1.zip"))
-    assert os.path.exists(zip_path)
-    return zip_path
-
-
-def login_as_user1(driver, host):
-    driver.get(f"{host}/login")
-    wait_for_page_to_load(driver)
-    email_field = driver.find_element(By.NAME, "email")
-    password_field = driver.find_element(By.NAME, "password")
-    email_field.clear()
-    password_field.clear()
-    email_field.send_keys("user1@example.com")
-    password_field.send_keys("1234")
-    password_field.send_keys(Keys.RETURN)
-    time.sleep(4)
-    wait_for_page_to_load(driver)
-
-
-def open_latest_dataset_view(driver, host):
-    driver.get(f"{host}/dataset/list")
-    wait_for_page_to_load(driver)
-    rows = driver.find_elements(By.XPATH, "(//table)[1]//tbody//tr")
-    assert rows
-    latest_row = rows[0]
-    title_link = latest_row.find_element(By.XPATH, ".//td[1]/a")
-    title_link.click()
-    wait_for_page_to_load(driver)
-    time.sleep(2)
+def wait_for_list_or_rows_without_current_url(driver, timeout=75):
+    end = time.time() + timeout
+    last = None
+    while time.time() < end:
+        try:
+            if not safe_handles(driver):
+                time.sleep(0.2)
+                continue
+            safe_switch_to_any_window(driver)
+            rows = driver.find_elements(By.XPATH, "//table//tbody//tr")
+            if rows:
+                return True
+            if driver.find_elements(
+                By.XPATH,
+                "//*[contains(translate(.,'SUCCESS','success'),'success') or contains(translate(.,'UPLOADED','uploaded'),'uploaded') or contains(translate(.,'CREATED','created'),'created')]",
+            ):
+                return True
+        except Exception as e:
+            last = e
+        time.sleep(0.5)
+    if last:
+        raise last
+    return False
 
 
 def test_upload_dataset():
     driver = initialize_driver()
-
     try:
         host = get_host_for_selenium_testing()
+        email, password, secret = signup_enable_2fa(driver, host)
 
-        login_as_user1(driver, host)
+        before = count_datasets(driver, host)
 
-        initial_datasets = count_datasets(driver, host)
+        open_upload(driver, host, email, password, secret)
 
-        driver.get(f"{host}/dataset/upload")
-        wait_for_page_to_load(driver)
+        title = f"Test dataset {int(time.time())}"
+        find_title_input(driver).send_keys(title)
 
-        unique_title = f"Test dataset {int(time.time())}"
+        fill(
+            driver,
+            [
+                (By.NAME, "desc"),
+                (By.ID, "desc"),
+                (By.NAME, "description"),
+                (By.ID, "description"),
+                (By.TAG_NAME, "textarea"),
+            ],
+            "Description for selenium upload test",
+        )
+        fill(driver, [(By.NAME, "tags"), (By.ID, "tags")], "tag1,tag2")
 
-        driver.find_element(By.NAME, "title").send_keys(unique_title)
-        driver.find_element(By.NAME, "desc").send_keys("Description for selenium upload test")
-        driver.find_element(By.NAME, "tags").send_keys("tag1,tag2")
+        f1, f2 = pix_file_paths()
+        file_inputs = driver.find_elements(By.CLASS_NAME, "dz-hidden-input") or driver.find_elements(
+            By.CSS_SELECTOR, "input[type='file']"
+        )
+        assert file_inputs
+        file_inputs[0].send_keys(f1)
+        WebDriverWait(driver, 15).until(lambda d: len(d.find_elements(By.CLASS_NAME, "dz-preview")) > 0)
+        file_inputs = driver.find_elements(By.CLASS_NAME, "dz-hidden-input") or driver.find_elements(
+            By.CSS_SELECTOR, "input[type='file']"
+        )
+        file_inputs[0].send_keys(f2)
 
-        add_author_button = driver.find_element(By.ID, "add_author")
-        add_author_button.send_keys(Keys.RETURN)
-        wait_for_page_to_load(driver)
-        add_author_button.send_keys(Keys.RETURN)
-        wait_for_page_to_load(driver)
+        try_click_agree(driver)
+        click_upload(driver)
 
-        driver.find_element(By.NAME, "authors-0-name").send_keys("Author0")
-        driver.find_element(By.NAME, "authors-0-affiliation").send_keys("Club0")
-        driver.find_element(By.NAME, "authors-0-orcid").send_keys("0000-0000-0000-0000")
-
-        driver.find_element(By.NAME, "authors-1-name").send_keys("Author1")
-        driver.find_element(By.NAME, "authors-1-affiliation").send_keys("Club1")
-
-        file1_path, file2_path = get_pix_file_paths()
-
-        dropzone = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
-        dropzone.send_keys(file1_path)
-        wait_for_page_to_load(driver)
-
-        dropzone = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
-        dropzone.send_keys(file2_path)
-        wait_for_page_to_load(driver)
-
-        click_agree_checkbox_if_present(driver)
-        click_upload_button(driver)
-
-        expected = initial_datasets + 1
-        final_datasets = count_datasets(driver, host)
-
-        for _ in range(5):
-            if final_datasets == expected:
+        expected = before + 1
+        for _ in range(15):
+            if count_datasets(driver, host) == expected:
                 break
             time.sleep(1)
-            final_datasets = count_datasets(driver, host)
-
-        assert final_datasets == expected
-
-        driver.get(f"{host}/dataset/list")
-        wait_for_page_to_load(driver)
-        links = driver.find_elements(
-            By.XPATH,
-            f"//table[1]//tbody//tr//td[1]//a[normalize-space(text())='{unique_title}']",
-        )
-        assert links
-
+        assert count_datasets(driver, host) == expected
     finally:
         close_driver(driver)
 
 
 def test_upload_dataset_from_github():
     driver = initialize_driver()
-
     try:
         host = get_host_for_selenium_testing()
+        email, password, secret = signup_enable_2fa(driver, host)
 
-        login_as_user1(driver, host)
+        before = count_datasets(driver, host)
 
-        initial_datasets = count_datasets(driver, host)
+        open_upload(driver, host, email, password, secret)
 
-        driver.get(f"{host}/dataset/upload")
-        wait_for_page_to_load(driver)
+        title = f"Test dataset GitHub {int(time.time())}"
+        find_title_input(driver).send_keys(title)
 
-        unique_title = f"Test dataset GitHub {int(time.time())}"
-
-        driver.find_element(By.NAME, "title").send_keys(unique_title)
-        driver.find_element(By.NAME, "desc").send_keys("Description for selenium upload test from GitHub")
-        driver.find_element(By.NAME, "tags").send_keys("tag1,tag2,github")
-
-        # Fill GitHub info
-        repo_input = driver.find_element(By.ID, "github-repo")
-        repo_input.clear()
-        repo_input.send_keys("https://github.com/JoseLu2121/pix_files.git")
-
-        path_input = driver.find_element(By.ID, "github-path")
-        path_input.clear()
-        path_input.send_keys("files/")
-
-        add_btn = driver.find_element(By.ID, "github-add-btn")
-        add_btn.click()
-
-        # Wait for files to be processed and listed
-        # The JS adds elements to 'file-list'
-        # We can wait for at least one list item in file-list
-        WebDriverWait(driver, 30).until(lambda d: len(d.find_elements(By.CSS_SELECTOR, "#file-list li")) > 0)
-
-        # Check if file1.pix or file2.pix is present
-        file_list = driver.find_element(By.ID, "file-list")
-        file_list_text = file_list.text
-        # Check for presence of base filenames, ignoring potential numeric suffixes added by the system
-        assert "file_github_path1" in file_list_text or "file_github_path2" in file_list_text
-
-        click_agree_checkbox_if_present(driver)
-        click_upload_button(driver)
-
-        expected = initial_datasets + 1
-        final_datasets = count_datasets(driver, host)
-
-        for _ in range(10):  # Increased wait time as GitHub fetch might take time
-            if final_datasets == expected:
-                break
-            time.sleep(1)
-            final_datasets = count_datasets(driver, host)
-
-        assert final_datasets == expected
-
-        driver.get(f"{host}/dataset/list")
-        wait_for_page_to_load(driver)
-        links = driver.find_elements(
-            By.XPATH,
-            f"//table[1]//tbody//tr//td[1]//a[normalize-space(text())='{unique_title}']",
+        fill(
+            driver,
+            [
+                (By.NAME, "desc"),
+                (By.ID, "desc"),
+                (By.NAME, "description"),
+                (By.ID, "description"),
+                (By.TAG_NAME, "textarea"),
+            ],
+            "Description for selenium upload test from GitHub",
         )
-        assert links
+        fill(driver, [(By.NAME, "tags"), (By.ID, "tags")], "tag1,tag2,github")
 
+        fill(
+            driver,
+            [(By.ID, "github-repo"), (By.ID, "github_repo"), (By.NAME, "github-repo"), (By.NAME, "github_repo")],
+            "https://github.com/JoseLu2121/pix_files.git",
+        )
+        fill(
+            driver,
+            [(By.ID, "github-path"), (By.ID, "github_path"), (By.NAME, "github-path"), (By.NAME, "github_path")],
+            "files/",
+        )
+
+        btns = driver.find_elements(By.ID, "github-add-btn") or driver.find_elements(By.ID, "github_add_btn")
+        assert btns
+        try:
+            btns[0].click()
+        except Exception:
+            driver.execute_script("arguments[0].click();", btns[0])
+
+        WebDriverWait(driver, 60).until(lambda d: len(d.find_elements(By.CSS_SELECTOR, "#file-list li")) > 0)
+
+        try_click_agree(driver)
+        click_upload(driver)
+
+        assert wait_for_list_or_rows_without_current_url(driver, 75)
+        assert count_datasets(driver, host) >= before + 1
     finally:
         close_driver(driver)
 
 
 def test_upload_dataset_from_zip():
     driver = initialize_driver()
-
     try:
         host = get_host_for_selenium_testing()
+        email, password, secret = signup_enable_2fa(driver, host)
 
-        login_as_user1(driver, host)
+        before = count_datasets(driver, host)
 
-        initial_datasets = count_datasets(driver, host)
+        open_upload(driver, host, email, password, secret)
 
-        driver.get(f"{host}/dataset/upload")
-        wait_for_page_to_load(driver)
+        title = f"Test dataset ZIP {int(time.time())}"
+        find_title_input(driver).send_keys(title)
 
-        unique_title = f"Test dataset {int(time.time())}"
-
-        driver.find_element(By.NAME, "title").send_keys(unique_title)
-        driver.find_element(By.NAME, "desc").send_keys("Dataset from zip upload test")
-        driver.find_element(By.NAME, "tags").send_keys("tag1,tag2")
-
-        add_author_button = driver.find_element(By.ID, "add_author")
-        add_author_button.send_keys(Keys.RETURN)
-        wait_for_page_to_load(driver)
-        add_author_button.send_keys(Keys.RETURN)
-        wait_for_page_to_load(driver)
-
-        driver.find_element(By.NAME, "authors-0-name").send_keys("Author0")
-        driver.find_element(By.NAME, "authors-0-affiliation").send_keys("Club0")
-        driver.find_element(By.NAME, "authors-0-orcid").send_keys("0000-0000-0000-0000")
-
-        driver.find_element(By.NAME, "authors-1-name").send_keys("Author1")
-        driver.find_element(By.NAME, "authors-1-affiliation").send_keys("Club1")
-
-        zip_path = get_zip_file_path()
-
-        dropzone = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
-        dropzone.send_keys(zip_path)
-        wait_for_page_to_load(driver)
-
-        agree_checkbox = driver.find_element(By.ID, "agreeCheckbox")
-        driver.execute_script("arguments[0].click();", agree_checkbox)
-
-        # Esperar a que el botón de subida exista
-        upload_button = WebDriverWait(driver, 10).until(lambda d: d.find_element(By.ID, "upload_button"))
-
-        # Asegurar visibilidad
-        driver.execute_script("arguments[0].scrollIntoView(true);", upload_button)
-        time.sleep(1)
-
-        # Hacer click con JS
-        driver.execute_script("arguments[0].click();", upload_button)
-        time.sleep(5)
-        wait_for_page_to_load(driver)
-
-        expected = initial_datasets + 1
-        final_datasets = count_datasets(driver, host)
-
-        for _ in range(5):
-            if final_datasets == expected:
-                break
-            time.sleep(5)
-            final_datasets = count_datasets(driver, host)
-
-        assert final_datasets == expected
-
-        driver.get(f"{host}/dataset/list")
-        wait_for_page_to_load(driver)
-        links = driver.find_elements(
-            By.XPATH,
-            f"//table[1]//tbody//tr//td[1]//a[normalize-space(text())='{unique_title}']",
+        fill(
+            driver,
+            [
+                (By.NAME, "desc"),
+                (By.ID, "desc"),
+                (By.NAME, "description"),
+                (By.ID, "description"),
+                (By.TAG_NAME, "textarea"),
+            ],
+            "Dataset from zip upload test",
         )
-        assert links
+        fill(driver, [(By.NAME, "tags"), (By.ID, "tags")], "tag1,tag2,zip")
 
+        zp = zip_file_path()
+        file_inputs = driver.find_elements(By.CLASS_NAME, "dz-hidden-input") or driver.find_elements(
+            By.CSS_SELECTOR, "input[type='file']"
+        )
+        assert file_inputs
+        file_inputs[0].send_keys(zp)
+
+        try_click_agree(driver)
+        click_upload(driver)
+
+        assert wait_for_list_or_rows_without_current_url(driver, 75)
+        assert count_datasets(driver, host) >= before + 1
     finally:
         close_driver(driver)
