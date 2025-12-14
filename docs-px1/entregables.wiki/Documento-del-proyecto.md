@@ -421,7 +421,7 @@ Una vez hecho todo esto nuestro sistema debería estar corriendo en [esta direcc
 
 Si queremos eliminar la máquina virtual en la que se encuentra desplegado el sistema utilizamos:
 
-```bash
+````bash
 vagrant destroy
 
 ### Ejercicio de propuesta de cambio
@@ -451,7 +451,8 @@ Cada miembro trabaja siguiendo un flujo basado en `trunk`.
    ```bash
    git checkout trunk
    git pull origin trunk
-   ```
+````
+
 2. Crea una rama en local y pasa su issue a **In Progress**:
    ```bash
    git checkout -b feature/update-teams

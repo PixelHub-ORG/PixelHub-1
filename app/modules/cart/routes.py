@@ -74,7 +74,8 @@ def create_dataset():
         if not form.validate_on_submit():
             return jsonify({"message": form.errors}), 400
 
-        result, status_code = cart_service.create_dataset(current_user.id, form)
+        result, status_code = cart_service.create_dataset(
+            current_user.id, form)
         return jsonify(result), status_code
 
     cart_items = cart_service.view_cart(current_user.id)
@@ -90,7 +91,10 @@ def create_dataset():
                     "authors": fm_meta.authors if fm_meta else [],
                 }
             )
-    return render_template("cart/create_dataset.html", form=form, models=models)
+    return render_template(
+        "cart/create_dataset.html",
+        form=form,
+        models=models)
 
 
 @cart_bp.route("/user/cart/download", methods=["GET"])
@@ -118,7 +122,12 @@ def download_cart():
                 dateset_id = file_model.data_set_id
                 filename = file_model.fm_meta_data.filename
 
-                file_path = os.path.join(working_dir, "uploads", f"user_{user_id}", f"dataset_{dateset_id}", filename)
+                file_path = os.path.join(
+                    working_dir,
+                    "uploads",
+                    f"user_{user_id}",
+                    f"dataset_{dateset_id}",
+                    filename)
 
                 existe = os.path.exists(file_path)
                 print(f"DEBUG: Buscando archivo: {file_path}")
@@ -129,4 +138,8 @@ def download_cart():
                 else:
                     print("DEBUG: ¡ERROR! El archivo no está donde debería.")
 
-    return send_from_directory(temp_dir, zip_filename, as_attachment=True, mimetype="application/zip")
+    return send_from_directory(
+        temp_dir,
+        zip_filename,
+        as_attachment=True,
+        mimetype="application/zip")

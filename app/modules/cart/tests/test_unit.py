@@ -48,12 +48,15 @@ def setup_user_and_model(test_client_with_user):
         user = User.query.filter_by(email=user_email).first()
 
         dummy_ds_metadata = DSMetaData(
-            title="Dummy Dataset Meta", description="Dummy description", publication_type=PublicationType.OTHER
-        )
+            title="Dummy Dataset Meta",
+            description="Dummy description",
+            publication_type=PublicationType.OTHER)
         db.session.add(dummy_ds_metadata)
         db.session.commit()
 
-        dummy_dataset = DataSet(user_id=user.id, ds_meta_data_id=dummy_ds_metadata.id)
+        dummy_dataset = DataSet(
+            user_id=user.id,
+            ds_meta_data_id=dummy_ds_metadata.id)
         db.session.add(dummy_dataset)
         db.session.commit()
         dummy_ds_id = dummy_dataset.id
@@ -119,9 +122,13 @@ def test_add_nonexistent_file_model_to_cart_returns_404(setup_user_and_model):
 
     non_existent_id = 999999
 
-    response = test_client.post("/filemodel/cart/add", json={"item_id": non_existent_id})
+    response = test_client.post(
+        "/filemodel/cart/add",
+        json={
+            "item_id": non_existent_id})
 
-    assert response.status_code in [404, 400], "Expected 404/400 for nonexistent FM."
+    assert response.status_code in [
+        404, 400], "Expected 404/400 for nonexistent FM."
 
     logout(test_client)
 
@@ -149,7 +156,8 @@ def setup_cart_and_login(test_client, fm_id, user_email):
     test_client.post("/filemodel/cart/add", json={"item_id": fm_id})
 
 
-def test_create_dataset_missing_required_fields_returns_400(setup_user_and_model):
+def test_create_dataset_missing_required_fields_returns_400(
+        setup_user_and_model):
     """
     Missing mandatory fields like 'title'
     """
@@ -173,7 +181,8 @@ def test_create_dataset_missing_required_fields_returns_400(setup_user_and_model
     logout(test_client)
 
 
-def test_create_dataset_with_invalid_publication_type_returns_400(setup_user_and_model):
+def test_create_dataset_with_invalid_publication_type_returns_400(
+        setup_user_and_model):
     """
     Invalid publication type.
     """
@@ -192,7 +201,8 @@ def test_create_dataset_with_invalid_publication_type_returns_400(setup_user_and
     logout(test_client)
 
 
-def test_create_dataset_with_invalid_doi_format_returns_400(setup_user_and_model):
+def test_create_dataset_with_invalid_doi_format_returns_400(
+        setup_user_and_model):
     """
     Invalid DOI format.
     """
@@ -212,7 +222,7 @@ def test_create_dataset_with_invalid_doi_format_returns_400(setup_user_and_model
     data = response.get_json()
 
     assert data is not None
-    assert "publication_doi" in data.get("message", {}) or "publication_doi" in data.get(
-        "errors", {}
-    ), "The error must mention the 'publication_doi' field."
+    assert "publication_doi" in data.get(
+        "message", {}) or "publication_doi" in data.get(
+        "errors", {}), "The error must mention the 'publication_doi' field."
     logout(test_client)

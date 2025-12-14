@@ -13,12 +13,12 @@ class HubfileRepository(BaseRepository):
         super().__init__(Hubfile)
 
     def get_owner_user_by_hubfile(self, hubfile: Hubfile) -> User:
-        return (
-            db.session.query(User).join(DataSet).join(FileModel).join(Hubfile).filter(Hubfile.id == hubfile.id).first()
-        )
+        return (db.session.query(User).join(DataSet).join(FileModel).join(
+            Hubfile).filter(Hubfile.id == hubfile.id).first())
 
     def get_dataset_by_hubfile(self, hubfile: Hubfile) -> DataSet:
-        return db.session.query(DataSet).join(FileModel).join(Hubfile).filter(Hubfile.id == hubfile.id).first()
+        return db.session.query(DataSet).join(FileModel).join(
+            Hubfile).filter(Hubfile.id == hubfile.id).first()
 
 
 class HubfileViewRecordRepository(BaseRepository):
@@ -26,7 +26,8 @@ class HubfileViewRecordRepository(BaseRepository):
         super().__init__(HubfileViewRecord)
 
     def total_hubfile_views(self) -> int:
-        max_id = self.model.query.with_entities(func.max(self.model.id)).scalar()
+        max_id = self.model.query.with_entities(
+            func.max(self.model.id)).scalar()
         return max_id if max_id is not None else 0
 
 
@@ -35,5 +36,6 @@ class HubfileDownloadRecordRepository(BaseRepository):
         super().__init__(HubfileDownloadRecord)
 
     def total_hubfile_downloads(self) -> int:
-        max_id = self.model.query.with_entities(func.max(self.model.id)).scalar()
+        max_id = self.model.query.with_entities(
+            func.max(self.model.id)).scalar()
         return max_id if max_id is not None else 0

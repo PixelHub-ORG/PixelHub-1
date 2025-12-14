@@ -26,7 +26,12 @@ def enforce_2fa():
     if request.endpoint == "dataset.subdomain_index":
         return
 
-    allowed = {"auth.enable_2fa", "auth.verify_2fa", "auth.logout", "auth.login", "static"}
+    allowed = {
+        "auth.enable_2fa",
+        "auth.verify_2fa",
+        "auth.logout",
+        "auth.login",
+        "static"}
 
     if current_user.is_two_factor_enabled:
         return
@@ -37,7 +42,8 @@ def enforce_2fa():
     return redirect(url_for("auth.enable_2fa"))
 
 
-@auth_bp.route("/signup/", methods=["GET", "POST"], endpoint="show_signup_form")
+@auth_bp.route("/signup/", methods=["GET",
+               "POST"], endpoint="show_signup_form")
 def show_signup_form():
     if current_user.is_authenticated:
         return redirect(url_for("public.index"))
@@ -46,12 +52,18 @@ def show_signup_form():
     if form.validate_on_submit():
         email = form.email.data
         if not authentication_service.is_email_available(email):
-            return render_template("auth/signup_form.html", form=form, error=f"Email {email} in use")
+            return render_template(
+                "auth/signup_form.html",
+                form=form,
+                error=f"Email {email} in use")
 
         try:
             user = authentication_service.create_with_profile(**form.data)
         except Exception as exc:
-            return render_template("auth/signup_form.html", form=form, error=f"Error creating user: {exc}")
+            return render_template(
+                "auth/signup_form.html",
+                form=form,
+                error=f"Error creating user: {exc}")
 
         session["setup_2fa_user_id"] = user.id
 
@@ -75,7 +87,8 @@ def login():
 
         if not user or not user.check_password(form.password.data):
             error = "Invalid credentials"
-            return render_template("auth/login_form.html", form=form, error=error)
+            return render_template(
+                "auth/login_form.html", form=form, error=error)
 
         if user.is_two_factor_enabled:
             session["two_factor_user_id"] = user.id
@@ -129,7 +142,11 @@ def enable_2fa():
 
         error = "Invalid code, please try again."
 
-    return render_template("auth/enable_2fa.html", qr_code=qr_code, secret=secret, error=error)
+    return render_template(
+        "auth/enable_2fa.html",
+        qr_code=qr_code,
+        secret=secret,
+        error=error)
 
 
 @auth_bp.route("/2fa/verify", methods=["GET", "POST"], endpoint="verify_2fa")
@@ -193,7 +210,9 @@ def orcid_callback():
         token = oauth.orcid.authorize_access_token()
     except Exception as e:
         # Handle error (e.g., user denied access)
-        return render_template("auth/login_form.html", error=f"ORCID login failed: {e}")
+        return render_template(
+            "auth/login_form.html",
+            error=f"ORCID login failed: {e}")
 
     # The token response from ORCID (with /authenticate scope) includes
     # 'orcid' and 'name'
@@ -201,14 +220,19 @@ def orcid_callback():
     full_name = token.get("name")
 
     if not orcid_id:
-        return render_template("auth/login_form.html", error="Could not retrieve ORCID iD.")
+        return render_template(
+            "auth/login_form.html",
+            error="Could not retrieve ORCID iD.")
 
     # Find or create a local user account
     try:
-        user = authentication_service.find_or_create_by_orcid(orcid_id=orcid_id, full_name=full_name)
+        user = authentication_service.find_or_create_by_orcid(
+            orcid_id=orcid_id, full_name=full_name)
     except Exception as e:
         # Handle error during user creation
-        return render_template("auth/login_form.html", error=f"Error creating user profile: {e}")
+        return render_template(
+            "auth/login_form.html",
+            error=f"Error creating user profile: {e}")
 
     # Log the user in
     login_user(user, remember=True)

@@ -17,7 +17,10 @@ def test_client(test_client):
         db.session.add(user_test)
         db.session.commit()
 
-        profile = UserProfile(user_id=user_test.id, name="Name", surname="Surname")
+        profile = UserProfile(
+            user_id=user_test.id,
+            name="Name",
+            surname="Surname")
         db.session.add(profile)
         db.session.commit()
 
