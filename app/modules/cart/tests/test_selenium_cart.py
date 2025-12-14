@@ -47,7 +47,6 @@ def download_env(test_client):
         dataset = DataSet(user_id=user.id, ds_meta_data_id=ds_meta.id)
         db.session.add(dataset)
         db.session.commit()
-        dataset_id = dataset.id
 
         fm_meta = FMMetaData(
             filename="download_model.uvl",
