@@ -155,7 +155,81 @@ Debe explicar cuál es el entorno de desarrollo que ha usado, cuáles son las ve
 
 ### Ejercicio de propuesta de cambio
 
-Se presentará un ejercicio con una propuesta concreta de cambio en la que a partir de un cambio que se requiera, se expliquen paso por paso (incluyendo comandos y uso de herramientas) lo que hay que hacer para realizar dicho cambio. Debe ser un ejercicio ilustrativo de todo el proceso de evolución y gestión de la configuración del proyecto.
+Se presentará un ejercicio con una propuesta concreta de cambio que ilustra **todo el proceso de evolución y gestión de la configuración del proyecto**. El cambio consiste en **añadir información detallada del equipo en la sección _Teams_ de la página**.
+
+---
+
+#### 1. Propuesta del cambio
+En primer lugar, **Aaron** detecta la necesidad del cambio y crea una **issue de tipo _feature_ en GitHub**, utilizando la plantilla correspondiente
+Una vez completados los campos, Aaron pulsa **Submit new issue**.
+
+---
+
+#### 2. Análisis y división del trabajo
+La issue se asigna a **Jesús**, quien analiza el alcance y determina que el trabajo es demasiado grande para una sola tarea. Por ello, la divide en varias *issues* más pequeñas. Estas nuevas *issues* se asignan a distintos miembros del equipo y se mueven al estado **Ready** del tablero.
+
+---
+
+#### 3. Trabajo en local y creación de ramas
+Cada miembro trabaja siguiendo un flujo basado en `trunk`.
+
+1. Actualizar la rama local:
+   ```bash
+   git checkout trunk
+   git pull origin trunk
+2. Crea una rama en local y pasa su issue a **In Progress**:
+   ```bash
+   git checkout -b feature/update-teams
+
+---
+
+#### 4. Implementación del cambio
+
+En la rama creada, cada desarrollador modifica el template de la sección **Teams** añadiendo la información del equipo.
+Tras comprobar que todo funciona correctamente, se guardan los cambios:
+
+```bash
+git add .
+git commit -m "feat: Add team information to Teams section"
+```
+---
+
+#### 5. Integración en `trunk`
+
+Una vez finalizada la tarea, se integra el trabajo en la rama de integración:
+
+```bash
+git checkout trunk
+git merge feature/update-teams
+git push origin trunk
+```
+
+---
+
+#### 6. Verificación automática
+
+Al hacer *push* a `trunk`, se ejecutan los **workflows de GitHub Actions**.
+
+* Si los checks fallan o se encuentra algún bugs, se crea una nueva *issue* y se repite el proceso (rama, corrección y merge).
+* Si todo pasa correctamente, las *issues* se cierran.
+
+---
+
+#### 7. Publicación final
+
+Cuando `trunk` es estable y todas las tareas están completadas, se integra en producción:
+
+```bash
+git checkout main
+git merge trunk
+git push origin main
+```
+
+---
+
+Este ejercicio muestra cómo se gestiona un cambio desde su propuesta inicial hasta su despliegue final, garantizando **control, trazabilidad y calidad** en la evolución y gestión de la configuración del proyecto.
+
+
 
 ### Conclusiones y trabajo futuro
 

@@ -52,25 +52,15 @@ Este documento describe el flujo estándar para gestionar incidencias dentro del
 2. En Projects, mover la tarjeta de subtarea a la columna **In Progress** para indicar que está en desarrollo.
 3. Desarrollar la funcionalidad o corrección correspondiente.
 4. Completar y verificar que funciona correctamente a nivel individual.
-5. Hacer push de los cambios y preparar la rama para merge.
+5. Hacer merge a trunk desde la rama local.
 
 ---
 
-## 5. Integración en la rama general de la incidencia
 
-1. Cada subtarea se mergea en una **rama general** correspondiente a la incidencia principal.
-2. Una vez que todas las subtareas estén integradas:
 
-   * Mover la tarjeta general a **In Review**.
-   * Verificar funcionamiento completo de la incidencia.
-   * Ejecutar los tests.
-   * Añadir nuevos tests si fuese necesario.
+## 5. Integración en trunk y main
 
----
-
-## 6. Integración en trunk y main
-
-1. Tras pasar las pruebas en la rama general, hacer merge a **trunk**.
+1. Una vez que todas las subtareas estén integradas en trunk.
 2. Verificar nuevamente que todo funciona correctamente, observar el workflow.
 3. Cuando la funcionalidad este bien, ejecutar el merge final de **trunk → main**.
 
