@@ -4,14 +4,17 @@
 
 La razón por la que a algunos miembros del equipo se le han asociado dos WI es porque hemos trabajado haciendo pairprogramming.
 
-| Miembro del equipo                                                   | Horas | Commits | LoC | Test                                               | Issues | Work Item                                                                          | Dificultad     |
-| -------------------------------------------------------------------- | ----- | ------- | --- | -------------------------------------------------- | ------ | ---------------------------------------------------------------------------------- | -------------- |
-| [Campos Díez, Lucía](https://github.com/HHV4884)                     | 55    | XX      | YY  | Unitarios: 37, Locust:8, Selenium: 4 (total: 49)   | 6      | Two-factor authentication (2FA) (H) \#89 & Embeddable badge \#102 (M)              | M & H          |
-| [Mayoral Ansias, Aaron](https://github.com/aaronma300604)            | 47    | XX      | YY  | Unitarios: 5, Locust: 1, Selenium: 1 (total: 7)    | 4      | newdataset - Evolving uvlhub into a "datatypehub" \#104                            | H              |
-| [Oviedo Govantes, Claudia](https://github.com/ClaudiaOviedoGovantes) | 65    | XX      | YY  | Unitarios: 27, Locust: 20, Selenium: 1 (total: 48) | 13     | Trending datasets \#100 (M) & Two-factor authentication (2FA) (H)                  | M & H          |
-| [Peñaloza Friqui, Nora](https://github.com/norapfr)                  | 52    | XX      | YY  | Unitarios: 10, Locust:13, Selenium:1 (total: 24)   | 12     | Trending datasets \#100 (M) & Automatic dataset recommendations \#98 (H)           | M & H          |
-| [Sánchez Quirós, Jesús](https://github.com/JesusSQ)                  | 53    | XX      | YY  | Unitarios: 7, Locust: 7, Selenium: 1 (total: 15)   | 7      | Add download counter for datasets (L) & Automatic dataset recommendations \#98 (H) | L & H          |
-| **TOTAL**                                                            | 272   | tXX     | tYY | 143                                                | tII    | Descripción breve                                                                  | H(2)/M(2)/L(1) |
+| Miembro del equipo                                                   | Horas | Commits | LoC     | Test                                               | Issues | Work Item                                                                          | Dificultad     |
+| -------------------------------------------------------------------- | ----- | ------- | ------- | -------------------------------------------------- | ------ | ---------------------------------------------------------------------------------- | -------------- |
+| [Campos Díez, Lucía](https://github.com/HHV4884)                     | 55    | 31      | 1482    | Unitarios: 37, Locust:8, Selenium: 4 (total: 49)   | 6      | Two-factor authentication (2FA) (H) \#89 & Embeddable badge \#102 (M)              | M & H          |
+| [Mayoral Ansias, Aaron](https://github.com/aaronma300604)            | 47    | 34      | 9667802 | Unitarios: 5, Locust: 1, Selenium: 1 (total: 7)    | 4      | newdataset - Evolving uvlhub into a "datatypehub" \#104                            | H              |
+| [Oviedo Govantes, Claudia](https://github.com/ClaudiaOviedoGovantes) | 65    | 56      | 11601   | Unitarios: 27, Locust: 20, Selenium: 1 (total: 48) | 13     | Trending datasets \#100 (M) & Two-factor authentication (2FA) (H)                  | M & H          |
+| [Peñaloza Friqui, Nora](https://github.com/norapfr)                  | 52    | 42      | 2280    | Unitarios: 10, Locust:13, Selenium:1 (total: 24)   | 12     | Trending datasets \#100 (M) & Automatic dataset recommendations \#98 (H)           | M & H          |
+| [Sánchez Quirós, Jesús](https://github.com/JesusSQ)                  | 53    | 19      | 737     | Unitarios: 7, Locust: 7, Selenium: 1 (total: 15)   | 7      | Add download counter for datasets (L) & Automatic dataset recommendations \#98 (H) | L & H          |
+| **TOTAL**                                                            | 272   | 182     | 9682568 | 143                                                | tII    | Descripción breve                                                                  | H(2)/M(2)/L(1) |
+
+Estadísticas sacadas a partir de Git Stats:
+![Reporte de Git Stats](../images/GitStats.png)
 
 Las evidencias de las horas trabajadas se encuentran en la carpeta `clockify`, que contiene los reports de Clockify de todos los miembros del equipo.
 
