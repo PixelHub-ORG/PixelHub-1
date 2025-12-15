@@ -289,7 +289,7 @@ MARIADB_ROOT_PASSWORD=contraseña_establecida_root
 WORKING_DIR=""
 ORCID_CLIENT_ID="APP-QDXJOGWEQBPHZ3JR"
 ORCID_CLIENT_SECRET="3d15b6fc-2d86-46e0-9522-dba049b5d477"
-GITHUB_TOKEN = "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"
+GITHUB_TOKEN = "sacar Github token (no es necesario que tenga permisos)"
 ```
 
 Una vez escrita la configuración guardamos el archivo y cerramos el editor.
