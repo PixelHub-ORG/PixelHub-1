@@ -57,50 +57,42 @@ def create_dataset():
 
         try:
             logger.info("Creating dataset...")
-            dataset = dataset_service.create_from_form(
-                form=form, current_user=current_user)
+            dataset = dataset_service.create_from_form(form=form, current_user=current_user)
             logger.info(f"Created dataset: {dataset}")
             dataset_service.move_file_models(dataset)
         except Exception as exc:
-            logger.exception(
-                f"Exception while create dataset data in local {exc}")
-            return jsonify(
-                {"Exception while create dataset data in local: ": str(exc)}), 400
+            logger.exception(f"Exception while create dataset data in local {exc}")
+            return jsonify({"Exception while create dataset data in local: ": str(exc)}), 400
 
         # send dataset as deposition to Zenodo
         data = {}
         try:
-            zenodo_response_json = zenodo_service.create_new_deposition(
-                dataset)
+            zenodo_response_json = zenodo_service.create_new_deposition(dataset)
             response_data = json.dumps(zenodo_response_json)
             data = json.loads(response_data)
         except Exception as exc:
             data = {}
             zenodo_response_json = {}
-            logger.exception(
-                f"Exception while create dataset data in Zenodo {exc}")
+            logger.exception(f"Exception while create dataset data in Zenodo {exc}")
 
         if data.get("id"):
             deposition_id = data.get("id")
 
             # update dataset with deposition id in Zenodo
-            dataset_service.update_dsmetadata(
-                dataset.ds_meta_data_id, deposition_id=deposition_id)
+            dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
 
             try:
                 # iterate for each file model (one file model = one request to
                 # Zenodo)
                 for file_model in dataset.file_models:
-                    zenodo_service.upload_file(
-                        dataset, deposition_id, file_model)
+                    zenodo_service.upload_file(dataset, deposition_id, file_model)
 
                 # publish deposition
                 zenodo_service.publish_deposition(deposition_id)
 
                 # update DOI
                 deposition_doi = zenodo_service.get_doi(deposition_id)
-                dataset_service.update_dsmetadata(
-                    dataset.ds_meta_data_id, dataset_doi=deposition_doi)
+                dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
             except Exception as e:
                 msg = f"it has not been possible upload file models in Zenodo and update the DOI: {e}"
                 return jsonify({"message": msg}), 200
@@ -130,9 +122,7 @@ def list_dataset():
 def home_leaderboard():
     period = request.args.get("period", "week")  # Por defecto semana
     leaderboard_data = dataset_service.get_dataset_leaderboard(period=period)
-    return render_template(
-        "dataset/leaderboard.html",
-        leaderboard=leaderboard_data)
+    return render_template("dataset/leaderboard.html", leaderboard=leaderboard_data)
 
 
 @dataset_bp.route("/dataset/file/upload", methods=["POST"])
@@ -183,8 +173,7 @@ def upload():
                     ]
 
                     if not pix_members:
-                        return jsonify(
-                            {"message": "Zip file does not contain any .pix files"}), 400
+                        return jsonify({"message": "Zip file does not contain any .pix files"}), 400
 
                     for member in pix_members:
                         file_data = zip_file.read(member)
@@ -324,8 +313,7 @@ def upload_github():
         return jsonify({"message": err}), 400
 
     if not saved_filenames:
-        return jsonify(
-            {"message": "No .pix files found in the given GitHub path"}), 400
+        return jsonify({"message": "No .pix files found in the given GitHub path"}), 400
 
     return (
         jsonify(
@@ -369,8 +357,10 @@ def download_dataset(dataset_id):
 
                 relative_path = os.path.relpath(full_path, file_path)
 
-                zipf.write(full_path, arcname=os.path.join(
-                    os.path.basename(zip_path[:-4]), relative_path), )
+                zipf.write(
+                    full_path,
+                    arcname=os.path.join(os.path.basename(zip_path[:-4]), relative_path),
+                )
 
     user_cookie = request.cookies.get("download_cookie")
     if not user_cookie:
@@ -410,11 +400,7 @@ def download_dataset(dataset_id):
 def subdomain_index(doi):
     new_doi = doi_mapping_service.get_new_doi(doi)
     if new_doi:
-        return redirect(
-            url_for(
-                "dataset.subdomain_index",
-                doi=new_doi),
-            code=302)
+        return redirect(url_for("dataset.subdomain_index", doi=new_doi), code=302)
 
     ds_meta_data = dsmetadata_service.filter_by_doi(doi)
 
@@ -425,17 +411,15 @@ def subdomain_index(doi):
 
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
 
-    related_datasets = dataset_service.get_dataset_recommendations(
-        dataset=dataset)
+    related_datasets = dataset_service.get_dataset_recommendations(dataset=dataset)
 
     history = dataset_service.get_dataset_history(dataset.id)
 
     resp = make_response(
         render_template(
-            "dataset/view_dataset.html",
-            dataset=dataset,
-            related_datasets=related_datasets,
-            history=history))
+            "dataset/view_dataset.html", dataset=dataset, related_datasets=related_datasets, history=history
+        )
+    )
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp
@@ -444,8 +428,7 @@ def subdomain_index(doi):
 @dataset_bp.route("/dataset/unsynchronized/<int:dataset_id>/", methods=["GET"])
 @login_required
 def get_unsynchronized_dataset(dataset_id):
-    dataset = dataset_service.get_unsynchronized_dataset(
-        current_user.id, dataset_id)
+    dataset = dataset_service.get_unsynchronized_dataset(current_user.id, dataset_id)
     if not dataset:
         abort(404)
 
@@ -453,14 +436,10 @@ def get_unsynchronized_dataset(dataset_id):
     history = dataset_service.get_dataset_history(dataset.id)
     # --------------------------------
 
-    return render_template(
-        "dataset/view_dataset.html",
-        dataset=dataset,
-        history=history)  # <--- Pasamos la variable
+    return render_template("dataset/view_dataset.html", dataset=dataset, history=history)  # <--- Pasamos la variable
 
 
-@dataset_bp.route("/dataset/<int:dataset_id>/create_version",
-                  methods=["GET", "POST"])
+@dataset_bp.route("/dataset/<int:dataset_id>/create_version", methods=["GET", "POST"])
 @login_required
 def create_dataset_version(dataset_id):
     parent_dataset = dataset_service.get_or_404(dataset_id)
@@ -474,45 +453,38 @@ def create_dataset_version(dataset_id):
             return jsonify({"message": form.errors}), 400
 
         try:
-            logger.info(
-                f"Initiating version creation for dataset {dataset_id}")
+            logger.info(f"Initiating version creation for dataset {dataset_id}")
 
             dataset = dataset_service.create_from_form(
-                form=form, current_user=current_user, parent_dataset=parent_dataset)
+                form=form, current_user=current_user, parent_dataset=parent_dataset
+            )
 
             logger.info(f"Created dataset version: {dataset}")
             dataset_service.move_file_models(dataset)
 
         except Exception as exc:
-            logger.exception(
-                f"Exception while create dataset data in local {exc}")
-            return jsonify(
-                {"Exception while create dataset data in local: ": str(exc)}), 400
+            logger.exception(f"Exception while create dataset data in local {exc}")
+            return jsonify({"Exception while create dataset data in local: ": str(exc)}), 400
 
         data = {}
         try:
-            zenodo_response_json = zenodo_service.create_new_deposition(
-                dataset)
+            zenodo_response_json = zenodo_service.create_new_deposition(dataset)
             response_data = json.dumps(zenodo_response_json)
             data = json.loads(response_data)
         except Exception as exc:
             data = {}
             zenodo_response_json = {}
-            logger.exception(
-                f"Exception while create dataset data in Zenodo {exc}")
+            logger.exception(f"Exception while create dataset data in Zenodo {exc}")
 
         if data.get("id"):
             deposition_id = data.get("id")
-            dataset_service.update_dsmetadata(
-                dataset.ds_meta_data_id, deposition_id=deposition_id)
+            dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
             try:
                 for file_model in dataset.file_models:
-                    zenodo_service.upload_file(
-                        dataset, deposition_id, file_model)
+                    zenodo_service.upload_file(dataset, deposition_id, file_model)
                 zenodo_service.publish_deposition(deposition_id)
                 deposition_doi = zenodo_service.get_doi(deposition_id)
-                dataset_service.update_dsmetadata(
-                    dataset.ds_meta_data_id, dataset_doi=deposition_doi)
+                dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
             except Exception as e:
                 msg = f"it has not been possible upload file models in Zenodo and update the DOI: {e}"
                 return jsonify({"message": msg}), 200
@@ -540,8 +512,7 @@ def create_dataset_version(dataset_id):
         )
 
 
-@dataset_bp.route("/dataset/compare/<int:old_id>/<int:new_id>",
-                  methods=["GET"])
+@dataset_bp.route("/dataset/compare/<int:old_id>/<int:new_id>", methods=["GET"])
 @login_required
 def compare_datasets(old_id, new_id):
     old_ds = dataset_service.get_or_404(old_id)
@@ -559,8 +530,7 @@ def compare_datasets(old_id, new_id):
     )
 
 
-@dataset_bp.route("/file/diff/<int:old_file_id>/<int:new_file_id>",
-                  methods=["GET"])
+@dataset_bp.route("/file/diff/<int:old_file_id>/<int:new_file_id>", methods=["GET"])
 def file_diff(old_file_id, new_file_id):
     comparison_service = DataSetComparisonService()
     diff_html = comparison_service.generate_diff_html(old_file_id, new_file_id)

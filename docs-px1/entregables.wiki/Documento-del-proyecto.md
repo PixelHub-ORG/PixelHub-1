@@ -10,10 +10,12 @@ La razón por la que a algunos miembros del equipo se le han asociado dos WI es 
 | -------------------------------------------------------------------- | ----- | ------- | --- | ---- | ------ | ---------------------------------------------------------------------------------- | -------------- |
 | [Campos Díez, Lucía](https://github.com/LWH9900)                     | HH    | XX      | YY  | ZZ   | II     | Two-factor authentication (2FA) (H) \#89 & Embeddable badge \#102 (M)              | M & H          |
 | [Mayoral Ansias, Aaron](https://github.com/aaronma300604)            | HH    | XX      | YY  | ZZ   | II     | newdataset - Evolving uvlhub into a "datatypehub" \#104                            | H              |
-| [Oviedo Govantes, Claudia](https://github.com/ClaudiaOviedoGovantes) | HH    | XX      | YY  | ZZ   | II     | Trending datasets \#100 (M) & Two-factor authentication (2FA) (H)                  | M & H          |
-| [Peñaloza Friqui, Nora](https://github.com/norapfr)                  | HH    | XX      | YY  | ZZ   | II     | Trending datasets \#100 (M) & Automatic dataset recommendations \#98 (H)           | M & H          |
-| [Sánchez Quirós, Jesús](https://github.com/JesusSQ)                  | HH    | XX      | YY  | ZZ   | II     | Add download counter for datasets (L) & Automatic dataset recommendations \#98 (H) | L & H          |
+| [Oviedo Govantes, Claudia](https://github.com/ClaudiaOviedoGovantes) | HH    | XX      | YY  | Unitarios: 8, Locust:13   | II     | Trending datasets \#100 (M) & Two-factor authentication (2FA) (H)                  | M & H          |
+| [Peñaloza Friqui, Nora](https://github.com/norapfr)                  | 52    | XX      | YY  | Unitarios:10,Locust:13, Selenium:1   | II     | Trending datasets \#100 (M) & Automatic dataset recommendations \#98 (H)           | M & H          |
+| [Sánchez Quirós, Jesús](https://github.com/JesusSQ)                  | HH    | XX      | YY  | Unitarios:2,  | II     | Add download counter for datasets (L) & Automatic dataset recommendations \#98 (H) | L & H          |
 | **TOTAL**                                                            | tHH   | tXX     | tYY | tZZ  | tII    | Descripción breve                                                                  | H(2)/M(2)/L(1) |
+
+Las evidencias de las horas trabajadas se encuentran en la carpeta `clockify`, que contiene los reports de Clockify de todos los miembros del equipo.
 
 La tabla contiene la información de cada miembro del proyecto y el total de la siguiente forma:
 
@@ -421,9 +423,9 @@ Una vez hecho todo esto nuestro sistema debería estar corriendo en [esta direcc
 
 Si queremos eliminar la máquina virtual en la que se encuentra desplegado el sistema utilizamos:
 
-````bash
+```bash
 vagrant destroy
-
+```
 ### Ejercicio de propuesta de cambio
 
 Se presentará un ejercicio con una propuesta concreta de cambio que ilustra **todo el proceso de evolución y gestión de la configuración del proyecto**. El cambio consiste en **añadir información detallada del equipo en la sección _Teams_ de la página**.
@@ -451,7 +453,7 @@ Cada miembro trabaja siguiendo un flujo basado en `trunk`.
    ```bash
    git checkout trunk
    git pull origin trunk
-````
+   ```
 
 2. Crea una rama en local y pasa su issue a **In Progress**:
    ```bash
@@ -474,7 +476,7 @@ git commit -m "feat: Add team information to Teams section"
 
 #### 5. Integración en `trunk`
 
-Una vez finalizada la tarea, se integra el trabajo en la rama de integración:
+Una vez finalizada la tarea, se integra el trabajo en la rama de integración, se pasa la issue a **In review**:
 
 ```bash
 git checkout trunk
@@ -495,7 +497,7 @@ Al hacer _push_ a `trunk`, se ejecutan los **workflows de GitHub Actions**.
 
 #### 7. Publicación final
 
-Cuando `trunk` es estable y todas las tareas están completadas, se integra en producción:
+Cuando `trunk` es estable y todas las tareas están completadas, se cierran las issues, se integra en producción:
 
 ```bash
 git checkout main

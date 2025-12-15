@@ -56,10 +56,7 @@ class HubfileViewRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     file_id = db.Column(db.Integer, db.ForeignKey("file.id"), nullable=False)
-    view_date = db.Column(
-        db.DateTime,
-        default=lambda: datetime.now(
-            timezone.utc))
+    view_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     view_cookie = db.Column(db.String(36))
 
     def __repr__(self):
@@ -71,11 +68,7 @@ class HubfileDownloadRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     file_id = db.Column(db.Integer, db.ForeignKey("file.id"))
-    download_date = db.Column(
-        db.DateTime,
-        nullable=False,
-        default=lambda: datetime.now(
-            timezone.utc))
+    download_date = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     download_cookie = db.Column(db.String(36), nullable=False)
 
     def __repr__(self):
