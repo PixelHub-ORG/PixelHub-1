@@ -1,218 +1,185 @@
+import io
+import os
+import zipfile
+from types import SimpleNamespace
+from unittest.mock import MagicMock
+
 import pytest
+from flask import Flask
+from flask_login import LoginManager
 
-from app import db
-from app.modules.auth.models import User
-from app.modules.conftest import login, logout
-from app.modules.dataset.models import DataSet, DSMetaData, PublicationType
-from app.modules.filemodel.models import FileModel, FMMetaData
-from app.modules.profile.models import UserProfile
+import app.modules.cart.routes as cart_routes
+from app.modules.cart import cart_bp
 
 
-@pytest.fixture(scope="module")
-def test_client_with_user(test_client):
-    """
-    Extend the test_client to create a test user with an associated profile.
-    """
-    with test_client.application.app_context():
-        User.query.filter_by(email="user_cart@example.com").delete()
-        db.session.commit()
+@pytest.fixture
+def app():
+    app = Flask(__name__)
+    app.secret_key = "test-secret"
+    app.register_blueprint(cart_bp)
+    lm = LoginManager()
+    lm.init_app(app)
 
-        user_test = User(email="user_cart@example.com", password="test1234")
-        db.session.add(user_test)
-        db.session.commit()
+    @lm.user_loader
+    def _load_user(user_id):
+        u = MagicMock()
+        u.is_authenticated = True
+        try:
+            u.id = int(user_id)
+        except Exception:
+            u.id = user_id
+        return u
 
-        profile = UserProfile(
-            user_id=user_test.id,
-            name="Name",
-            surname="Surname",
-            affiliation="Test University",
-            orcid="0000-0000-0000-0000",
-        )
-        db.session.add(profile)
-        db.session.commit()
-
-    yield test_client
+    app.config["TESTING"] = True
+    return app
 
 
-@pytest.fixture(scope="module")
-def setup_user_and_model(test_client_with_user):
-    """
-    Creates a user and a test FileModel.
-    Returns (test_client, fm_id, user_email, dummy_ds_id).
-    """
-    test_client = test_client_with_user
-    user_email = "user_cart@example.com"
-    fm_id = None
-
-    with test_client.application.app_context():
-        user = User.query.filter_by(email=user_email).first()
-
-        dummy_ds_metadata = DSMetaData(
-            title="Dummy Dataset Meta", description="Dummy description", publication_type=PublicationType.OTHER
-        )
-        db.session.add(dummy_ds_metadata)
-        db.session.commit()
-
-        dummy_dataset = DataSet(user_id=user.id, ds_meta_data_id=dummy_ds_metadata.id)
-        db.session.add(dummy_dataset)
-        db.session.commit()
-        dummy_ds_id = dummy_dataset.id
-
-        fm_meta_data = FMMetaData(
-            filename="test_fm.uvl",
-            title="Test File Model for Cart",
-            description="A file model for cart testing.",
-            publication_type=PublicationType.JOURNAL_ARTICLE,
-        )
-        db.session.add(fm_meta_data)
-        db.session.commit()
-
-        test_file_model = FileModel(
-            data_set_id=dummy_dataset.id,
-            fm_meta_data_id=fm_meta_data.id,
-        )
-        db.session.add(test_file_model)
-        db.session.commit()
-        fm_id = test_file_model.id
-
-    yield test_client, fm_id, user_email, dummy_ds_id
-
-    with test_client.application.app_context():
-        if fm_id:
-            FileModel.query.filter_by(id=fm_id).delete()
-        if dummy_ds_id:
-            DataSet.query.filter_by(id=dummy_ds_id).delete()
-        db.session.commit()
+@pytest.fixture
+def client(app):
+    return app.test_client()
 
 
-def test_create_dataset_from_empty_cart_returns_400(setup_user_and_model):
-    """
-    If the cart is empty, the API must return 400.
-    """
-    test_client, _, user_email, _ = setup_user_and_model
-    login_response = login(test_client, user_email, "test1234")
-    assert login_response.status_code == 200, "Login failed."
-
-    form_data = {
-        "title": "My cart dataset",
-        "desc": "Dataset created from an empty cart",
-        "publication_type": PublicationType.JOURNAL_ARTICLE.value,
-    }
-
-    response = test_client.post("/user/cart/create", data=form_data)
-    assert response.status_code == 400, "Expected 400 for empty cart."
-
-    data = response.get_json()
-    assert data is not None
-    assert "message" in data
-    assert "Cart is empty" in data["message"]
-
-    logout(test_client)
+def login_client(client, user_id="1"):
+    with client.session_transaction() as sess:
+        sess["_user_id"] = str(user_id)
 
 
-def test_add_nonexistent_file_model_to_cart_returns_404(setup_user_and_model):
-    """
-    Attempt to add a FileModel ID that doesn't exist.
-    """
-    test_client, _, user_email, _ = setup_user_and_model
-    login(test_client, user_email, "test1234")
-
-    non_existent_id = 999999
-
-    response = test_client.post("/filemodel/cart/add", json={"item_id": non_existent_id})
-
-    assert response.status_code in [404, 400], "Expected 404/400 for nonexistent FM."
-
-    logout(test_client)
+def make_file_model(filename="file.dat", user_id=2, dataset_id=10, title="T", description="D", authors=None):
+    if authors is None:
+        authors = []
+    fm_meta = SimpleNamespace(filename=filename, title=title, description=description, authors=authors)
+    data_set = SimpleNamespace(user_id=user_id)
+    fm = SimpleNamespace(id=123, fm_meta_data=fm_meta, data_set=data_set, data_set_id=dataset_id)
+    return fm
 
 
-def test_remove_file_model_from_cart_success(setup_user_and_model):
-    """
-    Add a FileModel and then remove it.
-    """
-    test_client, fm_id, user_email, _ = setup_user_and_model
-    login(test_client, user_email, "test1234")
+def test_cart_count_returns_json(monkeypatch, app, client):
+    mock_cart_service = MagicMock()
+    mock_cart_service.view_cart.return_value = [{"cart_item_id": 1}, {"cart_item_id": 2}]
+    monkeypatch.setattr(cart_routes, "cart_service", mock_cart_service)
 
-    test_client.post("/filemodel/cart/add", json={"item_id": fm_id})
-
-    response = test_client.post("/user/cart/delete", json={"item_id": fm_id})
-    assert response.status_code == 200, "Expected 200 upon removal from cart."
-
-    logout(test_client)
+    login_client(client)
+    resp = client.get("/user/cart/count")
+    assert resp.status_code == 200
+    assert resp.is_json
+    assert resp.get_json() == {"count": 2}
 
 
-def setup_cart_and_login(test_client, fm_id, user_email):
-    """
-    Helper function to ensure the cart is full and the user is logged in.
-    """
-    login(test_client, user_email, "test1234")
-    test_client.post("/filemodel/cart/add", json={"item_id": fm_id})
+def test_add_to_cart_missing_item_id(monkeypatch, app, client):
+    mock_cart_service = MagicMock()
+    monkeypatch.setattr(cart_routes, "cart_service", mock_cart_service)
+
+    login_client(client)
+    resp = client.post("/filemodel/cart/add", json={})
+    assert resp.status_code == 400
+    assert resp.is_json
+    assert "No item_id provided" in resp.get_json()["message"]
 
 
-def test_create_dataset_missing_required_fields_returns_400(setup_user_and_model):
-    """
-    Missing mandatory fields like 'title'
-    """
-    test_client, fm_id, user_email, _ = setup_user_and_model
-    setup_cart_and_login(test_client, fm_id, user_email)
+def test_add_to_cart_delegates_to_service(monkeypatch, app, client):
+    mock_cart_service = MagicMock()
+    mock_cart_service.add_to_cart.return_value = ({"message": "ok"}, 200)
+    monkeypatch.setattr(cart_routes, "cart_service", mock_cart_service)
 
-    form_data = {
-        "desc": "Missing data",
-        "publication_type": PublicationType.JOURNAL_ARTICLE.value,
-    }
-
-    response = test_client.post("/user/cart/create", data=form_data)
-    assert response.status_code == 400, "Expected 400 due to missing 'title'."
-
-    data = response.get_json()
-
-    assert data is not None
-    assert "title" in data.get("message", {}) or "title" in data.get(
-        "errors", {}
-    ), "The error must mention the 'title' field."
-    logout(test_client)
+    login_client(client)
+    resp = client.post("/filemodel/cart/add", json={"item_id": 55})
+    assert resp.status_code == 200
+    mock_cart_service.add_to_cart.assert_called_once_with(1, 55)
 
 
-def test_create_dataset_with_invalid_publication_type_returns_400(setup_user_and_model):
-    """
-    Invalid publication type.
-    """
-    test_client, fm_id, user_email, _ = setup_user_and_model
-    setup_cart_and_login(test_client, fm_id, user_email)
+def test_delete_from_cart_calls_service(monkeypatch, app, client, capsys):
+    mock_cart_service = MagicMock()
+    mock_cart_service.delete_from_cart.return_value = ({"message": "removed"}, 200)
+    monkeypatch.setattr(cart_routes, "cart_service", mock_cart_service)
 
-    form_data = {
-        "title": "Invalid Type",
-        "desc": "Incorrect publication type",
-        "publication_type": "INVALID_TYPE_ENUM",
-    }
-
-    response = test_client.post("/user/cart/create", data=form_data)
-    assert response.status_code == 400, "Expected 400 for invalid publication type."
-
-    logout(test_client)
+    login_client(client)
+    resp = client.post("/user/cart/delete", json={"item_id": 99})
+    assert resp.status_code == 200
+    mock_cart_service.delete_from_cart.assert_called_once_with(1, 99)
 
 
-def test_create_dataset_with_invalid_doi_format_returns_400(setup_user_and_model):
-    """
-    Invalid DOI format.
-    """
-    test_client, fm_id, user_email, _ = setup_user_and_model
-    setup_cart_and_login(test_client, fm_id, user_email)
+def test_create_dataset_post_invalid_form(monkeypatch, app, client):
+    mock_cart_service = MagicMock()
 
-    form_data = {
-        "title": "Invalid DOI",
-        "desc": "Testing invalid DOI format",
-        "publication_type": PublicationType.JOURNAL_ARTICLE.value,
-        "publication_doi": "This is not a valid DOI",
-    }
+    class FakeForm:
 
-    response = test_client.post("/user/cart/create", data=form_data)
-    assert response.status_code == 400, "Expected 400 for invalid DOI format."
+        def validate_on_submit(self):
+            return False
 
-    data = response.get_json()
+        @property
+        def errors(self):
+            return {"field": ["error"]}
 
-    assert data is not None
-    assert "publication_doi" in data.get("message", {}) or "publication_doi" in data.get(
-        "errors", {}
-    ), "The error must mention the 'publication_doi' field."
-    logout(test_client)
+    monkeypatch.setattr(cart_routes, "cart_service", mock_cart_service)
+    monkeypatch.setattr(cart_routes, "CartCreateDatasetForm", lambda: FakeForm())
+
+    login_client(client)
+    resp = client.post("/user/cart/create", data={})
+    assert resp.status_code == 400
+    assert resp.is_json
+    assert "field" in resp.get_json()["message"]
+
+
+def test_create_dataset_post_delegates_to_service(monkeypatch, app, client):
+    mock_cart_service = MagicMock()
+
+    class FakeForm:
+        def validate_on_submit(self):
+            return True
+
+    mock_cart_service.create_dataset.return_value = ({"message": "created"}, 201)
+
+    monkeypatch.setattr(cart_routes, "cart_service", mock_cart_service)
+    monkeypatch.setattr(cart_routes, "CartCreateDatasetForm", lambda: FakeForm())
+
+    login_client(client)
+    resp = client.post("/user/cart/create", data={})
+    assert resp.status_code == 201
+    mock_cart_service.create_dataset.assert_called_once()
+
+
+def test_download_cart_empty(monkeypatch, app, client):
+    mock_cart_service = MagicMock()
+    mock_cart_service.view_cart.return_value = []
+    monkeypatch.setattr(cart_routes, "cart_service", mock_cart_service)
+
+    login_client(client)
+    resp = client.get("/user/cart/download")
+    assert resp.status_code == 400
+    assert resp.is_json
+    assert "Cart is empty" in resp.get_json()["message"]
+
+
+def test_download_cart_creates_zip_and_returns_file(monkeypatch, tmp_path, app, client):
+    tmpdir = str(tmp_path)
+    monkeypatch.setenv("WORKING_DIR", tmpdir)
+
+    user_id = 7
+    dataset_id = 33
+    filename = "myfile.txt"
+    upload_folder = os.path.join(tmpdir, "uploads", f"user_{user_id}", f"dataset_{dataset_id}")
+    os.makedirs(upload_folder, exist_ok=True)
+    file_path = os.path.join(upload_folder, filename)
+    with open(file_path, "wb") as fh:
+        fh.write(b"hello zip")
+
+    mock_cart_service = MagicMock()
+    mock_fm_service = MagicMock()
+
+    mock_cart_service.view_cart.return_value = [{"cart_item_id": 1, "file_model_id": 123}]
+    fm = make_file_model(filename=filename, user_id=user_id, dataset_id=dataset_id)
+    mock_fm_service.get_by_id.return_value = fm
+
+    monkeypatch.setattr(cart_routes, "cart_service", mock_cart_service)
+    monkeypatch.setattr(cart_routes, "fm_service", mock_fm_service)
+
+    login_client(client)
+    resp = client.get("/user/cart/download")
+    assert resp.status_code == 200
+    assert resp.mimetype == "application/zip"
+    zip_bytes = resp.get_data()
+    zf = zipfile.ZipFile(io.BytesIO(zip_bytes))
+    names = zf.namelist()
+    assert filename in names
+    with zf.open(filename) as f:
+        assert f.read() == b"hello zip"

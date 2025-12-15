@@ -10,7 +10,6 @@
     .badge-tags {
         margin-right: 5px;
     }
-    /* Estilo para alinear el botón de eliminar y el título */
     .item-header {
         display: flex;
         justify-content: space-between;
@@ -66,7 +65,7 @@
 
         <div class="d-flex mt-3 gap-2">
             <form action="{{ url_for('cart.create_dataset') }}" method="get">
-                <button type="submit" class="btn btn-success btn-sm">
+                <button type="submit" id="create-dataset-btn" class="btn btn-success btn-sm" test="create-car-ferrari">
                     <i data-feather="plus-square"></i> Create my own dataset
                 </button>
             </form>
@@ -110,12 +109,20 @@
         })
         .then(async response => {
             const data = await response.json(); 
-            alert("File removed from cart."); 
+
+            const toastBody = document.getElementById("cart-toast-body");
+            toastBody.innerText = data.message || "File removed from cart.";
+
+            const toastEl = document.getElementById("cart-toast");
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+
             if (response.ok) {
                 location.reload();
             }
         })
         .catch(err => console.error("Error deleting from cart:", err));
     }
+
 </script>
 {% endblock %}

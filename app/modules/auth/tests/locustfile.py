@@ -430,10 +430,17 @@ class ORCIDLoginBehavior(TaskSet):
                 )
 
 
-class AuthUser(HttpUser):
-    """Standard auth testing (signup/login without 2FA)"""
+class OrcidBehavior(TaskSet):
+    @task
+    def start_orcid_login(self):
+        response = self.client.get("/orcid/login", allow_redirects=False)
+        if response.status_code != 302:
+            print(f"Orcid login did not redirect: {response.status_code}")
 
-    tasks = [SignupBehavior, LoginBehavior]
+
+class AuthUser(HttpUser):
+    tasks = [SignupBehavior, LoginBehavior, OrcidBehavior]
+
     min_wait = 5000
     max_wait = 9000
     host = get_host_for_locust_testing()

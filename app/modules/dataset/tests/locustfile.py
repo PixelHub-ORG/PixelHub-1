@@ -12,30 +12,25 @@ from core.locust.common import get_csrf_token
 DATASET_V1_ID = 9991
 DATASET_V2_ID = 9992
 
-# Credenciales del Seeder
 USER_EMAIL = "user1@example.com"
-USER_PASSWORD = "password"
+USER_PASSWORD = "1234"
 
 
 class WebsiteUser(HttpUser):
-    wait_time = between(1, 3)
-
+    wait_time = between(1, 5)
     host = "http://localhost:5000"
 
     def on_start(self):
         """
-        Se ejecuta una vez por usuario simulado al arrancar.
-        Aquí hacemos el login obligatorio.
+        Se ejecuta al iniciar el usuario.
+        Usamos la función importada get_csrf_token, igual que en CartUser.
         """
-        logging.info("--- Iniciando Usuario: Intentando Login ---")
-        self.login()
-
-    def login(self):
         response = self.client.get("/login")
-        csrf_token = self.get_csrf_token(response.text)
+        csrf_token = get_csrf_token(response)
 
         if not csrf_token:
-            logging.error("!!! Error: No se pudo obtener CSRF Token del login !!!")
+            print("Error: No se pudo obtener CSRF token en login.")
+            self.stop()
             return
 
         response = self.client.post(
@@ -66,18 +61,16 @@ class WebsiteUser(HttpUser):
     @task(3)
     def test_compare_datasets(self):
         """
-        Prueba la comparación entre las versiones fijas V1 y V2.
+        Tests compare datasets page and file diffs.
         """
         url = f"/dataset/compare/{DATASET_V1_ID}/{DATASET_V2_ID}"
 
         with self.client.get(url, catch_response=True, name="/dataset/compare/[id]/[id]") as response:
             if response.status_code == 200:
                 self.extract_and_request_file_diff(response.text)
+                response.success()
             elif response.status_code == 404:
-                response.failure(
-                    f"Dataset no encontrado (404). ¿Ejecutaste el seeder nuevo? IDs esperadas: {DATASET_V1_ID}"
-                    + "/{DATASET_V2_ID}"
-                )
+                response.failure(f"Dataset no encontrado (404). IDs esperados: {DATASET_V1_ID}/{DATASET_V2_ID}")
             else:
                 response.failure(
                     f"Error al cargar comparacion: {
@@ -87,8 +80,10 @@ class WebsiteUser(HttpUser):
     @task(1)
     def test_create_version_page(self):
         """
-        Entra a la página de crear nueva versión desde la V2
+        Visits the create version page for a dataset.
         """
+        self.client.get(f"/dataset/{DATASET_V2_ID}/create_version", name="/dataset/[id]/create_version")
+
         self.client.get(
             f"/dataset/{DATASET_V2_ID}/create_version",
             name="/dataset/[id]/create_version",
@@ -224,3 +219,29 @@ class DatasetUser(HttpUser):
         new_file_id = DATASET_V2_ID
         if old_file_id != new_file_id:
             self.client.get(f"/file/diff/{old_file_id}/{new_file_id}")
+
+    @task(1)
+    def test_upload_github(self):
+        """
+        Prueba la subida de ficheros desde GitHub.
+        """
+        payload = {"repo_url": "https://github.com/JoseLu2121/pix_files.git", "path": "files/"}
+        self.client.post("/dataset/file/upload_github", json=payload, name="/dataset/file/upload_github")
+
+    def extract_and_request_file_diff(self, html_content):
+        """
+        This function parses the HTML content to find file diff buttons and simulates
+        the AJAX requests that would be made when those buttons are clicked.
+        """
+        try:
+            soup = BeautifulSoup(html_content, "html.parser")
+            button = soup.find("button", attrs={"onclick": "showDiff(this)"})
+
+            if button:
+                old_id = button.get("data-old-id")
+                new_id = button.get("data-new-id")
+
+                if old_id and new_id:
+                    self.client.get(f"/file/diff/{old_id}/{new_id}", name="/file/diff/[id]/[id]")
+        except Exception as e:
+            print(f"Error parseando diffs: {e}")
