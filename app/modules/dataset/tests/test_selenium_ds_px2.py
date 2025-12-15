@@ -299,7 +299,9 @@ def wait_for_list_or_rows_without_current_url(driver, timeout=75):
                 return True
             if driver.find_elements(
                 By.XPATH,
-                "//*[contains(translate(.,'SUCCESS','success'),'success') or contains(translate(.,'UPLOADED','uploaded'),'uploaded') or contains(translate(.,'CREATED','created'),'created')]",
+                "//*[contains(translate(.,'SUCCESS','success'),'success') "
+                "or contains(translate(.,'UPLOADED','uploaded'),'uploaded') "
+                "or contains(translate(.,'CREATED','created'),'created')]",
             ):
                 return True
         except Exception as e:
