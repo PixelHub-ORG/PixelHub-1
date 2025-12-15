@@ -10,7 +10,7 @@
 
 | Miembro                                                              | Implicación |
 | -------------------------------------------------------------------- | ----------- |
-| [Campos Díez, Lucía](https://github.com/LWH9900)                     | 10          |
+| [Campos Díez, Lucía](https://github.com/HHV4884)                     | 10          |
 | [Mayoral Ansias, Aaron](https://github.com/aaronma300604)            | 10          |
 | [Oviedo Govantes, Claudia](https://github.com/ClaudiaOviedoGovantes) | 10          |
 | [Peñaloza Friqui, Nora](https://github.com/norapfr)                  | 10          |
@@ -19,10 +19,9 @@
 ## Enlaces de interés:
 
 - [Repositorio de PixelHub-1](https://github.com/PixelHub-ORG/PixelHub-1/tree/main)
-- [Sistema desplegado](https://loquesea.com.es)
 - [Repositorio conjunto con el equipo con el que nos integramos - PixelHub-X](https://github.com/PixelHub-ORG/PixelHub-X)
-- [cualquier otro enlace de interés](https://loqueseadeinteres.org)
-- [cualquier otro enlace de interés](https://loqueseadeinteres.org)
+- [Despliegue Render ](https://pixelhub-1.onrender.com/)
+- [Despliegue a fakenodo](https://pixelhub-2-51iz.onrender.com/api/)
 
 ## Enlace a la documentación
 

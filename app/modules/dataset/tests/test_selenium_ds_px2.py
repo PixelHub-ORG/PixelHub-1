@@ -16,14 +16,18 @@ _STATE = {"email": None, "password": None, "secret": None}
 
 
 def wait_ready(driver, timeout=20):
-    WebDriverWait(driver, timeout).until(lambda d: d.execute_script("return document.readyState") == "complete")
+    WebDriverWait(
+        driver, timeout).until(
+        lambda d: d.execute_script("return document.readyState") == "complete")
 
 
 def extract_secret(driver):
     text = driver.find_element(By.TAG_NAME, "body").text or ""
     m = re.search(r"\b[A-Z2-7]{16,}\b", text.replace(" ", ""))
     if not m:
-        raise AssertionError(f"2FA secret not found. url={safe_current_url(driver)}")
+        raise AssertionError(
+            f"2FA secret not found. url={
+                safe_current_url(driver)}")
     return m.group(0)
 
 
@@ -69,37 +73,49 @@ def signup_enable_2fa(driver, host):
     driver.find_element(By.NAME, "password").send_keys(password)
     driver.find_element(By.CSS_SELECTOR, "input[type='submit']").click()
 
-    wait.until(lambda d: "/2fa/enable" in safe_current_url(d) or safe_current_url(d).startswith(host))
+    wait.until(lambda d: "/2fa/enable" in safe_current_url(d)
+               or safe_current_url(d).startswith(host))
 
     if "/2fa/enable" not in safe_current_url(driver):
         driver.get(f"{host}/2fa/enable")
         wait_ready(driver)
-        wait.until(lambda d: "/2fa/enable" in safe_current_url(d) or safe_current_url(d).startswith(host))
+        wait.until(lambda d: "/2fa/enable" in safe_current_url(d)
+                   or safe_current_url(d).startswith(host))
 
     if "/2fa/enable" not in safe_current_url(driver):
-        raise AssertionError(f"Could not reach /2fa/enable after signup. url={safe_current_url(driver)}")
+        raise AssertionError(
+            f"Could not reach /2fa/enable after signup. url={safe_current_url(driver)}")
 
     secret = extract_secret(driver)
     code = pyotp.TOTP(secret).now()
 
     code_inputs = (
-        driver.find_elements(By.NAME, "code")
-        or driver.find_elements(By.NAME, "token")
-        or driver.find_elements(By.CSS_SELECTOR, "input[type='text'], input[type='tel'], input[type='number']")
-    )
+        driver.find_elements(
+            By.NAME,
+            "code") or driver.find_elements(
+            By.NAME,
+            "token") or driver.find_elements(
+                By.CSS_SELECTOR,
+            "input[type='text'], input[type='tel'], input[type='number']"))
     if not code_inputs:
-        raise AssertionError(f"2FA code input not found. url={safe_current_url(driver)}")
+        raise AssertionError(
+            f"2FA code input not found. url={
+                safe_current_url(driver)}")
     try:
         code_inputs[0].clear()
     except Exception:
         pass
     code_inputs[0].send_keys(code)
 
-    submit_btns = driver.find_elements(By.CSS_SELECTOR, "button[type='submit']") or driver.find_elements(
-        By.CSS_SELECTOR, "input[type='submit']"
-    )
+    submit_btns = driver.find_elements(
+        By.CSS_SELECTOR,
+        "button[type='submit']") or driver.find_elements(
+        By.CSS_SELECTOR,
+        "input[type='submit']")
     if not submit_btns:
-        raise AssertionError(f"2FA enable submit button not found. url={safe_current_url(driver)}")
+        raise AssertionError(
+            f"2FA enable submit button not found. url={
+                safe_current_url(driver)}")
     submit_btns[0].click()
 
     wait.until(lambda d: "/2fa/enable" not in safe_current_url(d))
@@ -131,7 +147,9 @@ def login_with_2fa_to_next(driver, host, email, password, secret, next_path):
         or driver.find_elements(By.CSS_SELECTOR, "input[type='password']")
     )
     if not email_inputs or not pass_inputs:
-        raise AssertionError(f"Login inputs not found. url={safe_current_url(driver)}")
+        raise AssertionError(
+            f"Login inputs not found. url={
+                safe_current_url(driver)}")
 
     try:
         email_inputs[0].clear()
@@ -144,9 +162,11 @@ def login_with_2fa_to_next(driver, host, email, password, secret, next_path):
         pass
     pass_inputs[0].send_keys(password)
 
-    submit = driver.find_elements(By.CSS_SELECTOR, "button[type='submit']") or driver.find_elements(
-        By.CSS_SELECTOR, "input[type='submit']"
-    )
+    submit = driver.find_elements(
+        By.CSS_SELECTOR,
+        "button[type='submit']") or driver.find_elements(
+        By.CSS_SELECTOR,
+        "input[type='submit']")
     if submit:
         submit[0].click()
     else:
@@ -162,36 +182,48 @@ def login_with_2fa_to_next(driver, host, email, password, secret, next_path):
     if "/2fa/verify" in safe_current_url(driver):
         code = pyotp.TOTP(secret).now()
         code_inputs = (
-            driver.find_elements(By.NAME, "code")
-            or driver.find_elements(By.NAME, "token")
-            or driver.find_elements(By.CSS_SELECTOR, "input[type='text'], input[type='tel'], input[type='number']")
-        )
+            driver.find_elements(
+                By.NAME,
+                "code") or driver.find_elements(
+                By.NAME,
+                "token") or driver.find_elements(
+                By.CSS_SELECTOR,
+                "input[type='text'], input[type='tel'], input[type='number']"))
         if not code_inputs:
-            raise AssertionError(f"2FA verify code input not found. url={safe_current_url(driver)}")
+            raise AssertionError(
+                f"2FA verify code input not found. url={
+                    safe_current_url(driver)}")
         try:
             code_inputs[0].clear()
         except Exception:
             pass
         code_inputs[0].send_keys(code)
 
-        submit2 = driver.find_elements(By.CSS_SELECTOR, "button[type='submit']") or driver.find_elements(
-            By.CSS_SELECTOR, "input[type='submit']"
-        )
+        submit2 = driver.find_elements(
+            By.CSS_SELECTOR,
+            "button[type='submit']") or driver.find_elements(
+            By.CSS_SELECTOR,
+            "input[type='submit']")
         if not submit2:
-            raise AssertionError(f"2FA verify submit button not found. url={safe_current_url(driver)}")
+            raise AssertionError(
+                f"2FA verify submit button not found. url={
+                    safe_current_url(driver)}")
         submit2[0].click()
 
         wait.until(lambda d: "/2fa/verify" not in safe_current_url(d))
         wait_ready(driver)
 
     if "/login" in safe_current_url(driver):
-        raise AssertionError(f"Login did not stick (still on login). url={safe_current_url(driver)}")
+        raise AssertionError(
+            f"Login did not stick (still on login). url={
+                safe_current_url(driver)}")
 
     if next_path not in safe_current_url(driver):
         driver.get(f"{host}{next_path}")
         wait_ready(driver)
         if "/login" in safe_current_url(driver):
-            raise AssertionError(f"Still not authenticated after login+2FA. url={safe_current_url(driver)}")
+            raise AssertionError(
+                f"Still not authenticated after login+2FA. url={safe_current_url(driver)}")
 
 
 def count_datasets(driver, host):
@@ -276,12 +308,20 @@ def click_upload(driver):
 
 
 def open_upload(driver, host, email, password, secret):
-    login_with_2fa_to_next(driver, host, email, password, secret, "/dataset/upload")
+    login_with_2fa_to_next(
+        driver,
+        host,
+        email,
+        password,
+        secret,
+        "/dataset/upload")
     if "/dataset/upload" not in safe_current_url(driver):
         driver.get(f"{host}/dataset/upload")
         wait_ready(driver)
     if "/login" in safe_current_url(driver):
-        raise AssertionError(f"Not authenticated to access upload. url={safe_current_url(driver)}")
+        raise AssertionError(
+            f"Not authenticated to access upload. url={
+                safe_current_url(driver)}")
     find_title_input(driver)
 
 
@@ -339,15 +379,21 @@ def test_upload_dataset():
         fill(driver, [(By.NAME, "tags"), (By.ID, "tags")], "tag1,tag2")
 
         f1, f2 = pix_file_paths()
-        file_inputs = driver.find_elements(By.CLASS_NAME, "dz-hidden-input") or driver.find_elements(
-            By.CSS_SELECTOR, "input[type='file']"
-        )
+        file_inputs = driver.find_elements(
+            By.CLASS_NAME, "dz-hidden-input") or driver.find_elements(
+            By.CSS_SELECTOR, "input[type='file']")
         assert file_inputs
         file_inputs[0].send_keys(f1)
-        WebDriverWait(driver, 15).until(lambda d: len(d.find_elements(By.CLASS_NAME, "dz-preview")) > 0)
-        file_inputs = driver.find_elements(By.CLASS_NAME, "dz-hidden-input") or driver.find_elements(
-            By.CSS_SELECTOR, "input[type='file']"
-        )
+        WebDriverWait(
+            driver,
+            15).until(
+            lambda d: len(
+                d.find_elements(
+                    By.CLASS_NAME,
+                    "dz-preview")) > 0)
+        file_inputs = driver.find_elements(
+            By.CLASS_NAME, "dz-hidden-input") or driver.find_elements(
+            By.CSS_SELECTOR, "input[type='file']")
         file_inputs[0].send_keys(f2)
 
         try_click_agree(driver)
@@ -389,25 +435,35 @@ def test_upload_dataset_from_github():
         )
         fill(driver, [(By.NAME, "tags"), (By.ID, "tags")], "tag1,tag2,github")
 
-        fill(
-            driver,
-            [(By.ID, "github-repo"), (By.ID, "github_repo"), (By.NAME, "github-repo"), (By.NAME, "github_repo")],
-            "https://github.com/JoseLu2121/pix_files.git",
-        )
-        fill(
-            driver,
-            [(By.ID, "github-path"), (By.ID, "github_path"), (By.NAME, "github-path"), (By.NAME, "github_path")],
-            "files/",
-        )
+        fill(driver,
+             [(By.ID,
+               "github-repo"),
+              (By.ID,
+               "github_repo"),
+              (By.NAME,
+               "github-repo"),
+              (By.NAME,
+               "github_repo")],
+             "https://github.com/JoseLu2121/pix_files.git",
+             )
+        fill(driver, [(By.ID, "github-path"), (By.ID, "github_path"),
+                      (By.NAME, "github-path"), (By.NAME, "github_path")], "files/", )
 
-        btns = driver.find_elements(By.ID, "github-add-btn") or driver.find_elements(By.ID, "github_add_btn")
+        btns = driver.find_elements(
+            By.ID, "github-add-btn") or driver.find_elements(By.ID, "github_add_btn")
         assert btns
         try:
             btns[0].click()
         except Exception:
             driver.execute_script("arguments[0].click();", btns[0])
 
-        WebDriverWait(driver, 60).until(lambda d: len(d.find_elements(By.CSS_SELECTOR, "#file-list li")) > 0)
+        WebDriverWait(
+            driver,
+            60).until(
+            lambda d: len(
+                d.find_elements(
+                    By.CSS_SELECTOR,
+                    "#file-list li")) > 0)
 
         try_click_agree(driver)
         click_upload(driver)
@@ -445,9 +501,9 @@ def test_upload_dataset_from_zip():
         fill(driver, [(By.NAME, "tags"), (By.ID, "tags")], "tag1,tag2,zip")
 
         zp = zip_file_path()
-        file_inputs = driver.find_elements(By.CLASS_NAME, "dz-hidden-input") or driver.find_elements(
-            By.CSS_SELECTOR, "input[type='file']"
-        )
+        file_inputs = driver.find_elements(
+            By.CLASS_NAME, "dz-hidden-input") or driver.find_elements(
+            By.CSS_SELECTOR, "input[type='file']")
         assert file_inputs
         file_inputs[0].send_keys(zp)
 

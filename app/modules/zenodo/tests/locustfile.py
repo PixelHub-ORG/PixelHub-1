@@ -34,6 +34,7 @@ class ZenodoUser(HttpUser):
 
     tasks = [ZenodoBehavior]
 
-    wait_time = between(5, 9)  # Equivalente a min_wait/max_wait de 5000/9000 ms
+    # Equivalente a min_wait/max_wait de 5000/9000 ms
+    wait_time = between(5, 9)
 
     host = get_host_for_locust_testing()

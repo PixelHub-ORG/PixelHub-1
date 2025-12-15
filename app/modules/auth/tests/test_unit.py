@@ -27,7 +27,8 @@ def test_login_success(test_client):
         follow_redirects=True,
     )
 
-    assert response.request.path != url_for("auth.login"), "Login was unsuccessful"
+    assert response.request.path != url_for(
+        "auth.login"), "Login was unsuccessful"
 
     test_client.get("/logout", follow_redirects=True)
 
@@ -39,7 +40,8 @@ def test_login_unsuccessful_bad_email(test_client):
         follow_redirects=True,
     )
 
-    assert response.request.path == url_for("auth.login"), "Login was unsuccessful"
+    assert response.request.path == url_for(
+        "auth.login"), "Login was unsuccessful"
 
     test_client.get("/logout", follow_redirects=True)
 
@@ -51,7 +53,8 @@ def test_login_unsuccessful_bad_password(test_client):
         follow_redirects=True,
     )
 
-    assert response.request.path == url_for("auth.login"), "Login was unsuccessful"
+    assert response.request.path == url_for(
+        "auth.login"), "Login was unsuccessful"
 
     test_client.get("/logout", follow_redirects=True)
 
@@ -59,10 +62,14 @@ def test_login_unsuccessful_bad_password(test_client):
 def test_signup_user_no_name(test_client):
     response = test_client.post(
         "/signup",
-        data=dict(surname="Foo", email="test@example.com", password="test1234"),
+        data=dict(
+            surname="Foo",
+            email="test@example.com",
+            password="test1234"),
         follow_redirects=True,
     )
-    assert response.request.path == url_for("auth.show_signup_form"), "Signup was unsuccessful"
+    assert response.request.path == url_for(
+        "auth.show_signup_form"), "Signup was unsuccessful"
     assert b"This field is required" in response.data, response.data
 
 
@@ -70,20 +77,30 @@ def test_signup_user_unsuccessful(test_client):
     email = "test@example.com"
     response = test_client.post(
         "/signup",
-        data=dict(name="Test", surname="Foo", email=email, password="test1234"),
+        data=dict(
+            name="Test",
+            surname="Foo",
+            email=email,
+            password="test1234"),
         follow_redirects=True,
     )
-    assert response.request.path == url_for("auth.show_signup_form"), "Signup was unsuccessful"
+    assert response.request.path == url_for(
+        "auth.show_signup_form"), "Signup was unsuccessful"
     assert f"Email {email} in use".encode("utf-8") in response.data
 
 
 def test_signup_user_successful(test_client):
     response = test_client.post(
         "/signup/",
-        data=dict(name="Foo", surname="Example", email="foo@example.com", password="foo1234"),
+        data=dict(
+            name="Foo",
+            surname="Example",
+            email="foo@example.com",
+            password="foo1234"),
         follow_redirects=True,
     )
-    assert response.request.path == url_for("auth.enable_2fa"), "Signup should redirect to 2FA setup"
+    assert response.request.path == url_for(
+        "auth.enable_2fa"), "Signup should redirect to 2FA setup"
 
 
 def test_service_create_with_profie_success(clean_database):
@@ -158,5 +175,6 @@ def test_find_or_create_by_orcid_existing_user(clean_database):
 
     assert found_user.id == existing_user.id
     assert UserRepository().count() == 1
-    # Check that profile was NOT updated (logic implies it just returns the user found by ID)
+    # Check that profile was NOT updated (logic implies it just returns the
+    # user found by ID)
     assert found_user.profile.name == "John"

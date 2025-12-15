@@ -44,18 +44,33 @@ def login_client(client, user_id="1"):
         sess["_user_id"] = str(user_id)
 
 
-def make_file_model(filename="file.dat", user_id=2, dataset_id=10, title="T", description="D", authors=None):
+def make_file_model(
+        filename="file.dat",
+        user_id=2,
+        dataset_id=10,
+        title="T",
+        description="D",
+        authors=None):
     if authors is None:
         authors = []
-    fm_meta = SimpleNamespace(filename=filename, title=title, description=description, authors=authors)
+    fm_meta = SimpleNamespace(
+        filename=filename,
+        title=title,
+        description=description,
+        authors=authors)
     data_set = SimpleNamespace(user_id=user_id)
-    fm = SimpleNamespace(id=123, fm_meta_data=fm_meta, data_set=data_set, data_set_id=dataset_id)
+    fm = SimpleNamespace(
+        id=123,
+        fm_meta_data=fm_meta,
+        data_set=data_set,
+        data_set_id=dataset_id)
     return fm
 
 
 def test_cart_count_returns_json(monkeypatch, app, client):
     mock_cart_service = MagicMock()
-    mock_cart_service.view_cart.return_value = [{"cart_item_id": 1}, {"cart_item_id": 2}]
+    mock_cart_service.view_cart.return_value = [
+        {"cart_item_id": 1}, {"cart_item_id": 2}]
     monkeypatch.setattr(cart_routes, "cart_service", mock_cart_service)
 
     login_client(client)
@@ -89,7 +104,8 @@ def test_add_to_cart_delegates_to_service(monkeypatch, app, client):
 
 def test_delete_from_cart_calls_service(monkeypatch, app, client, capsys):
     mock_cart_service = MagicMock()
-    mock_cart_service.delete_from_cart.return_value = ({"message": "removed"}, 200)
+    mock_cart_service.delete_from_cart.return_value = (
+        {"message": "removed"}, 200)
     monkeypatch.setattr(cart_routes, "cart_service", mock_cart_service)
 
     login_client(client)
@@ -111,7 +127,10 @@ def test_create_dataset_post_invalid_form(monkeypatch, app, client):
             return {"field": ["error"]}
 
     monkeypatch.setattr(cart_routes, "cart_service", mock_cart_service)
-    monkeypatch.setattr(cart_routes, "CartCreateDatasetForm", lambda: FakeForm())
+    monkeypatch.setattr(
+        cart_routes,
+        "CartCreateDatasetForm",
+        lambda: FakeForm())
 
     login_client(client)
     resp = client.post("/user/cart/create", data={})
@@ -127,10 +146,14 @@ def test_create_dataset_post_delegates_to_service(monkeypatch, app, client):
         def validate_on_submit(self):
             return True
 
-    mock_cart_service.create_dataset.return_value = ({"message": "created"}, 201)
+    mock_cart_service.create_dataset.return_value = (
+        {"message": "created"}, 201)
 
     monkeypatch.setattr(cart_routes, "cart_service", mock_cart_service)
-    monkeypatch.setattr(cart_routes, "CartCreateDatasetForm", lambda: FakeForm())
+    monkeypatch.setattr(
+        cart_routes,
+        "CartCreateDatasetForm",
+        lambda: FakeForm())
 
     login_client(client)
     resp = client.post("/user/cart/create", data={})
@@ -150,14 +173,19 @@ def test_download_cart_empty(monkeypatch, app, client):
     assert "Cart is empty" in resp.get_json()["message"]
 
 
-def test_download_cart_creates_zip_and_returns_file(monkeypatch, tmp_path, app, client):
+def test_download_cart_creates_zip_and_returns_file(
+        monkeypatch, tmp_path, app, client):
     tmpdir = str(tmp_path)
     monkeypatch.setenv("WORKING_DIR", tmpdir)
 
     user_id = 7
     dataset_id = 33
     filename = "myfile.txt"
-    upload_folder = os.path.join(tmpdir, "uploads", f"user_{user_id}", f"dataset_{dataset_id}")
+    upload_folder = os.path.join(
+        tmpdir,
+        "uploads",
+        f"user_{user_id}",
+        f"dataset_{dataset_id}")
     os.makedirs(upload_folder, exist_ok=True)
     file_path = os.path.join(upload_folder, filename)
     with open(file_path, "wb") as fh:
@@ -166,8 +194,12 @@ def test_download_cart_creates_zip_and_returns_file(monkeypatch, tmp_path, app, 
     mock_cart_service = MagicMock()
     mock_fm_service = MagicMock()
 
-    mock_cart_service.view_cart.return_value = [{"cart_item_id": 1, "file_model_id": 123}]
-    fm = make_file_model(filename=filename, user_id=user_id, dataset_id=dataset_id)
+    mock_cart_service.view_cart.return_value = [
+        {"cart_item_id": 1, "file_model_id": 123}]
+    fm = make_file_model(
+        filename=filename,
+        user_id=user_id,
+        dataset_id=dataset_id)
     mock_fm_service.get_by_id.return_value = fm
 
     monkeypatch.setattr(cart_routes, "cart_service", mock_cart_service)

@@ -33,14 +33,20 @@ class TestSelenium2FA:
         db.create_all()
 
         unique_email = f"user_{uuid.uuid4().hex}@example.com"
-        self.user = User(email=unique_email, is_two_factor_enabled=True, two_factor_secret="MOCKSECRET")
+        self.user = User(
+            email=unique_email,
+            is_two_factor_enabled=True,
+            two_factor_secret="MOCKSECRET")
         self.user.set_password("1234")
         db.session.add(self.user)
         db.session.commit()
 
         profile = UserProfile(
-            user_id=self.user.id, name="Sypha", surname="Belnades", orcid="0000-0001-2345-6789", affiliation="Test Lab"
-        )
+            user_id=self.user.id,
+            name="Sypha",
+            surname="Belnades",
+            orcid="0000-0001-2345-6789",
+            affiliation="Test Lab")
         db.session.add(profile)
         db.session.commit()
         assert self.user.id is not None
@@ -54,7 +60,10 @@ class TestSelenium2FA:
         self.server_thread.daemon = True
         self.server_thread.start()
         self.driver = initialize_driver()
-        self.patcher = patch.object(AuthenticationService, "verify_two_factor_code", return_value=True)
+        self.patcher = patch.object(
+            AuthenticationService,
+            "verify_two_factor_code",
+            return_value=True)
         self.patcher.start()
 
     def teardown_method(self, method):
@@ -74,7 +83,8 @@ class TestSelenium2FA:
         code_input = self.driver.find_element(By.ID, "code")
         code_input.send_keys("000000")
         code_input.send_keys(Keys.ENTER)
-        user_span = WebDriverWait(self.driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "span.text-dark"))
-        )
+        user_span = WebDriverWait(
+            self.driver, 10).until(
+            EC.visibility_of_element_located(
+                (By.CSS_SELECTOR, "span.text-dark")))
         assert "Sypha" in user_span.text and "Belnades" in user_span.text

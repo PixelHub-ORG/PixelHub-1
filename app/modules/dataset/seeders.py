@@ -107,7 +107,12 @@ class DataSetSeeder(BaseSeeder):
         # Create files, associate them with FileModels and copy files
         load_dotenv()
         working_dir = os.getenv("WORKING_DIR", "")
-        src_folder = os.path.join(working_dir, "app", "modules", "dataset", "pix_examples")
+        src_folder = os.path.join(
+            working_dir,
+            "app",
+            "modules",
+            "dataset",
+            "pix_examples")
 
         if not os.path.exists(src_folder):
             os.makedirs(src_folder)
@@ -121,7 +126,8 @@ class DataSetSeeder(BaseSeeder):
         for i in range(11):
             file_name = f"file{i + 1}.pix"
             file_model = seeded_file_models[i]
-            dataset = next(ds for ds in seeded_datasets if ds.id == file_model.data_set_id)
+            dataset = next(
+                ds for ds in seeded_datasets if ds.id == file_model.data_set_id)
             user_id = dataset.user_id
 
             dest_folder = os.path.join(

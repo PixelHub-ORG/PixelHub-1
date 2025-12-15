@@ -35,12 +35,13 @@ def check_pix(file_id):
         # Allow either unquoted identifiers or quoted strings (single or double) which may include spaces.
         # We capture the raw token and then "unquote" it so mixed or repeated quote combinations
         # (e.g. '"name"' or '"name\'' ) are normalized by stripping surrounding quote pairs.
-        element_header_re = re.compile(r"^\s*(?P<name>(?:\"[^\"]*\"|'[^']*'|[^\{\s][^\{]*?))\s*\{\s*$")
+        element_header_re = re.compile(
+            r"^\s*(?P<name>(?:\"[^\"]*\"|'[^']*'|[^\{\s][^\{]*?))\s*\{\s*$")
         # For attributes: key can be quoted or unquoted, separator can be ':'
         # or '=', value may be empty.
         attr_re = re.compile(
-            r"^\s*(?P<key>(?:\"[^\"]*\"|'[^']*'|[^:=\s][^:=\{]*?))" r"\s*(?P<sep>[:=])\s*(?P<value>.*?)\s*$"
-        )
+            r"^\s*(?P<key>(?:\"[^\"]*\"|'[^']*'|[^:=\s][^:=\{]*?))"
+            r"\s*(?P<sep>[:=])\s*(?P<value>.*?)\s*$")
 
         def unquote_token(tok: str) -> str:
             """Strip surrounding quote pairs (single or double) repeatedly.
@@ -100,8 +101,7 @@ def check_pix(file_id):
                     else:
                         errors.append(
                             f"Line {idx}: Invalid attribute format, expected 'key:val' or 'key=val', got: {
-                                line!r}"
-                        )
+                                line!r}")
 
         if state == "inside":
             errors.append(

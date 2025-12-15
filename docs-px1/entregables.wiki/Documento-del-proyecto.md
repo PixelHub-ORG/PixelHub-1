@@ -2,20 +2,20 @@
 
 ## Indicadores del proyecto
 
-(_debe dejar enlaces a evidencias que permitan de una forma sencilla analizar estos indicadores, con gráficas y/o con enlaces_)
-
 La razón por la que a algunos miembros del equipo se le han asociado dos WI es porque hemos trabajado haciendo pairprogramming.
 
-| Miembro del equipo                                                   | Horas | Commits | LoC | Test | Issues | Work Item                                                                          | Dificultad     |
-| -------------------------------------------------------------------- | ----- | ------- | --- | ---- | ------ | ---------------------------------------------------------------------------------- | -------------- |
-| [Campos Díez, Lucía](https://github.com/LWH9900)                     | HH    | XX      | YY  | ZZ   | II     | Two-factor authentication (2FA) (H) \#89 & Embeddable badge \#102 (M)              | M & H          |
-| [Mayoral Ansias, Aaron](https://github.com/aaronma300604)            | HH    | XX      | YY  | ZZ   | II     | newdataset - Evolving uvlhub into a "datatypehub" \#104                            | H              |
-| [Oviedo Govantes, Claudia](https://github.com/ClaudiaOviedoGovantes) | HH    | XX      | YY  | Unitarios: 8, Locust:13   | II     | Trending datasets \#100 (M) & Two-factor authentication (2FA) (H)                  | M & H          |
-| [Peñaloza Friqui, Nora](https://github.com/norapfr)                  | 52    | XX      | YY  | Unitarios:10,Locust:13, Selenium:1   | II     | Trending datasets \#100 (M) & Automatic dataset recommendations \#98 (H)           | M & H          |
-| [Sánchez Quirós, Jesús](https://github.com/JesusSQ)                  | HH    | XX      | YY  | Unitarios:2,  | II     | Add download counter for datasets (L) & Automatic dataset recommendations \#98 (H) | L & H          |
-| **TOTAL**                                                            | tHH   | tXX     | tYY | tZZ  | tII    | Descripción breve                                                                  | H(2)/M(2)/L(1) |
+| Miembro del equipo                                                   | Horas | Commits | LoC | Test                                               | Issues | Work Item                                                                          | Dificultad     |
+| -------------------------------------------------------------------- | ----- | ------- | --- | -------------------------------------------------- | ------ | ---------------------------------------------------------------------------------- | -------------- |
+| [Campos Díez, Lucía](https://github.com/HHV4884)                     | 55    | XX      | YY  | Unitarios: 37, Locust:8, Selenium: 4 (total: 49)   | 6      | Two-factor authentication (2FA) (H) \#89 & Embeddable badge \#102 (M)              | M & H          |
+| [Mayoral Ansias, Aaron](https://github.com/aaronma300604)            | 47    | XX      | YY  | Unitarios: 5, Locust: 1, Selenium: 1 (total: 7)    | 4      | newdataset - Evolving uvlhub into a "datatypehub" \#104                            | H              |
+| [Oviedo Govantes, Claudia](https://github.com/ClaudiaOviedoGovantes) | 65    | XX      | YY  | Unitarios: 27, Locust: 20, Selenium: 1 (total: 48) | 13     | Trending datasets \#100 (M) & Two-factor authentication (2FA) (H)                  | M & H          |
+| [Peñaloza Friqui, Nora](https://github.com/norapfr)                  | 52    | XX      | YY  | Unitarios: 10, Locust:13, Selenium:1 (total: 24)   | 12     | Trending datasets \#100 (M) & Automatic dataset recommendations \#98 (H)           | M & H          |
+| [Sánchez Quirós, Jesús](https://github.com/JesusSQ)                  | 53    | XX      | YY  | Unitarios: 7, Locust: 7, Selenium: 1 (total: 15)   | 7      | Add download counter for datasets (L) & Automatic dataset recommendations \#98 (H) | L & H          |
+| **TOTAL**                                                            | 272   | tXX     | tYY | 143                                                | tII    | Descripción breve                                                                  | H(2)/M(2)/L(1) |
 
 Las evidencias de las horas trabajadas se encuentran en la carpeta `clockify`, que contiene los reports de Clockify de todos los miembros del equipo.
+
+Este es nuestro repositorio: [PixelHub-1](https://github.com/PixelHub-ORG/PixelHub-1)
 
 La tabla contiene la información de cada miembro del proyecto y el total de la siguiente forma:
 
@@ -42,7 +42,6 @@ En el transcurso del proyecto, hemos realizado varias mejoras clave. Nos hemos e
 
 1. **Autenticación en dos factores (2FA):** Esta funcionalidad permite una capa adicional de seguridad para los usuarios, mejorando la protección de sus cuentas.
 2. **Datos populares y recomendados:** Implementamos un sistema de clasificación de los datasets más populares, basándonos en las descargas, ya sean semanales o mensuales. También añadimos recomendaciones automáticas de datasets relacionados, lo que mejora la experiencia de descubrimiento para los usuarios.
-
 3. **Mejoras en la interfaz de usuario:** Se desarrolló un "badge" embebible para los datasets, lo que permite que los usuarios compartan fácilmente sus datasets en otras plataformas. Además, se añadió un contador de descargas para cada dataset, lo que brinda más información sobre su popularidad.
 
 ### Entorno Tecnológico
@@ -147,9 +146,9 @@ A lo largo del desarrollo de la plataforma, se han implementado y mejorado varia
 6. **Interfaz de Usuario Mejorada:**
    - Se han realizado mejoras en la interfaz de usuario para hacerla más intuitiva y fácil de usar, permitiendo a los usuarios gestionar y explorar datasets de manera más eficiente.
 
-## Visión global del proceso de desarrollo (1.500 palabras aproximadamente)
+## Visión global del proceso de desarrollo
 
-Debe dar una visión general del proceso que ha seguido enlazándolo con las herramientas que ha utilizado. Ponga un ejemplo de un cambio que se proponga al sistema y cómo abordaría todo el ciclo hasta tener ese cambio en producción. Los detalles de cómo hacer el cambio vendrán en el apartado correspondiente.
+El desarrollo de PixelHub se ha llevado a cabo de forma colaborativa y estructurada, combinando buenas prácticas de integración continua, control de versiones y automatización de tareas. El equipo ha utilizado herramientas como GitHub, Docker (con su propia imagen publicada en Docker Hub para producción) y Vagrant para garantizar un entorno reproducible y estable en cualquier sistema. Gracias a ello, el proyecto puede desplegarse fácilmente tanto en entornos de desarrollo como en producción. A lo largo del documento se explica cómo se ha organizado el proceso y se muestra un ejemplo práctico de cómo se gestiona un cambio desde su propuesta hasta su despliegue final.
 
 ### Entorno de desarrollo
 
@@ -208,9 +207,9 @@ Para garantizar la calidad del software, se han utilizado distintas herramientas
 
 La combinación de estas herramientas ha permitido validar tanto la lógica interna del sistema como su comportamiento desde el punto de vista del usuario final, contribuyendo a un desarrollo más robusto y fiable.
 
-### Instalación, ejecución y despliegue
+## Instalación, ejecución y despliegue
 
-## Instalación paso a paso
+### Instalación paso a paso
 
 Esta sección detalla los pasos para la instalación de forma manual. Asegúrate de sustituir todas los usuarios y contraseñas de ejemplo por opciones seguras.
 
@@ -288,6 +287,9 @@ MARIADB_USER=pixelhubdb_user
 MARIADB_PASSWORD=contraseña_establecida_mariadb
 MARIADB_ROOT_PASSWORD=contraseña_establecida_root
 WORKING_DIR=""
+ORCID_CLIENT_ID="APP-QDXJOGWEQBPHZ3JR"
+ORCID_CLIENT_SECRET="3d15b6fc-2d86-46e0-9522-dba049b5d477"
+GITHUB_TOKEN = "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"
 ```
 
 Una vez escrita la configuración guardamos el archivo y cerramos el editor.
@@ -327,13 +329,11 @@ Una vez ejecutado la aplicación debería estar corriendo en el puerto 5000 de n
 
 En el comando flask run utilizamos reload para que los cambios en el código se reflejen en tiempo real en la aplicación. Utilizamos debug para ejecutar el proyecto en modo desarrollo (eliminar si no se pretende utilizar el sistema con este fin).
 
-## Despliegue
-
-#### Uso del sistema con Docker
+## Despliegue con Docker
 
 Si prefieres ejecutar **PixelHub** en un entorno aislado sin instalar dependencias manualmente, hemos preparado una configuración lista para producción utilizando Docker.
 
-## Requisitos previos
+### Requisitos previos
 
 - Tener instalado [Docker Desktop](https://www.docker.com/products/docker-desktop/) (o Docker Engine + Docker Compose).
 
@@ -356,11 +356,7 @@ docker compose -f docker/docker-compose.prod.yml up -d
 > **Nota:** La primera vez puede tardar unos minutos mientras se descargan las imágenes de `claovigov/pixelhub`, MariaDB y Nginx.
 
 **3. Acceso a la aplicación**
-Una vez que los contenedores estén listos, abre tu navegador y accede a:
-
-**http://localhost**
-
----
+Una vez que los contenedores estén listos, abre tu navegador y accede a: **http://localhost**
 
 ### Comandos útiles
 
@@ -378,7 +374,9 @@ Para apagar los servicios y liberar recursos:
 docker compose -f docker/docker-compose.prod.yml down
 ```
 
-##### Uso del sistema con Vagrant
+## Despliegue con Vagrant
+
+Si prefieres ejecutar **PixelHub** en un entorno con Vagrant
 
 Para desplegar el sistema en una máquina virtual haciendo Vagrant deberemos seguir los siguientes pasos:
 
@@ -426,30 +424,26 @@ Si queremos eliminar la máquina virtual en la que se encuentra desplegado el si
 ```bash
 vagrant destroy
 ```
-### Ejercicio de propuesta de cambio
+
+## Ejercicio de propuesta de cambio
 
 Se presentará un ejercicio con una propuesta concreta de cambio que ilustra **todo el proceso de evolución y gestión de la configuración del proyecto**. El cambio consiste en **añadir información detallada del equipo en la sección _Teams_ de la página**.
-
----
 
 #### 1. Propuesta del cambio
 
 En primer lugar, **Aaron** detecta la necesidad del cambio y crea una **issue de tipo _feature_ en GitHub**, utilizando la plantilla correspondiente
 Una vez completados los campos, Aaron pulsa **Submit new issue**.
 
----
-
 #### 2. Análisis y división del trabajo
 
 La issue se asigna a **Jesús**, quien analiza el alcance y determina que el trabajo es demasiado grande para una sola tarea. Por ello, la divide en varias _issues_ más pequeñas. Estas nuevas _issues_ se asignan a distintos miembros del equipo y se mueven al estado **Ready** del tablero.
-
----
 
 #### 3. Trabajo en local y creación de ramas
 
 Cada miembro trabaja siguiendo un flujo basado en `trunk`.
 
 1. Actualizar la rama local:
+
    ```bash
    git checkout trunk
    git pull origin trunk
@@ -459,8 +453,6 @@ Cada miembro trabaja siguiendo un flujo basado en `trunk`.
    ```bash
    git checkout -b feature/update-teams
    ```
-
----
 
 #### 4. Implementación del cambio
 
@@ -472,8 +464,6 @@ git add .
 git commit -m "feat: Add team information to Teams section"
 ```
 
----
-
 #### 5. Integración en `trunk`
 
 Una vez finalizada la tarea, se integra el trabajo en la rama de integración, se pasa la issue a **In review**:
@@ -484,16 +474,12 @@ git merge feature/update-teams
 git push origin trunk
 ```
 
----
-
 #### 6. Verificación automática
 
 Al hacer _push_ a `trunk`, se ejecutan los **workflows de GitHub Actions**.
 
 - Si los checks fallan o se encuentra algún bugs, se crea una nueva _issue_ y se repite el proceso (rama, corrección y merge).
 - Si todo pasa correctamente, las _issues_ se cierran.
-
----
 
 #### 7. Publicación final
 
@@ -505,14 +491,8 @@ git merge trunk
 git push origin main
 ```
 
----
-
 Este ejercicio muestra cómo se gestiona un cambio desde su propuesta inicial hasta su despliegue final, garantizando **control, trazabilidad y calidad** en la evolución y gestión de la configuración del proyecto.
 
 ### Conclusiones y trabajo futuro
 
-Se enunciarán algunas conclusiones y se presentará un apartado sobre las mejoras que se proponen para el futuro (curso siguiente) y que no han sido desarrolladas en el sistema que se entrega
-
-```
-
-```
+El proceso seguido en PixelHub ha permitido trabajar de forma ordenada, colaborativa y con una buena trazabilidad de los cambios. El uso de herramientas de automatización y control de calidad ha reducido errores y facilitado la integración del trabajo en equipo. De cara al futuro, se prevé seguir mejorando el sistema, incorporando nuevas funcionalidades como mejora de la edición del perfil, un foro, o más estadísticas, y optimizando el rendimiento sin perder la estabilidad ni la coherencia del proyecto.

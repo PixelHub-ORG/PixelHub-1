@@ -27,7 +27,8 @@ def on_locust_init(environment, **kwargs):
                 .all()
             )
             for user in users_with_2fa:
-                CACHED_2FA_USERS.append({"email": user.email, "secret": user.two_factor_secret, "password": "1234"})
+                CACHED_2FA_USERS.append(
+                    {"email": user.email, "secret": user.two_factor_secret, "password": "1234"})
             print(
                 f"✓ Loaded {
                     len(CACHED_2FA_USERS)} users with 2FA for testing"
@@ -152,7 +153,12 @@ class TwoFactorSetupBehavior(TaskSet):
     def test_2fa_enable_with_code(self):
         response = self.client.get("/login")
         csrf_token = get_csrf_token(response)
-        self.client.post("/login", data={"email": "user1@example.com", "password": "1234", "csrf_token": csrf_token})
+        self.client.post(
+            "/login",
+            data={
+                "email": "user1@example.com",
+                "password": "1234",
+                "csrf_token": csrf_token})
         response = self.client.get("/2fa/enable")
         try:
             csrf_token = get_csrf_token(response)
@@ -248,8 +254,11 @@ class TwoFactorLoginBehavior(TaskSet):
         csrf_token = get_csrf_token(response)
 
         self.client.post(
-            "/login", data={"email": user["email"], "password": user["password"], "csrf_token": csrf_token}
-        )
+            "/login",
+            data={
+                "email": user["email"],
+                "password": user["password"],
+                "csrf_token": csrf_token})
 
         response = self.client.get("/2fa/verify")
         csrf_token = get_csrf_token(response)
@@ -280,8 +289,11 @@ class TwoFactorLoginBehavior(TaskSet):
         csrf_token = get_csrf_token(response)
 
         self.client.post(
-            "/login", data={"email": user["email"], "password": user["password"], "csrf_token": csrf_token}
-        )
+            "/login",
+            data={
+                "email": user["email"],
+                "password": user["password"],
+                "csrf_token": csrf_token})
 
         response = self.client.get("/2fa/verify")
         csrf_token = get_csrf_token(response)
@@ -317,15 +329,22 @@ class TwoFactorDisableBehavior(TaskSet):
         csrf_token = get_csrf_token(response)
 
         self.client.post(
-            "/login", data={"email": user["email"], "password": user["password"], "csrf_token": csrf_token}
-        )
+            "/login",
+            data={
+                "email": user["email"],
+                "password": user["password"],
+                "csrf_token": csrf_token})
         response = self.client.get("/2fa/verify")
         csrf_token = get_csrf_token(response)
 
         totp = pyotp.TOTP(user["secret"])
         code = totp.now()
 
-        self.client.post("/2fa/verify", data={"code": code, "csrf_token": csrf_token})
+        self.client.post(
+            "/2fa/verify",
+            data={
+                "code": code,
+                "csrf_token": csrf_token})
 
         return True
 
@@ -473,7 +492,11 @@ class SecurityTestUser(HttpUser):
 class MixedAuthUser(HttpUser):
     """Mixed authentication tests including ORCID"""
 
-    tasks = [LoginBehavior, TwoFactorLoginBehavior, ORCIDLoginBehavior, TwoFactorDisableBehavior]
+    tasks = [
+        LoginBehavior,
+        TwoFactorLoginBehavior,
+        ORCIDLoginBehavior,
+        TwoFactorDisableBehavior]
     min_wait = 4000
     max_wait = 8000
     host = get_host_for_locust_testing()

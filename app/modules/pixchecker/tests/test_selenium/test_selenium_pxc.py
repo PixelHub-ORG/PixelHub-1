@@ -17,7 +17,11 @@ class TestPixcheckertest:
         self.driver.get(get_host_for_selenium_testing())
         self.driver.set_window_size(1854, 1048)
         self.driver.find_element(By.LINK_TEXT, "Sample dataset 4").click()
-        self.driver.find_element(By.CSS_SELECTOR, "button[test='test-button']").click()
+        self.driver.find_element(
+            By.CSS_SELECTOR,
+            "button[test='test-button']").click()
         self.driver.find_element(By.LINK_TEXT, "Syntax check").click()
-        self.driver.find_element(By.CSS_SELECTOR, "button[test='test-button']").click()
+        self.driver.find_element(
+            By.CSS_SELECTOR,
+            "button[test='test-button']").click()
         self.driver.find_element(By.LINK_TEXT, "Syntax check").click()

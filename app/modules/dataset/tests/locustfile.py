@@ -46,7 +46,8 @@ class WebsiteUser(HttpUser):
             logging.info(f"Login Exitoso: {USER_EMAIL}")
         else:
             if "/login" in response.url:
-                logging.error("!!! Login Fallido: Credenciales incorrectas o error de servidor !!!")
+                logging.error(
+                    "!!! Login Fallido: Credenciales incorrectas o error de servidor !!!")
             else:
                 logging.info("Login parece exitoso (Redirección correcta)")
 
@@ -70,7 +71,8 @@ class WebsiteUser(HttpUser):
                 self.extract_and_request_file_diff(response.text)
                 response.success()
             elif response.status_code == 404:
-                response.failure(f"Dataset no encontrado (404). IDs esperados: {DATASET_V1_ID}/{DATASET_V2_ID}")
+                response.failure(
+                    f"Dataset no encontrado (404). IDs esperados: {DATASET_V1_ID}/{DATASET_V2_ID}")
             else:
                 response.failure(
                     f"Error al cargar comparacion: {
@@ -82,7 +84,9 @@ class WebsiteUser(HttpUser):
         """
         Visits the create version page for a dataset.
         """
-        self.client.get(f"/dataset/{DATASET_V2_ID}/create_version", name="/dataset/[id]/create_version")
+        self.client.get(
+            f"/dataset/{DATASET_V2_ID}/create_version",
+            name="/dataset/[id]/create_version")
 
         self.client.get(
             f"/dataset/{DATASET_V2_ID}/create_version",
@@ -127,7 +131,8 @@ class DatasetUser(HttpUser):
                     .limit(20)
                     .all()
                 )
-                DatasetUser._cached_dois = [doi[0] for doi in datasets_with_doi if doi[0]]
+                DatasetUser._cached_dois = [doi[0]
+                                            for doi in datasets_with_doi if doi[0]]
         except Exception:
             DatasetUser._cached_dois = []
 
@@ -225,8 +230,13 @@ class DatasetUser(HttpUser):
         """
         Prueba la subida de ficheros desde GitHub.
         """
-        payload = {"repo_url": "https://github.com/JoseLu2121/pix_files.git", "path": "files/"}
-        self.client.post("/dataset/file/upload_github", json=payload, name="/dataset/file/upload_github")
+        payload = {
+            "repo_url": "https://github.com/JoseLu2121/pix_files.git",
+            "path": "files/"}
+        self.client.post(
+            "/dataset/file/upload_github",
+            json=payload,
+            name="/dataset/file/upload_github")
 
     def extract_and_request_file_diff(self, html_content):
         """
@@ -242,6 +252,8 @@ class DatasetUser(HttpUser):
                 new_id = button.get("data-new-id")
 
                 if old_id and new_id:
-                    self.client.get(f"/file/diff/{old_id}/{new_id}", name="/file/diff/[id]/[id]")
+                    self.client.get(
+                        f"/file/diff/{old_id}/{new_id}",
+                        name="/file/diff/[id]/[id]")
         except Exception as e:
             print(f"Error parseando diffs: {e}")

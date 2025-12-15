@@ -22,9 +22,9 @@ Se utiliza un **hook de pre-commit** que se ejecuta automáticamente antes de re
    rosemary linter
    ```
 
-   * Ejecuta el linter personalizado del proyecto.
-   * Verifica reglas de estilo y buenas prácticas.
-   * Si se detectan errores, el commit se aborta con el mensaje:
+   - Ejecuta el linter personalizado del proyecto.
+   - Verifica reglas de estilo y buenas prácticas.
+   - Si se detectan errores, el commit se aborta con el mensaje:
 
      ```
      ❌ Errores detectados por Rosemary. Abortando commit.
@@ -36,7 +36,7 @@ Se utiliza un **hook de pre-commit** que se ejecuta automáticamente antes de re
    black app rosemary core
    ```
 
-   * Aplica automáticamente el formato estándar de Black a todo el código Python.
+   - Aplica automáticamente el formato estándar de Black a todo el código Python.
 
 4. **Corrección de errores PEP8 con autopep8**
 
@@ -44,8 +44,8 @@ Se utiliza un **hook de pre-commit** que se ejecuta automáticamente antes de re
    autopep8 --in-place --aggressive --aggressive --recursive app rosemary core
    ```
 
-   * Corrige automáticamente errores comunes de PEP8.
-   * Si `autopep8` no está instalado, el hook lo instala automáticamente.
+   - Corrige automáticamente errores comunes de PEP8.
+   - Si `autopep8` no está instalado, el hook lo instala automáticamente.
 
 5. **Ordenación de imports con isort**
 
@@ -53,7 +53,7 @@ Se utiliza un **hook de pre-commit** que se ejecuta automáticamente antes de re
    isort app rosemary core
    ```
 
-   * Garantiza un orden consistente de las importaciones.
+   - Garantiza un orden consistente de las importaciones.
 
 6. **Verificación final con flake8**
 
@@ -61,18 +61,18 @@ Se utiliza un **hook de pre-commit** que se ejecuta automáticamente antes de re
    flake8 app rosemary core
    ```
 
-   * Realiza una validación final del código.
-   * Si solo existen errores de indentación `E122`, se intenta una corrección automática usando `yapf`.
-   * Si persisten errores no corregibles automáticamente, el commit se aborta.
+   - Realiza una validación final del código.
+   - Si solo existen errores de indentación `E122`, se intenta una corrección automática usando `yapf`.
+   - Si persisten errores no corregibles automáticamente, el commit se aborta.
 
 7. **Añadido automático de cambios al commit**
 
-   * Si el formateo modifica archivos, estos se añaden automáticamente al staging area y se incluyen en el commit actual.
+   - Si el formateo modifica archivos, estos se añaden automáticamente al staging area y se incluyen en el commit actual.
 
 8. **Resultado final**
 
-   * Todos los checks pasan → el commit se permite.
-   * Algún error no corregible → el commit se bloquea.
+   - Todos los checks pasan → el commit se permite.
+   - Algún error no corregible → el commit se bloquea.
 
 ---
 
@@ -84,57 +84,57 @@ Se utiliza **pre-commit** como capa adicional de validación para ejecutar linte
 
 #### Ruff
 
-* Repo: [astral-sh/ruff-pre-commit](https://github.com/astral-sh/ruff-pre-commit)
-* Rev: `v0.14.5`
-* Args: `--fix`
-* Analiza código Python y corrige problemas automáticamente en archivos staged.
+- Repo: [astral-sh/ruff-pre-commit](https://github.com/astral-sh/ruff-pre-commit)
+- Rev: `v0.14.5`
+- Args: `--fix`
+- Analiza código Python y corrige problemas automáticamente en archivos staged.
 
 #### pre-commit-hooks
 
-* Repo: [pre-commit/pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks)
-* Rev: `v6.0.0`
-* Hooks:
+- Repo: [pre-commit/pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks)
+- Rev: `v6.0.0`
+- Hooks:
 
-  * `check-merge-conflict`
-  * `check-added-large-files` (máx. 5MB)
-  * `check-yaml`
-  * `check-json`
+  - `check-merge-conflict`
+  - `check-added-large-files` (máx. 5MB)
+  - `check-yaml`
+  - `check-json`
 
 #### Commitlint
 
-* Repo: [alessandrojcm/commitlint-pre-commit-hook](https://github.com/alessandrojcm/commitlint-pre-commit-hook)
-* Rev: `v9.23.0`
-* Stage: `commit-msg`
-* Valida mensajes de commit siguiendo **Conventional Commits**.
+- Repo: [alessandrojcm/commitlint-pre-commit-hook](https://github.com/alessandrojcm/commitlint-pre-commit-hook)
+- Rev: `v9.23.0`
+- Stage: `commit-msg`
+- Valida mensajes de commit siguiendo **Conventional Commits**.
 
 #### Rosemary Linter
 
-* Repo: `local`
-* Entry: `rosemary linter`
-* Language: `system`
-* Ejecuta el linter sobre el proyecto completo.
+- Repo: `local`
+- Entry: `rosemary linter`
+- Language: `system`
+- Ejecuta el linter sobre el proyecto completo.
 
 #### Black
 
-* Repo: [psf/black](https://github.com/psf/black)
-* Rev: `24.10.0`
-* Formatea automáticamente el código Python.
+- Repo: [psf/black](https://github.com/psf/black)
+- Rev: `24.10.0`
+- Formatea automáticamente el código Python.
 
 #### isort
 
-* Repo: [PyCQA/isort](https://github.com/PyCQA/isort)
-* Rev: `5.13.2`
-* Ordena las importaciones de Python.
+- Repo: [PyCQA/isort](https://github.com/PyCQA/isort)
+- Rev: `5.13.2`
+- Ordena las importaciones de Python.
 
 ---
 
 ## 3. Beneficios de esta configuración
 
-* Garantiza **alta calidad de código** antes de cada commit.
-* Aplica correcciones automáticas sin intervención manual.
-* Evita introducir errores de estilo o formato en el repositorio.
-* Mantiene consistencia entre desarrolladores.
-* Refuerza buenas prácticas en mensajes de commit.
+- Garantiza **alta calidad de código** antes de cada commit.
+- Aplica correcciones automáticas sin intervención manual.
+- Evita introducir errores de estilo o formato en el repositorio.
+- Mantiene consistencia entre desarrolladores.
+- Refuerza buenas prácticas en mensajes de commit.
 
 ---
 
@@ -146,6 +146,14 @@ Se utiliza **pre-commit** como capa adicional de validación para ejecutar linte
 pre-commit install
 ```
 
+2. Configurar el pre-hook:
+
+```bash
+nano .git/hooks/pre-commit # (copiamos el script pre-commit.sh)
+chmod +x .git/hooks/pre-commit
+ls -l .git/hooks/pre-commit #(comprobamos que se ha creado y que tiene los permisos correctos)
+```
+
 2. Realizar commits normalmente:
 
 ```bash
@@ -153,8 +161,7 @@ git add .
 git commit -m "feat: nueva funcionalidad"
 ```
 
-* Los formateos se aplican automáticamente.
-* Si existen errores no corregibles, el commit se aborta hasta ser solucionados.
+- Los formateos se aplican automáticamente.
+- Si existen errores no corregibles, el commit se aborta hasta ser solucionados. Indicará la causa del fallo, la línea en la que se encuentra y el tipo de fallo.
 
 ---
-

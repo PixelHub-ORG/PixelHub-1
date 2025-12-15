@@ -30,21 +30,27 @@ def test_login_and_check_element():
 
         wait.until(EC.presence_of_element_located((By.TAG_NAME, "h1")))
         if "/2fa/enable" in driver.current_url:
-            p = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "p.mb-3")))
+            p = wait.until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, "p.mb-3")))
             secret = p.text.split("Manual secret:")[-1].strip()
             code = pyotp.TOTP(secret).now()
-            code_input = wait.until(EC.presence_of_element_located((By.NAME, "code")))
+            code_input = wait.until(
+                EC.presence_of_element_located(
+                    (By.NAME, "code")))
             code_input.clear()
             code_input.send_keys(code)
-            driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+            driver.find_element(
+                By.CSS_SELECTOR,
+                "button[type='submit']").click()
 
         if "/2fa/verify" in driver.current_url:
-            raise AssertionError("Unexpected /2fa/verify without having the secret available in the test flow.")
+            raise AssertionError(
+                "Unexpected /2fa/verify without having the secret available in the test flow.")
 
         wait.until(
             EC.presence_of_element_located(
-                (By.XPATH, "//h1[contains(@class, 'h2 mb-3') and contains(., 'Latest datasets')]")
-            )
-        )
+                (By.XPATH,
+                 "//h1[contains(@class, 'h2 mb-3') and contains(., 'Latest datasets')]")))
     finally:
         close_driver(driver)

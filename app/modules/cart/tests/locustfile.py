@@ -10,7 +10,8 @@ from core.environment.host import get_host_for_locust_testing
 class CartUser(HttpUser):
     wait_time = between(1, 5)
 
-    # Host para pruebas (si get_host_for_locust_testing devuelve None, Locust usará --host)
+    # Host para pruebas (si get_host_for_locust_testing devuelve None, Locust
+    # usará --host)
     host = get_host_for_locust_testing()
 
     # Credenciales de prueba (ajusta si hace falta)
@@ -32,11 +33,13 @@ class CartUser(HttpUser):
             print("Login successful")
 
         # Aseguramos que el carrito tiene algo para las pruebas
-        # Ajusta el endpoint si en tu app es /featuremodel/cart/add o /filemodel/cart/add
+        # Ajusta el endpoint si en tu app es /featuremodel/cart/add o
+        # /filemodel/cart/add
         try:
             self.client.post("/filemodel/cart/add", json={"item_id": 1})
         except Exception:
-            # No queremos que falle el inicio si este POST da error; lo registramos
+            # No queremos que falle el inicio si este POST da error; lo
+            # registramos
             print("Warning: could not add initial item to cart in on_start")
 
     @task(2)
@@ -63,27 +66,38 @@ class CartUser(HttpUser):
     def delete_item(self):
         item_id = random.randint(1, 50)
         payload = {"item_id": item_id}
-        self.client.post("/user/cart/delete", data=json.dumps(payload), headers={"Content-Type": "application/json"})
+        self.client.post(
+            "/user/cart/delete",
+            data=json.dumps(payload),
+            headers={
+                "Content-Type": "application/json"})
 
     @task(1)
     def delete_nonexistent_item(self):
         payload = {"item_id": 999999}
-        self.client.post("/user/cart/delete", data=json.dumps(payload), headers={"Content-Type": "application/json"})
+        self.client.post(
+            "/user/cart/delete",
+            data=json.dumps(payload),
+            headers={
+                "Content-Type": "application/json"})
 
     @task(1)
     def create_dataset(self):
-        payload = {"dataset_name": "locust_dataset", "description": "Dataset generado por Locust"}
+        payload = {"dataset_name": "locust_dataset",
+                   "description": "Dataset generado por Locust"}
         # Form POST (no JSON) — ajusta si tu endpoint espera JSON
         self.client.post("/user/cart/create", data=payload)
 
     @task(1)
     def create_dataset_empty_cart(self):
         # Vaciar carrito primero
-        self.client.post(
-            "/user/cart/delete", data=json.dumps({"item_id": None}), headers={"Content-Type": "application/json"}
-        )
+        self.client.post("/user/cart/delete",
+                         data=json.dumps({"item_id": None}),
+                         headers={"Content-Type": "application/json"})
 
-        payload = {"dataset_name": "dataset_vacio", "description": "Esto debe fallar"}
+        payload = {
+            "dataset_name": "dataset_vacio",
+            "description": "Esto debe fallar"}
         self.client.post("/user/cart/create", data=payload)
 
     @task(1)

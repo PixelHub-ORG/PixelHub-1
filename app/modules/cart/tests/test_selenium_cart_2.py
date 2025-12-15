@@ -13,7 +13,9 @@ from core.selenium.common import close_driver, initialize_driver
 
 
 def wait_ready(driver, timeout=20):
-    WebDriverWait(driver, timeout).until(lambda d: d.execute_script("return document.readyState") == "complete")
+    WebDriverWait(
+        driver, timeout).until(
+        lambda d: d.execute_script("return document.readyState") == "complete")
 
 
 def accept_alert_if_any(driver, timeout=3):
@@ -32,7 +34,8 @@ def wait_ready_safe(driver, timeout=20):
         try:
             if accept_alert_if_any(driver, 1):
                 continue
-            if driver.execute_script("return document.readyState") == "complete":
+            if driver.execute_script(
+                    "return document.readyState") == "complete":
                 return
         except Exception as e:
             last = e
@@ -58,26 +61,40 @@ def signup_enable_2fa(driver, host):
     driver.get(f"{host}/signup/")
     wait_ready_safe(driver)
 
-    WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.NAME, "name"))).send_keys("Cart")
+    WebDriverWait(
+        driver, 20).until(
+        EC.presence_of_element_located(
+            (By.NAME, "name"))).send_keys("Cart")
     driver.find_element(By.NAME, "surname").send_keys("Selenium")
     driver.find_element(By.NAME, "email").send_keys(email)
     driver.find_element(By.NAME, "password").send_keys(password)
     driver.find_element(By.CSS_SELECTOR, "input[type='submit']").click()
 
-    WebDriverWait(driver, 20).until(lambda d: "/2fa/enable" in d.current_url or d.current_url.startswith(host))
+    WebDriverWait(
+        driver, 20).until(
+        lambda d: "/2fa/enable" in d.current_url or d.current_url.startswith(host))
 
     if "/2fa/enable" not in driver.current_url:
         driver.get(f"{host}/2fa/enable")
         wait_ready_safe(driver)
-        WebDriverWait(driver, 20).until(lambda d: "/2fa/enable" in d.current_url)
+        WebDriverWait(
+            driver, 20).until(
+            lambda d: "/2fa/enable" in d.current_url)
 
     secret = extract_secret(driver)
     code = pyotp.TOTP(secret).now()
 
-    WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.NAME, "code"))).send_keys(code)
-    driver.find_element(By.CSS_SELECTOR, "button[type='submit'],input[type='submit']").click()
+    WebDriverWait(
+        driver, 20).until(
+        EC.presence_of_element_located(
+            (By.NAME, "code"))).send_keys(code)
+    driver.find_element(
+        By.CSS_SELECTOR,
+        "button[type='submit'],input[type='submit']").click()
 
-    WebDriverWait(driver, 20).until(lambda d: "/2fa/enable" not in d.current_url)
+    WebDriverWait(
+        driver, 20).until(
+        lambda d: "/2fa/enable" not in d.current_url)
     wait_ready_safe(driver)
 
     driver.get(f"{host}/logout")
@@ -90,23 +107,40 @@ def login_with_2fa_to_next(driver, host, email, password, secret, next_path):
     driver.get(f"{host}/login?next={next_q}")
     wait_ready_safe(driver)
 
-    email_inputs = driver.find_elements(By.NAME, "email") or driver.find_elements(By.ID, "email")
-    pass_inputs = driver.find_elements(By.NAME, "password") or driver.find_elements(By.ID, "password")
+    email_inputs = driver.find_elements(
+        By.NAME, "email") or driver.find_elements(
+        By.ID, "email")
+    pass_inputs = driver.find_elements(
+        By.NAME, "password") or driver.find_elements(
+        By.ID, "password")
     if not email_inputs or not pass_inputs:
-        raise AssertionError(f"Login inputs not found. url={driver.current_url}")
+        raise AssertionError(
+            f"Login inputs not found. url={
+                driver.current_url}")
 
     email_inputs[0].send_keys(email)
     pass_inputs[0].send_keys(password)
-    driver.find_element(By.CSS_SELECTOR, "button[type='submit'],input[type='submit']").click()
+    driver.find_element(
+        By.CSS_SELECTOR,
+        "button[type='submit'],input[type='submit']").click()
 
-    WebDriverWait(driver, 20).until(lambda d: "/2fa/verify" in d.current_url or "/login" not in d.current_url)
+    WebDriverWait(
+        driver, 20).until(
+        lambda d: "/2fa/verify" in d.current_url or "/login" not in d.current_url)
     wait_ready_safe(driver)
 
     if "/2fa/verify" in driver.current_url:
         code = pyotp.TOTP(secret).now()
-        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.NAME, "code"))).send_keys(code)
-        driver.find_element(By.CSS_SELECTOR, "button[type='submit'],input[type='submit']").click()
-        WebDriverWait(driver, 20).until(lambda d: "/2fa/verify" not in d.current_url)
+        WebDriverWait(
+            driver, 20).until(
+            EC.presence_of_element_located(
+                (By.NAME, "code"))).send_keys(code)
+        driver.find_element(
+            By.CSS_SELECTOR,
+            "button[type='submit'],input[type='submit']").click()
+        WebDriverWait(
+            driver, 20).until(
+            lambda d: "/2fa/verify" not in d.current_url)
         wait_ready_safe(driver)
 
     if "/login" in driver.current_url:
@@ -116,7 +150,9 @@ def login_with_2fa_to_next(driver, host, email, password, secret, next_path):
         driver.get(f"{host}{next_path}")
         wait_ready_safe(driver)
         if "/login" in driver.current_url:
-            raise AssertionError(f"Still not authenticated. url={driver.current_url}")
+            raise AssertionError(
+                f"Still not authenticated. url={
+                    driver.current_url}")
 
 
 def login_with_2fa(driver, host, email, password, secret):
@@ -139,26 +175,43 @@ class TestCreateDataset:
         self.driver.get(f"{host}/")
         wait_ready_safe(self.driver)
 
-        WebDriverWait(self.driver, 20).until(lambda d: len(d.find_elements(By.CSS_SELECTOR, 'a[href*="/doi/"]')) > 0)
-        self.driver.find_elements(By.CSS_SELECTOR, 'a[href*="/doi/"]')[0].click()
+        WebDriverWait(
+            self.driver,
+            20).until(
+            lambda d: len(
+                d.find_elements(
+                    By.CSS_SELECTOR,
+                    'a[href*="/doi/"]')) > 0)
+        self.driver.find_elements(
+            By.CSS_SELECTOR,
+            'a[href*="/doi/"]')[0].click()
         wait_ready_safe(self.driver)
 
-        WebDriverWait(self.driver, 20).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "[test='add-to-car-mclaren']"))
-        ).click()
-        WebDriverWait(self.driver, 20).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".feather-shopping-cart"))
-        ).click()
+        WebDriverWait(
+            self.driver, 20).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, "[test='add-to-car-mclaren']"))).click()
+        WebDriverWait(
+            self.driver, 20).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, ".feather-shopping-cart"))).click()
         wait_ready_safe(self.driver)
 
-        WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "create-dataset-btn"))).click()
+        WebDriverWait(
+            self.driver, 20).until(
+            EC.presence_of_element_located(
+                (By.ID, "create-dataset-btn"))).click()
         wait_ready_safe(self.driver)
 
-        WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "title"))).send_keys("Example3")
+        WebDriverWait(
+            self.driver, 20).until(
+            EC.presence_of_element_located(
+                (By.ID, "title"))).send_keys("Example3")
         self.driver.find_element(By.ID, "desc").send_keys("Example3")
 
-        WebDriverWait(self.driver, 20).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".btn-outline-danger"))
-        ).click()
+        WebDriverWait(
+            self.driver, 20).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, ".btn-outline-danger"))).click()
         accept_alert_if_any(self.driver, 5)
         wait_ready_safe(self.driver)

@@ -4,9 +4,9 @@
 - Curso escolar: 2025/2026
 - Asignatura: Evolución y gestión de la configuración
 
-## Miembros del grupo (en orden alfabético según apellido):
+## Miembros del grupo
 
-- [Campos Díez, Lucía](https://github.com/LWH9900)
+- [Campos Díez, Lucía](https://github.com/HHV4884)
 - [Mayoral Ansias, Aaron](https://github.com/aaronma300604)
 - [Oviedo Govantes, Claudia](https://github.com/ClaudiaOviedoGovantes)
 - [Peñaloza Friqui, Nora](https://github.com/norapfr)
@@ -76,6 +76,7 @@
   - Acuerdo 2025-07-01: Los miembros del equipo que no cuenten con una tarea específica que corregir se encargarán de escribir la documentación del proyecto.
 
 ## ACTA 2025-08
+
 - Asistentes: Lucía Campos Díez, Aaron Mayoral Ansias, Claudia Oviedo Govantes, Nora Peñaloza Friqui, Jesús Sánchez Quirós
 - Acuerdos tomados:
   - Acuerdo 2025-08-01: los miembros del equipo hemos decidido que nuestro cambio para la sección de cambios de la sesión de evalución M3 será completar y personalizar la sección team de PixelHub1.

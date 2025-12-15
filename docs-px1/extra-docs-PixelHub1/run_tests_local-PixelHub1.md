@@ -10,8 +10,8 @@ Los **tests unitarios** utilizan **Rosemary Test**.
 
 ### Requisitos
 
-* Tener la aplicación corriendo localmente.
-* Tener instalado `rosemary`.
+- Tener la aplicación corriendo localmente.
+- Tener instalado `rosemary`.
 
 ### Comando
 
@@ -29,9 +29,9 @@ Los **tests de carga** utilizan **Rosemary Locust**.
 
 ### Requisitos
 
-* La aplicación debe estar encendida y accesible.
-* Tener instalado `rosemary` y `locust`.
-* Para pararlo hay que ejecutar `rosemary locust:stop`
+- La aplicación debe estar encendida y accesible.
+- Tener instalado `rosemary` y `locust`.
+- Para pararlo hay que ejecutar `rosemary locust:stop`
 
 ### Comando
 
@@ -49,9 +49,9 @@ Los **tests de Selenium** permiten comprobar la interacción de la aplicación e
 
 ### Requisitos
 
-* Tener la aplicación corriendo localmente.
-* Tener instalado `pytest` y Selenium.
-* Asegurarse de que los drivers de Selenium (por ejemplo, ChromeDriver) estén correctamente instalados y accesibles.
+- Tener la aplicación corriendo localmente.
+- Tener instalado `pytest` y Selenium.
+- Asegurarse de que los drivers de Selenium (por ejemplo, ChromeDriver) estén correctamente instalados y accesibles.
 
 ### Comandos
 
