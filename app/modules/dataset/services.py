@@ -81,26 +81,16 @@ class DataSetService(BaseService):
             score = dataset.calculate_similarity_score(ds)
             scored_datasets.append((ds, score))
         scored_datasets_sorted = sorted(
-            scored_datasets,
-            key=lambda x: (
-                x[1],
-                x[0].get_download_count(),
-                x[0].created_at),
-            reverse=True)
-        datasets_with_doi = [
-            d for d,
-            _ in scored_datasets_sorted if d.ds_meta_data and d.ds_meta_data.dataset_doi]
+            scored_datasets, key=lambda x: (x[1], x[0].get_download_count(), x[0].created_at), reverse=True
+        )
+        datasets_with_doi = [d for d, _ in scored_datasets_sorted if d.ds_meta_data and d.ds_meta_data.dataset_doi]
         return [ds for ds in datasets_with_doi[:limit]]
 
     def get_unsynchronized(self, current_user_id: int) -> DataSet:
         return self.repository.get_unsynchronized(current_user_id)
 
-    def get_unsynchronized_dataset(
-            self,
-            current_user_id: int,
-            dataset_id: int) -> DataSet:
-        return self.repository.get_unsynchronized_dataset(
-            current_user_id, dataset_id)
+    def get_unsynchronized_dataset(self, current_user_id: int, dataset_id: int) -> DataSet:
+        return self.repository.get_unsynchronized_dataset(current_user_id, dataset_id)
 
     def latest_synchronized(self):
         return self.repository.latest_synchronized()
@@ -127,19 +117,13 @@ class DataSetService(BaseService):
         period = "".join(e for e in period if e.isalnum())
         if period not in ["week", "month"]:
             raise ValueError("Periodo no soportado: usa 'week' o 'month'")
-        datasets = self.dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week(
-            period=period)
+        datasets = self.dsdownloadrecord_repository.top_3_dowloaded_datasets_per_week(period=period)
         if not datasets:  # Manejar None o lista vacía
             return []
-        datasets_with_doi = [
-            d for d in datasets if d.ds_meta_data and d.ds_meta_data.dataset_doi]
+        datasets_with_doi = [d for d in datasets if d.ds_meta_data and d.ds_meta_data.dataset_doi]
         return datasets_with_doi
 
-    def create_from_form(
-            self,
-            form,
-            current_user,
-            parent_dataset=None) -> DataSet:
+    def create_from_form(self, form, current_user, parent_dataset=None) -> DataSet:
         main_author = {
             "name": f"{
                 current_user.profile.surname}, {
@@ -150,12 +134,10 @@ class DataSetService(BaseService):
         try:
 
             logger.info(f"Creating dsmetadata...: {form.get_dsmetadata()}")
-            dsmetadata = self.dsmetadata_repository.create(
-                **form.get_dsmetadata())
+            dsmetadata = self.dsmetadata_repository.create(**form.get_dsmetadata())
 
             for author_data in [main_author] + form.get_authors():
-                author = self.author_repository.create(
-                    commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
+                author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
                 dsmetadata.authors.append(author)
 
             target_version = 1
@@ -178,15 +160,14 @@ class DataSetService(BaseService):
 
             for file_model in form.file_models:
                 filename = file_model.filename.data
-                fmmetadata = self.fmmetadata_repository.create(
-                    commit=False, **file_model.get_fmmetadata())
+                fmmetadata = self.fmmetadata_repository.create(commit=False, **file_model.get_fmmetadata())
                 for author_data in file_model.get_authors():
-                    author = self.author_repository.create(
-                        commit=False, fm_meta_data_id=fmmetadata.id, **author_data)
+                    author = self.author_repository.create(commit=False, fm_meta_data_id=fmmetadata.id, **author_data)
                     fmmetadata.authors.append(author)
 
                 fm = self.file_model_repository.create(
-                    commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id)
+                    commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id
+                )
 
                 file_path = os.path.join(current_user.temp_folder(), filename)
                 checksum, size = calculate_checksum_and_size(file_path)
@@ -284,10 +265,7 @@ class DSViewRecordService(BaseService):
     def the_record_exists(self, dataset: DataSet, user_cookie: str):
         return self.repository.the_record_exists(dataset, user_cookie)
 
-    def create_new_record(
-            self,
-            dataset: DataSet,
-            user_cookie: str) -> DSViewRecord:
+    def create_new_record(self, dataset: DataSet, user_cookie: str) -> DSViewRecord:
         return self.repository.create_new_record(dataset, user_cookie)
 
     def create_cookie(self, dataset: DataSet) -> str:
@@ -295,8 +273,7 @@ class DSViewRecordService(BaseService):
         if not user_cookie:
             user_cookie = str(uuid.uuid4())
 
-        existing_record = self.the_record_exists(
-            dataset=dataset, user_cookie=user_cookie)
+        existing_record = self.the_record_exists(dataset=dataset, user_cookie=user_cookie)
 
         if not existing_record:
             self.create_new_record(dataset=dataset, user_cookie=user_cookie)
@@ -336,10 +313,7 @@ class DataSetComparisonService:
         """
         Compara dos datasets y devuelve un diccionario con las diferencias.
         """
-        return {
-            "metadata": self._compare_metadata(
-                old_ds, new_ds), "files": self._compare_files(
-                old_ds, new_ds)}
+        return {"metadata": self._compare_metadata(old_ds, new_ds), "files": self._compare_files(old_ds, new_ds)}
 
     def _compare_metadata(self, old_ds, new_ds):
         changes = []
@@ -358,18 +332,11 @@ class DataSetComparisonService:
             val_old = getattr(old_meta, attr)
             val_new = getattr(new_meta, attr)
 
-            val_old_str = str(
-                val_old.name) if hasattr(
-                val_old,
-                "name") else str(val_old)
-            val_new_str = str(
-                val_new.name) if hasattr(
-                val_new,
-                "name") else str(val_new)
+            val_old_str = str(val_old.name) if hasattr(val_old, "name") else str(val_old)
+            val_new_str = str(val_new.name) if hasattr(val_new, "name") else str(val_new)
 
             if val_old_str != val_new_str:
-                changes.append(
-                    {"field": label, "old": val_old_str, "new": val_new_str})
+                changes.append({"field": label, "old": val_old_str, "new": val_new_str})
 
         old_authors = {a.name for a in old_meta.authors}
         new_authors = {a.name for a in new_meta.authors}
@@ -412,11 +379,7 @@ class DataSetComparisonService:
                 else:
                     unchanged.append(f_new)
 
-        return {
-            "added": added,
-            "deleted": deleted,
-            "modified": modified,
-            "unchanged": unchanged}
+        return {"added": added, "deleted": deleted, "modified": modified, "unchanged": unchanged}
 
     def generate_diff_html(self, file_id_old, file_id_new):
         from app.modules.hubfile.models import Hubfile

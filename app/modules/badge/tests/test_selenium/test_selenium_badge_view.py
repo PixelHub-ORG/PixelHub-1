@@ -35,27 +35,17 @@ class TestDownloadSVG:
         db.session.add(self.user)
         db.session.commit()
         profile = UserProfile(
-            user_id=self.user.id,
-            name="Richter",
-            surname="Belmont",
-            orcid="0000-0000-0000-0000",
-            affiliation="Test Lab")
+            user_id=self.user.id, name="Richter", surname="Belmont", orcid="0000-0000-0000-0000", affiliation="Test Lab"
+        )
         db.session.add(profile)
         db.session.commit()
-        self.metadata = DSMetaData(
-            title="Test Dataset",
-            description="This is a test dataset",
-            publication_type="NONE")
+        self.metadata = DSMetaData(title="Test Dataset", description="This is a test dataset", publication_type="NONE")
         db.session.add(self.metadata)
         db.session.commit()
-        author = Author(
-            name="Richter Belmont",
-            ds_meta_data_id=self.metadata.id)
+        author = Author(name="Richter Belmont", ds_meta_data_id=self.metadata.id)
         db.session.add(author)
         db.session.commit()
-        self.dataset = DataSet(
-            user_id=self.user.id,
-            ds_meta_data_id=self.metadata.id)
+        self.dataset = DataSet(user_id=self.user.id, ds_meta_data_id=self.metadata.id)
         db.session.add(self.dataset)
         db.session.commit()
         self.port = get_free_port()
@@ -77,10 +67,7 @@ class TestDownloadSVG:
 
     def test_viewsvg(self):
         self.driver.get(f"{self.base_url}/badge/{self.dataset.id}/svg")
-        svg_element = WebDriverWait(
-            self.driver, 10).until(
-            EC.presence_of_element_located(
-                (By.TAG_NAME, "svg")))
+        svg_element = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "svg")))
 
         assert svg_element is not None
         outer_html = svg_element.get_attribute("outerHTML")

@@ -13,18 +13,9 @@ from app.modules.profile.models import UserProfile
 
 
 def login_with_2fa(client, email, password):
-    r1 = client.post(
-        "/login",
-        data={
-            "email": email,
-            "password": password},
-        follow_redirects=True)
+    r1 = client.post("/login", data={"email": email, "password": password}, follow_redirects=True)
     assert r1.status_code == 200
-    r2 = client.post(
-        "/2fa/verify",
-        data={
-            "code": "000000"},
-        follow_redirects=True)
+    r2 = client.post("/2fa/verify", data={"code": "000000"}, follow_redirects=True)
     assert r2.status_code == 200
     return r2
 
@@ -34,28 +25,16 @@ def download_env(test_client):
     email = "download_tester@example.com"
     password = "password123"
 
-    patcher = patch.object(
-        AuthenticationService,
-        "verify_two_factor_code",
-        return_value=True)
+    patcher = patch.object(AuthenticationService, "verify_two_factor_code", return_value=True)
     patcher.start()
 
     with test_client.application.app_context():
-        user = User(
-            email=email,
-            password=password,
-            is_two_factor_enabled=True,
-            two_factor_secret="MOCKSECRET")
+        user = User(email=email, password=password, is_two_factor_enabled=True, two_factor_secret="MOCKSECRET")
         db.session.add(user)
         db.session.commit()
 
         db.session.add(Cart(user_id=user.id))
-        db.session.add(
-            UserProfile(
-                user_id=user.id,
-                name="Downloader",
-                surname="Test",
-                orcid="0000-1111-2222-3333"))
+        db.session.add(UserProfile(user_id=user.id, name="Downloader", surname="Test", orcid="0000-1111-2222-3333"))
 
         ds_meta = DSMetaData(
             title="Download Dataset",

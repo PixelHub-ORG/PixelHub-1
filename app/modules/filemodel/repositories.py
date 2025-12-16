@@ -9,8 +9,7 @@ class FileModelRepository(BaseRepository):
         super().__init__(FileModel)
 
     def count_file_models(self) -> int:
-        max_id = self.model.query.with_entities(
-            func.max(self.model.id)).scalar()
+        max_id = self.model.query.with_entities(func.max(self.model.id)).scalar()
         return max_id if max_id is not None else 0
 
 

@@ -46,10 +46,7 @@ def auth_service():
 
 
 def test_enable_and_disable_two_factor(auth_service, clean_database):
-    user = User(
-        email="toggle_2fa@example.com",
-        password="dummy",
-        two_factor_secret="ABCDEF")
+    user = User(email="toggle_2fa@example.com", password="dummy", two_factor_secret="ABCDEF")
     db.session.add(user)
     db.session.commit()
 
@@ -65,8 +62,7 @@ def test_enable_and_disable_two_factor(auth_service, clean_database):
     assert reloaded2.two_factor_secret is None
 
 
-def test_login_without_2fa_does_not_require_code(
-        clean_database, auth_service, monkeypatch):
+def test_login_without_2fa_does_not_require_code(clean_database, auth_service, monkeypatch):
     data = {
         "name": "LoginNo2FA",
         "surname": "User",
@@ -84,9 +80,7 @@ def test_login_without_2fa_does_not_require_code(
         called["login_called"] = True
         assert u.id == user.id
 
-    monkeypatch.setattr(
-        "app.modules.auth.services.login_user",
-        fake_login_user)
+    monkeypatch.setattr("app.modules.auth.services.login_user", fake_login_user)
 
     result = auth_service.login("login_no_2fa@example.com", "test1234")
 
@@ -96,8 +90,7 @@ def test_login_without_2fa_does_not_require_code(
     assert called["login_called"] is True
 
 
-def test_login_with_2fa_requires_code(
-        clean_database, auth_service, monkeypatch):
+def test_login_with_2fa_requires_code(clean_database, auth_service, monkeypatch):
     data = {
         "name": "LoginWith2FA",
         "surname": "User",
@@ -114,9 +107,7 @@ def test_login_with_2fa_requires_code(
     def fake_login_user(u, remember=True):
         called["login_called"] = True
 
-    monkeypatch.setattr(
-        "app.modules.auth.services.login_user",
-        fake_login_user)
+    monkeypatch.setattr("app.modules.auth.services.login_user", fake_login_user)
 
     result = auth_service.login("login_with_2fa@example.com", "test1234")
 
@@ -127,20 +118,14 @@ def test_login_with_2fa_requires_code(
 
     totp = pyotp.TOTP(secret)
     code = totp.now()
-    result2 = auth_service.login(
-        "login_with_2fa@example.com",
-        "test1234",
-        two_factor_code=code)
+    result2 = auth_service.login("login_with_2fa@example.com", "test1234", two_factor_code=code)
 
     assert result2["success"] is True
     assert result2["2fa_required"] is False
     assert called["login_called"] is True
 
 
-def test_login_with_2fa_invalid_code(
-        clean_database,
-        auth_service,
-        monkeypatch):
+def test_login_with_2fa_invalid_code(clean_database, auth_service, monkeypatch):
     data = {
         "name": "Login2FAInvalid",
         "surname": "User",
@@ -155,14 +140,9 @@ def test_login_with_2fa_invalid_code(
     def fake_login_user(u, remember=True):
         called["login_called"] = True
 
-    monkeypatch.setattr(
-        "app.modules.auth.services.login_user",
-        fake_login_user)
+    monkeypatch.setattr("app.modules.auth.services.login_user", fake_login_user)
 
-    result = auth_service.login(
-        "login_2fa_invalid@example.com",
-        "test1234",
-        two_factor_code="000000")
+    result = auth_service.login("login_2fa_invalid@example.com", "test1234", two_factor_code="000000")
 
     assert result["success"] is False
     assert result["2fa_required"] is True
@@ -192,39 +172,28 @@ def test_is_email_available(clean_database, auth_service):
 
 def test_create_with_profile_missing_email(clean_database, auth_service):
     with pytest.raises(ValueError, match="Email is required"):
-        auth_service.create_with_profile(
-            name="Test", surname="User", password="test1234")
+        auth_service.create_with_profile(name="Test", surname="User", password="test1234")
 
 
-def test_create_with_profile_missing_password_without_orcid(
-        clean_database, auth_service):
+def test_create_with_profile_missing_password_without_orcid(clean_database, auth_service):
     with pytest.raises(ValueError, match="Password is required for form signup"):
-        auth_service.create_with_profile(
-            email="test@example.com", name="Test", surname="User")
+        auth_service.create_with_profile(email="test@example.com", name="Test", surname="User")
 
 
 def test_create_with_profile_missing_name(clean_database, auth_service):
     with pytest.raises(ValueError, match="Name is required"):
-        auth_service.create_with_profile(
-            email="test@example.com",
-            password="test1234",
-            surname="User")
+        auth_service.create_with_profile(email="test@example.com", password="test1234", surname="User")
 
 
 def test_create_with_profile_missing_surname(clean_database, auth_service):
     with pytest.raises(ValueError, match="Surname is required"):
-        auth_service.create_with_profile(
-            email="test@example.com",
-            password="test1234",
-            name="Test")
+        auth_service.create_with_profile(email="test@example.com", password="test1234", name="Test")
 
 
 def test_create_with_profile_success(clean_database, auth_service):
     user = auth_service.create_with_profile(
-        email="success@example.com",
-        password="test1234",
-        name="Test",
-        surname="User")
+        email="success@example.com", password="test1234", name="Test", surname="User"
+    )
 
     assert user.email == "success@example.com"
     assert user.two_factor_secret is not None
@@ -239,15 +208,13 @@ def test_find_or_create_by_orcid_existing_user(clean_database, auth_service):
     db.session.add(existing_user)
     db.session.commit()
 
-    user = auth_service.find_or_create_by_orcid(
-        "0000-0001-2345-6789", "John Doe")
+    user = auth_service.find_or_create_by_orcid("0000-0001-2345-6789", "John Doe")
 
     assert user.id == existing_user.id
 
 
 def test_find_or_create_by_orcid_new_user(clean_database, auth_service):
-    user = auth_service.find_or_create_by_orcid(
-        "0000-0001-9999-8888", "Jane Smith")
+    user = auth_service.find_or_create_by_orcid("0000-0001-9999-8888", "Jane Smith")
 
     assert user.orcid_id == "0000-0001-9999-8888"
     assert user.profile.name == "Jane"
@@ -255,8 +222,7 @@ def test_find_or_create_by_orcid_new_user(clean_database, auth_service):
 
 
 def test_find_or_create_by_orcid_single_name(clean_database, auth_service):
-    user = auth_service.find_or_create_by_orcid(
-        "0000-0001-1111-2222", "Madonna")
+    user = auth_service.find_or_create_by_orcid("0000-0001-1111-2222", "Madonna")
 
     assert user.profile.name == "Madonna"
     assert user.profile.surname == ""
@@ -279,18 +245,14 @@ def test_generate_qr_code_for_two_factor(clean_database, auth_service):
     db.session.add(user)
     db.session.commit()
 
-    qr_code = auth_service.generate_qr_code_for_two_factor(
-        user, app_name="TestApp")
+    qr_code = auth_service.generate_qr_code_for_two_factor(user, app_name="TestApp")
 
     assert qr_code.startswith("data:image/png;base64,")
     assert user.two_factor_secret is not None
 
 
 def test_generate_qr_code_with_existing_secret(clean_database, auth_service):
-    user = User(
-        email="qr2@example.com",
-        password="test",
-        two_factor_secret="EXISTINGSECRET123")
+    user = User(email="qr2@example.com", password="test", two_factor_secret="EXISTINGSECRET123")
     db.session.add(user)
     db.session.commit()
 
@@ -302,10 +264,7 @@ def test_generate_qr_code_with_existing_secret(clean_database, auth_service):
 
 def test_verify_two_factor_code(clean_database, auth_service):
     secret = pyotp.random_base32()
-    user = User(
-        email="verify@example.com",
-        password="test",
-        two_factor_secret=secret)
+    user = User(email="verify@example.com", password="test", two_factor_secret=secret)
     db.session.add(user)
     db.session.commit()
 
@@ -326,8 +285,7 @@ def test_get_authenticated_user(clean_database, auth_service, monkeypatch):
     assert result == mock_user
 
 
-def test_get_authenticated_user_not_authenticated(
-        clean_database, auth_service, monkeypatch):
+def test_get_authenticated_user_not_authenticated(clean_database, auth_service, monkeypatch):
     mock_user = MagicMock()
     mock_user.is_authenticated = False
 
@@ -337,8 +295,7 @@ def test_get_authenticated_user_not_authenticated(
     assert result is None
 
 
-def test_get_authenticated_user_profile(
-        clean_database, auth_service, monkeypatch):
+def test_get_authenticated_user_profile(clean_database, auth_service, monkeypatch):
     mock_profile = MagicMock()
     mock_user = MagicMock()
     mock_user.is_authenticated = True
@@ -350,8 +307,7 @@ def test_get_authenticated_user_profile(
     assert result == mock_profile
 
 
-def test_get_authenticated_user_profile_not_authenticated(
-        clean_database, auth_service, monkeypatch):
+def test_get_authenticated_user_profile_not_authenticated(clean_database, auth_service, monkeypatch):
     mock_user = MagicMock()
     mock_user.is_authenticated = False
 
@@ -392,11 +348,7 @@ def test_client(test_client):  # noqa: F811
 def test_signup_redirects_to_enable_2fa(test_client):
     response = test_client.post(
         "/signup",
-        data=dict(
-            name="New",
-            surname="User",
-            email="new_2fa@example.com",
-            password="newpassword123"),
+        data=dict(name="New", surname="User", email="new_2fa@example.com", password="newpassword123"),
         follow_redirects=True,
     )
 
@@ -419,11 +371,7 @@ def test_signup_authenticated_user_redirects(test_client):
 def test_signup_email_in_use(test_client):
     response = test_client.post(
         "/signup",
-        data=dict(
-            name="Duplicate",
-            surname="User",
-            email="no2fa@example.com",
-            password="password"),
+        data=dict(name="Duplicate", surname="User", email="no2fa@example.com", password="password"),
         follow_redirects=True,
     )
 
@@ -436,11 +384,7 @@ def test_login_get_renders_form(test_client):
 
 
 def test_login_without_2fa_redirects_to_enable_2fa(test_client, test_app):
-    response = test_client.post(
-        "/login",
-        json={
-            "email": "no2fa@example.com",
-            "password": "password"})
+    response = test_client.post("/login", json={"email": "no2fa@example.com", "password": "password"})
 
     assert response.status_code == 302
 
@@ -527,9 +471,7 @@ def test_enable_2fa_success_flow(test_client, monkeypatch):
 
     monkeypatch.setattr(
         "app.modules.auth.services.AuthenticationService.verify_two_factor_code",
-        lambda self,
-        u,
-        code: True,
+        lambda self, u, code: True,
     )
 
     resp = test_client.post(
@@ -562,9 +504,7 @@ def test_enable_2fa_wrong_code_shows_error(test_client, monkeypatch):
 
     monkeypatch.setattr(
         "app.modules.auth.services.AuthenticationService.verify_two_factor_code",
-        lambda self,
-        u,
-        code: False,
+        lambda self, u, code: False,
     )
 
     resp = test_client.post(
@@ -590,11 +530,7 @@ def test_verify_2fa_success(test_client):
     totp = pyotp.TOTP(secret)
     code = totp.now()
 
-    resp = test_client.post(
-        "/2fa/verify",
-        data={
-            "code": code},
-        follow_redirects=False)
+    resp = test_client.post("/2fa/verify", data={"code": code}, follow_redirects=False)
     assert resp.status_code in (301, 302)
     assert resp.headers["Location"].endswith("/")
 
@@ -695,8 +631,7 @@ def test_orcid_login_authenticated_user_redirects(test_client):
 
 def test_orcid_login_redirects_to_orcid(test_client, monkeypatch):
     mock_oauth = MagicMock()
-    mock_oauth.orcid.authorize_redirect = MagicMock(
-        return_value="redirect_response")
+    mock_oauth.orcid.authorize_redirect = MagicMock(return_value="redirect_response")
 
     with test_client.session_transaction() as sess:
         sess.clear()
@@ -729,21 +664,16 @@ def test_orcid_callback_success(test_client, monkeypatch):
 
         profile_repo = UserProfileRepository()
         parts = full_name.strip().split(" ", 1)
-        profile_data = {
-            "name": parts[0],
-            "surname": parts[1] if len(parts) > 1 else "",
-            "user_id": user.id}
+        profile_data = {"name": parts[0], "surname": parts[1] if len(parts) > 1 else "", "user_id": user.id}
         profile_repo.create(**profile_data)
         db.session.commit()
         created_user = user
         return user
 
+    monkeypatch.setattr("app.oauth.orcid.authorize_access_token", mock_authorize_access_token)
     monkeypatch.setattr(
-        "app.oauth.orcid.authorize_access_token",
-        mock_authorize_access_token)
-    monkeypatch.setattr(
-        "app.modules.auth.services.AuthenticationService.find_or_create_by_orcid",
-        mock_find_or_create_by_orcid)
+        "app.modules.auth.services.AuthenticationService.find_or_create_by_orcid", mock_find_or_create_by_orcid
+    )
 
     with test_client.session_transaction() as sess:
         sess.clear()

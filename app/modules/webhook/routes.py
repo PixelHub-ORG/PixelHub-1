@@ -23,12 +23,10 @@ def deploy():
     web_container = service.get_web_container()
 
     # Pull the latest code in the container
-    service.execute_container_command(
-        web_container, "/app/scripts/git_update.sh")
+    service.execute_container_command(web_container, "/app/scripts/git_update.sh")
 
     # Update dependencies in the container
-    service.execute_container_command(
-        web_container, "pip install -r requirements.txt")
+    service.execute_container_command(web_container, "pip install -r requirements.txt")
 
     # Run migrations in the container
     service.execute_container_command(web_container, "flask db upgrade")

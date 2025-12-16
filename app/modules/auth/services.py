@@ -65,10 +65,7 @@ class AuthenticationService(BaseService):
             user.two_factor_secret = pyotp.random_base32()
             user.is_two_factor_enabled = False
 
-            profile_data = {
-                "name": name,
-                "surname": surname,
-                "user_id": user.id}
+            profile_data = {"name": name, "surname": surname, "user_id": user.id}
             self.user_profile_repository.create(**profile_data)
 
             self.repository.session.commit()
@@ -100,10 +97,7 @@ class AuthenticationService(BaseService):
             self.repository.session.add(Cart(user=user))
             self.repository.session.flush()
 
-            profile_data = {
-                "name": name,
-                "surname": surname,
-                "user_id": user.id}
+            profile_data = {"name": name, "surname": surname, "user_id": user.id}
             self.user_profile_repository.create(commit=False, **profile_data)
 
             self.repository.session.commit()
@@ -139,8 +133,7 @@ class AuthenticationService(BaseService):
         self.repository.session.commit()
         return secret
 
-    def generate_qr_code_for_two_factor(
-            self, user: User, app_name: str = "PixelHub") -> str:
+    def generate_qr_code_for_two_factor(self, user: User, app_name: str = "PixelHub") -> str:
         if not user.two_factor_secret:
             self.generate_two_factor_secret(user)
 
