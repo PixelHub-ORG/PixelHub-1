@@ -1,46 +1,58 @@
-{% extends "base_template.html" %}
-
-{% block title %}View dataset{% endblock %}
-
+{% extends "base_template.html" %} {% block title %}View dataset{% endblock %}
 {% block content %}
 
 <h1 class="h3 mb-3"><b>Team</b></h1>
 
-
-<div class="d-flex flex-wrap" style="gap: 20px;">
-    <div style="width: 300px;">
-        <div class="card h-100">
-            <div class="card-body custom-card-body">
-                <h5 class="card-title">Aaron Mayoral</h5>
-                <p class="card-text">
-                    Project Lead. Aproves or reject project proposals, manages team members, and oversees project
-                    progress. Responsible for communication with PixelHub2 group.
-                </p>
-            </div>
-            <div class="card-footer">
-                <span>Project Lead</span>
-            </div>
-        </div>
+<div class="d-flex flex-wrap" style="gap: 20px">
+  <div style="width: 300px">
+    <div class="card h-100">
+      <div class="card-body custom-card-body">
+        <h5 class="card-title">Aaron Mayoral</h5>
+        <p class="card-text">
+          Project Lead. Aproves or reject project proposals, manages team
+          members, and oversees project progress. Responsible for communication
+          with PixelHub2 group.
+        </p>
+      </div>
+      <div class="card-footer">
+        <span>Project Lead</span>
+      </div>
     </div>
+  </div>
 
-    <div style="width: 300px;">
-        <div class="card h-100">
-            <div class="card-body custom-card-body">
-                <h5 class="card-title">Jesús Sánchez</h5>
-                <p class="card-text">
-                    Full Stack Developer. Develops and maintains the PixelHub platform, ensuring functionality,
-                    performance, and user experience.
-                </p>
-            </div>
-            <div class="card-footer">
-                <span>Developer</span>
-            </div>
-        </div>
+  <div style="width: 300px">
+    <div class="card h-100">
+      <div class="card-body custom-card-body">
+        <h5 class="card-title">Jesús Sánchez</h5>
+        <p class="card-text">
+          Full Stack Developer. Develops and maintains the PixelHub platform,
+          ensuring functionality, performance, and user experience.
+        </p>
+      </div>
+      <div class="card-footer">
+        <span>Developer</span>
+      </div>
     </div>
+  </div>
+
+  <div style="width: 300px">
+    <div class="card h-100">
+      <div class="card-body custom-card-body">
+        <h5 class="card-title">Claudia Oviedo</h5>
+        <p class="card-text">
+          Team Member. A multidisciplinary developer responsible for
+          implementing features, ensuring code quality through testing and peer
+          reviews, and managing their tasks via the project's issue tracking
+          workflow.
+        </p>
+      </div>
+      <div class="card-footer">
+        <span>Software Engineer</span>
+      </div>
+    </div>
+  </div>
 </div>
 
-{% endblock %}
-
-{% block scripts %}
+{% endblock %} {% block scripts %}
 <script src="{{ url_for('team.scripts') }}"></script>
 {% endblock %}
