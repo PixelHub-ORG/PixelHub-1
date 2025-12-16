@@ -53,9 +53,7 @@ def test_zenodo_test_route_success(test_client, mocker):
             return "/app"
         return default
 
-    mocker.patch(
-        "app.modules.zenodo.services.os.getenv",
-        side_effect=mock_getenv)
+    mocker.patch("app.modules.zenodo.services.os.getenv", side_effect=mock_getenv)
 
     # 2. Mockear 'requests.post' (Crear deposition y Subir archivo)
     mock_post_create = mocker.MagicMock()
@@ -65,21 +63,16 @@ def test_zenodo_test_route_success(test_client, mocker):
     mock_post_upload = mocker.MagicMock()
     mock_post_upload.status_code = 201
 
-    mocker.patch("app.modules.zenodo.services.requests.post",
-                 side_effect=[mock_post_create, mock_post_upload])
+    mocker.patch("app.modules.zenodo.services.requests.post", side_effect=[mock_post_create, mock_post_upload])
 
     # 3. Mockear 'requests.delete'
     mock_delete = mocker.MagicMock()
     mock_delete.status_code = 204  # No Content
-    mocker.patch(
-        "app.modules.zenodo.services.requests.delete",
-        return_value=mock_delete)
+    mocker.patch("app.modules.zenodo.services.requests.delete", return_value=mock_delete)
 
     # 4. Mockear operaciones de fichero (open, os.path.exists, os.remove)
     mocker.patch("builtins.open", mocker.mock_open())
-    mocker.patch(
-        "app.modules.zenodo.services.os.path.exists",
-        return_value=True)
+    mocker.patch("app.modules.zenodo.services.os.path.exists", return_value=True)
     mocker.patch("app.modules.zenodo.services.os.remove")
 
     response = test_client.get("/zenodo/test")
@@ -100,16 +93,10 @@ def test_zenodo_test_route_fail_create_deposition(test_client, mocker):
     mock_post_fail.status_code = 500
     mock_post_fail.text = "Error Interno del Servidor"
 
-    mocker.patch(
-        "app.modules.zenodo.services.os.getenv",
-        return_value="development")
-    mocker.patch(
-        "app.modules.zenodo.services.requests.post",
-        return_value=mock_post_fail)
+    mocker.patch("app.modules.zenodo.services.os.getenv", return_value="development")
+    mocker.patch("app.modules.zenodo.services.requests.post", return_value=mock_post_fail)
     mocker.patch("builtins.open", mocker.mock_open())
-    mocker.patch(
-        "app.modules.zenodo.services.os.path.exists",
-        return_value=True)
+    mocker.patch("app.modules.zenodo.services.os.path.exists", return_value=True)
     mocker.patch("app.modules.zenodo.services.os.remove")
 
     response = test_client.get("/zenodo/test")
@@ -134,24 +121,16 @@ def test_zenodo_test_route_fail_upload(test_client, mocker):
     mock_post_upload_fail.status_code = 400
     mock_post_upload_fail.content = b"Upload Error"
 
-    mocker.patch(
-        "app.modules.zenodo.services.requests.post",
-        side_effect=[
-            mock_post_create,
-            mock_post_upload_fail])
+    mocker.patch("app.modules.zenodo.services.requests.post", side_effect=[mock_post_create, mock_post_upload_fail])
 
     # 2. Mock de 'requests.delete'
     mock_delete = mocker.MagicMock()
     mock_delete.status_code = 204
-    mocker.patch(
-        "app.modules.zenodo.services.requests.delete",
-        return_value=mock_delete)
+    mocker.patch("app.modules.zenodo.services.requests.delete", return_value=mock_delete)
 
     # 3. Mockear operaciones de fichero
     mocker.patch("builtins.open", mocker.mock_open())
-    mocker.patch(
-        "app.modules.zenodo.services.os.path.exists",
-        return_value=True)
+    mocker.patch("app.modules.zenodo.services.os.path.exists", return_value=True)
     mocker.patch("app.modules.zenodo.services.os.remove")
 
     response = test_client.get("/zenodo/test")
@@ -180,8 +159,7 @@ def test_service_get_zenodo_url_uses_fakenodo_env_var(test_client, mocker):
         return default
 
     # 3. Aplicamos el mock
-    mocker.patch("app.modules.zenodo.services.os.getenv",
-                 side_effect=mock_getenv_side_effect)
+    mocker.patch("app.modules.zenodo.services.os.getenv", side_effect=mock_getenv_side_effect)
 
     # 4. Ejecutamos y verificamos
     with test_client.application.app_context():
@@ -190,9 +168,7 @@ def test_service_get_zenodo_url_uses_fakenodo_env_var(test_client, mocker):
         assert service.get_zenodo_url() == test_fakenodo_url
 
 
-def test_service_get_zenodo_url_uses_default_when_no_env_var(
-        test_client,
-        mocker):
+def test_service_get_zenodo_url_uses_default_when_no_env_var(test_client, mocker):
     """
     Prueba que get_zenodo_url usa la URL por defecto cuando
     FAKENODO_URL NO está definida.
@@ -207,8 +183,7 @@ def test_service_get_zenodo_url_uses_default_when_no_env_var(
         return default
 
     # 2. Aplicamos el mock
-    mocker.patch("app.modules.zenodo.services.os.getenv",
-                 side_effect=mock_getenv_side_effect)
+    mocker.patch("app.modules.zenodo.services.os.getenv", side_effect=mock_getenv_side_effect)
 
     # 3. Ejecutamos y verificamos
     with test_client.application.app_context():
@@ -233,9 +208,7 @@ def mock_service(mocker, test_client):
             return "TEST_TOKEN"
         return default
 
-    mocker.patch(
-        "app.modules.zenodo.services.os.getenv",
-        side_effect=mock_getenv)
+    mocker.patch("app.modules.zenodo.services.os.getenv", side_effect=mock_getenv)
 
     # 2. Mockear todas las llamadas
     mocker.patch("app.modules.zenodo.services.requests.get")
@@ -244,18 +217,12 @@ def mock_service(mocker, test_client):
 
     # 3. Mockear operaciones de ficheros
     mocker.patch("builtins.open", mocker.mock_open())
-    mocker.patch(
-        "app.modules.zenodo.services.os.path.exists",
-        return_value=True)
+    mocker.patch("app.modules.zenodo.services.os.path.exists", return_value=True)
     mocker.patch("app.modules.zenodo.services.os.remove")
-    mocker.patch(
-        "app.modules.zenodo.services.os.path.join",
-        return_value="/fake/path/file.txt")
+    mocker.patch("app.modules.zenodo.services.os.path.join", return_value="/fake/path/file.txt")
 
     # 4. Mockear dependencias de otros módulos
-    mocker.patch(
-        "app.modules.zenodo.services.uploads_folder_name",
-        return_value="/fake/uploads")
+    mocker.patch("app.modules.zenodo.services.uploads_folder_name", return_value="/fake/uploads")
     mocker.patch("app.modules.dataset.models.DSMetaData.query")
 
     # Devolvemos una instancia del servicio
@@ -274,9 +241,7 @@ def test_service_init_with_token(mocker):
             return "MI_TOKEN_SECRETO"
         return default
 
-    mocker.patch(
-        "app.modules.zenodo.services.os.getenv",
-        side_effect=mock_getenv)
+    mocker.patch("app.modules.zenodo.services.os.getenv", side_effect=mock_getenv)
 
     service = ZenodoService()
     assert service.params == {"access_token": "MI_TOKEN_SECRETO"}
@@ -298,8 +263,7 @@ def test_service_init_no_token(mocker):
             return None
         return default  # o None
 
-    mocker.patch("app.modules.zenodo.services.os.getenv",
-                 side_effect=mock_getenv_side_effect)
+    mocker.patch("app.modules.zenodo.services.os.getenv", side_effect=mock_getenv_side_effect)
 
     service = ZenodoService()
     # Verificamos que los params estén vacíos
@@ -310,8 +274,7 @@ def test_service_init_url_stripping(mocker):
     """
     Prueba que el __init__ añade '/depositions' si falta.
     """
-    mocker.patch("app.modules.zenodo.services.os.getenv",
-                 return_value="http://fakenodo/api/")
+    mocker.patch("app.modules.zenodo.services.os.getenv", return_value="http://fakenodo/api/")
     service = ZenodoService()
     assert service.ZENODO_API_URL == "http://fakenodo/api/depositions"
 
@@ -325,18 +288,14 @@ def test_service_test_connection(mock_service):
     # Caso 1: Éxito
     mock_response_ok = mocker.MagicMock()
     mock_response_ok.status_code = 200
-    mocker.patch(
-        "app.modules.zenodo.services.requests.get",
-        return_value=mock_response_ok)
+    mocker.patch("app.modules.zenodo.services.requests.get", return_value=mock_response_ok)
 
     assert service.test_connection() is True
 
     # Caso 2: Fallo
     mock_response_fail = mocker.MagicMock()
     mock_response_fail.status_code = 404
-    mocker.patch(
-        "app.modules.zenodo.services.requests.get",
-        return_value=mock_response_fail)
+    mocker.patch("app.modules.zenodo.services.requests.get", return_value=mock_response_fail)
 
     assert service.test_connection() is False
 
@@ -349,8 +308,7 @@ def test_service_get_all_depositions(mock_service):
     requests_get = mocker.patch("app.modules.zenodo.services.requests.get")
 
     # Caso 1: Éxito
-    requests_get.return_value = MagicMock(
-        status_code=200, json=lambda: {"id": 123})
+    requests_get.return_value = MagicMock(status_code=200, json=lambda: {"id": 123})
     assert service.get_all_depositions() == {"id": 123}
 
     # Caso 2: Fallo
@@ -369,8 +327,7 @@ def test_service_create_new_deposition_full_branches(mock_service):
     """
     service, mocker = mock_service
     requests_post = mocker.patch("app.modules.zenodo.services.requests.post")
-    requests_post.return_value = MagicMock(
-        status_code=201, json=lambda: {"id": 1})
+    requests_post.return_value = MagicMock(status_code=201, json=lambda: {"id": 1})
 
     # Creamos un mock de DataSet
     mock_author_no_details = MagicMock()
@@ -443,8 +400,7 @@ def test_service_upload_file(mock_service):
     mock_user = MagicMock(id=1)
 
     # Caso 1: Éxito (con user=None, usa current_user)
-    requests_post.return_value = MagicMock(
-        status_code=201, json=lambda: {"status": "ok"})
+    requests_post.return_value = MagicMock(status_code=201, json=lambda: {"status": "ok"})
     result = service.upload_file(mock_dataset, 123, mock_fm, user=None)
     assert result == {"status": "ok"}
 
@@ -452,17 +408,14 @@ def test_service_upload_file(mock_service):
     mock_file_handle.close.reset_mock()
 
     # Caso 2: Éxito (con user proporcionado)
-    result_user = service.upload_file(
-        mock_dataset, 123, mock_fm, user=mock_user)
+    result_user = service.upload_file(mock_dataset, 123, mock_fm, user=mock_user)
     assert result_user == {"status": "ok"}
 
     # Reseteamos el mock para el siguiente caso
     mock_file_handle.close.reset_mock()
 
     # Caso 3: Fallo (la API devuelve error)
-    requests_post.return_value = MagicMock(
-        status_code=400, json=lambda: {
-            "error": "Bad file"})
+    requests_post.return_value = MagicMock(status_code=400, json=lambda: {"error": "Bad file"})
     with pytest.raises(Exception, match="Error details: {'error': 'Bad file'}"):
         service.upload_file(mock_dataset, 123, mock_fm, user=mock_user)
 
@@ -488,8 +441,7 @@ def test_service_compute_next_doi(mock_service):
     assert service._compute_next_doi() == "10.5281/zenodo.1000011"
 
     # Caso 3: Error en la consulta
-    mock_query.with_entities.return_value.all.side_effect = Exception(
-        "DB Error")
+    mock_query.with_entities.return_value.all.side_effect = Exception("DB Error")
     assert service._compute_next_doi() == "10.5281/zenodo.1000001"  # Devuelve el fallback
 
 
@@ -499,20 +451,14 @@ def test_service_publish_deposition(mock_service):
     """
     service, mocker = mock_service
     requests_post = mocker.patch("app.modules.zenodo.services.requests.post")
-    mocker.patch.object(
-        service,
-        "_compute_next_doi",
-        return_value="10.5281/zenodo.999")
+    mocker.patch.object(service, "_compute_next_doi", return_value="10.5281/zenodo.999")
 
     # Caso 1: Éxito
-    requests_post.return_value = MagicMock(
-        status_code=202, json=lambda: {
-            "status": "published"})
+    requests_post.return_value = MagicMock(status_code=202, json=lambda: {"status": "published"})
     assert service.publish_deposition(123) == {"status": "published"}
 
     # Caso 2: Fallo
-    requests_post.return_value = MagicMock(
-        status_code=400, text="Already published")
+    requests_post.return_value = MagicMock(status_code=400, text="Already published")
     with pytest.raises(Exception, match="Failed to publish deposition"):
         service.publish_deposition(123)
 
@@ -525,8 +471,7 @@ def test_service_get_deposition(mock_service):
     requests_get = mocker.patch("app.modules.zenodo.services.requests.get")
 
     # Caso 1: Éxito
-    requests_get.return_value = MagicMock(
-        status_code=200, json=lambda: {"id": 123})
+    requests_get.return_value = MagicMock(status_code=200, json=lambda: {"id": 123})
     assert service.get_deposition(123) == {"id": 123}
 
     # Caso 2: Fallo
@@ -541,7 +486,6 @@ def test_service_get_doi(mock_service):
     """
     service, mocker = mock_service
 
-    mocker.patch.object(service, "get_deposition", return_value={
-                        "id": 123, "doi": "10.1234/zenodo.5678"})
+    mocker.patch.object(service, "get_deposition", return_value={"id": 123, "doi": "10.1234/zenodo.5678"})
 
     assert service.get_doi(123) == "10.1234/zenodo.5678"

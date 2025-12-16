@@ -35,25 +35,17 @@ class TestDownloadSVG:
         db.session.add(self.user)
         db.session.commit()
         profile = UserProfile(
-            user_id=self.user.id,
-            name="Maria",
-            surname="Renard",
-            orcid="0000-0000-0000-0000",
-            affiliation="Test Lab")
+            user_id=self.user.id, name="Maria", surname="Renard", orcid="0000-0000-0000-0000", affiliation="Test Lab"
+        )
         db.session.add(profile)
         db.session.commit()
-        self.metadata = DSMetaData(
-            title="Test Dataset",
-            description="This is a test dataset",
-            publication_type="NONE")
+        self.metadata = DSMetaData(title="Test Dataset", description="This is a test dataset", publication_type="NONE")
         db.session.add(self.metadata)
         db.session.commit()
         author = Author(name="Maria Renard", ds_meta_data_id=self.metadata.id)
         db.session.add(author)
         db.session.commit()
-        self.dataset = DataSet(
-            user_id=self.user.id,
-            ds_meta_data_id=self.metadata.id)
+        self.dataset = DataSet(user_id=self.user.id, ds_meta_data_id=self.metadata.id)
         db.session.add(self.dataset)
         db.session.commit()
         self.port = get_free_port()
@@ -77,17 +69,14 @@ class TestDownloadSVG:
         self.driver.get(f"{self.base_url}/badge/{self.dataset.id}/embed")
         self.driver.set_window_size(1200, 800)
 
-        table = WebDriverWait(
-            self.driver, 10).until(
-            EC.presence_of_element_located(
-                (By.CLASS_NAME, "treeTable")))
+        table = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "treeTable")))
 
         print(table)
 
-        html_cell = self.driver.find_element(
-            By.XPATH, '//tr[@id="/html"]//td[contains(@class,"treeValueCell")]')
+        html_cell = self.driver.find_element(By.XPATH, '//tr[@id="/html"]//td[contains(@class,"treeValueCell")]')
         markdown_cell = self.driver.find_element(
-            By.XPATH, '//tr[@id="/markdown"]//td[contains(@class,"treeValueCell")]')
+            By.XPATH, '//tr[@id="/markdown"]//td[contains(@class,"treeValueCell")]'
+        )
 
         html_value = html_cell.text
         markdown_value = markdown_cell.text

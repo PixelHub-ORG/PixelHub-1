@@ -33,21 +33,18 @@ class CartCreateDatasetForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired()])
     desc = TextAreaField("Description", validators=[DataRequired()])
     publication_type = SelectField(
-        "Publication type", choices=[
-            (pt.value, pt.name.replace(
-                "_", " ").title()) for pt in PublicationType], validators=[
-            DataRequired()], )
-    publication_doi = StringField(
-        "Publication DOI", validators=[
-            Optional(), URL()])
+        "Publication type",
+        choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in PublicationType],
+        validators=[DataRequired()],
+    )
+    publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
     dataset_doi = StringField("Dataset DOI", validators=[Optional(), URL()])
     tags = StringField("Tags (separated by commas)")
     authors = FieldList(FormField(AuthorForm))
     submit = SubmitField("Create Dataset")
 
     def get_dsmetadata(self):
-        publication_type_converted = self.convert_publication_type(
-            self.publication_type.data)
+        publication_type_converted = self.convert_publication_type(self.publication_type.data)
 
         return {
             "title": self.title.data,
@@ -63,8 +60,7 @@ class CartCreateDatasetForm(FlaskForm):
             if pt.value == value:
                 return pt.name
         # valor por defecto si algo raro viene del form
-        return PublicationType.NONE.name if hasattr(
-            PublicationType, "NONE") else "NONE"
+        return PublicationType.NONE.name if hasattr(PublicationType, "NONE") else "NONE"
 
     def get_authors(self):
         return [subform.get_author() for subform in self.authors]

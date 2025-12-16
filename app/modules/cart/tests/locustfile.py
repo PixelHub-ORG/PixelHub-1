@@ -66,38 +66,27 @@ class CartUser(HttpUser):
     def delete_item(self):
         item_id = random.randint(1, 50)
         payload = {"item_id": item_id}
-        self.client.post(
-            "/user/cart/delete",
-            data=json.dumps(payload),
-            headers={
-                "Content-Type": "application/json"})
+        self.client.post("/user/cart/delete", data=json.dumps(payload), headers={"Content-Type": "application/json"})
 
     @task(1)
     def delete_nonexistent_item(self):
         payload = {"item_id": 999999}
-        self.client.post(
-            "/user/cart/delete",
-            data=json.dumps(payload),
-            headers={
-                "Content-Type": "application/json"})
+        self.client.post("/user/cart/delete", data=json.dumps(payload), headers={"Content-Type": "application/json"})
 
     @task(1)
     def create_dataset(self):
-        payload = {"dataset_name": "locust_dataset",
-                   "description": "Dataset generado por Locust"}
+        payload = {"dataset_name": "locust_dataset", "description": "Dataset generado por Locust"}
         # Form POST (no JSON) — ajusta si tu endpoint espera JSON
         self.client.post("/user/cart/create", data=payload)
 
     @task(1)
     def create_dataset_empty_cart(self):
         # Vaciar carrito primero
-        self.client.post("/user/cart/delete",
-                         data=json.dumps({"item_id": None}),
-                         headers={"Content-Type": "application/json"})
+        self.client.post(
+            "/user/cart/delete", data=json.dumps({"item_id": None}), headers={"Content-Type": "application/json"}
+        )
 
-        payload = {
-            "dataset_name": "dataset_vacio",
-            "description": "Esto debe fallar"}
+        payload = {"dataset_name": "dataset_vacio", "description": "Esto debe fallar"}
         self.client.post("/user/cart/create", data=payload)
 
     @task(1)

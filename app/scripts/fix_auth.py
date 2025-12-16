@@ -33,11 +33,9 @@ def fix():
             user.password = new_hash
             db.session.commit()
             print("✅ ¡ÉXITO! Contraseña actualizada a hash seguro.")
-            print(
-                f"   -> Ya puedes entrar con: {email_to_fix} / {password_raw}")
+            print(f"   -> Ya puedes entrar con: {email_to_fix} / {password_raw}")
         else:
-            print(
-                f"⚠️ El usuario {email_to_fix} no existe en la base de datos.")
+            print(f"⚠️ El usuario {email_to_fix} no existe en la base de datos.")
 
 
 if __name__ == "__main__":

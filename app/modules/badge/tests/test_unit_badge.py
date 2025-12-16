@@ -75,11 +75,7 @@ def test_badge_svg_not_found(mock_get_dataset, client):
 
 @patch("app.modules.badge.routes.get_dataset")
 @patch("app.modules.badge.routes.url_for")
-def test_badge_embed_success(
-        mock_url_for,
-        mock_get_dataset,
-        client,
-        mock_dataset):
+def test_badge_embed_success(mock_url_for, mock_get_dataset, client, mock_dataset):
     mock_get_dataset.return_value = mock_dataset
     mock_url_for.return_value = "http://example.com/badge/1/svg"
 
@@ -218,8 +214,7 @@ def test_badge_embed_empty_doi(mock_url_for, mock_get_dataset, client):
 
 @patch("app.modules.badge.routes.get_dataset")
 @patch("app.modules.badge.routes.url_for")
-def test_badge_embed_no_dataset_url_uses_svg(
-        mock_url_for, mock_get_dataset, client):
+def test_badge_embed_no_dataset_url_uses_svg(mock_url_for, mock_get_dataset, client):
     mock_get_dataset.return_value = {
         "title": "Edge",
         "downloads": 0,
